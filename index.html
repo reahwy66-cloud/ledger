@@ -1,0 +1,1917 @@
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#131916">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ledger">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="favicon.png">
+<title>Studio Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#131916;--panel:#1B2320;--panel-2:#232C28;--line:#2F3A34;
+  --bone:#F5F2EA;--mute:#7E8A83;--brand:#9DA79F;
+  --cyan:#8FB0B8;--green:#7FBF9C;--coral:#DE8A6E;
+  --brand-w:rgba(157,167,159,.14);
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  --ar:"IBM Plex Sans Arabic","Noto Sans Arabic","Dubai",Tahoma,sans-serif;
+  --sans:"IBM Plex Sans","Helvetica Neue",-apple-system,system-ui,"Segoe UI",sans-serif;
+}
+[data-theme="light"]{
+  --ground:#F5F2EA;--panel:#FFFFFF;--panel-2:#EFEBE1;--line:#E1DCD0;
+  --bone:#232C27;--mute:#78847C;--brand:#4A6B5A;
+  --cyan:#4E7480;--green:#2E7A57;--coral:#B0563C;
+  --brand-w:rgba(74,107,90,.09);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--bone);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body[dir="rtl"]{font-family:var(--ar);line-height:1.75}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px 80px}
+
+/* ── masthead ── */
+.mast{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:24px 0 14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.stamp{width:40px;height:40px;border-radius:11px;flex:none;display:grid;place-items:center;overflow:hidden;
+  background:var(--panel-2);border:1px solid var(--line);color:var(--brand);font-size:16px;font-weight:600}
+.stamp img{width:100%;height:100%;object-fit:cover;display:block}
+.stamp.logo{background:var(--bone);border-color:transparent}
+[data-theme="light"] .stamp.logo{background:var(--panel);border-color:var(--line)}
+.brand h1{font-size:19px;margin:0;letter-spacing:-.01em;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);margin-top:3px}
+body[dir="rtl"] .brand small{font-family:var(--ar);letter-spacing:0;text-transform:none;font-size:11.5px}
+.tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.monthpick{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:5px 6px}
+.monthpick button{background:none;border:0;color:var(--mute);font-size:16px;cursor:pointer;padding:2px 9px;border-radius:6px;line-height:1}
+.monthpick button:hover{background:var(--panel-2);color:var(--bone)}
+.monthpick .lbl{font-family:var(--mono);font-size:12px;letter-spacing:.04em;min-width:100px;text-align:center;cursor:pointer;border-radius:6px;padding:3px 0}
+.monthpick .lbl:hover{background:var(--panel-2)}
+.chip{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:8px 12px;cursor:pointer;font-family:inherit;font-size:12.5px;color:var(--bone);line-height:1.2}
+.chip:hover{border-color:var(--mute)}
+.dot{width:7px;height:7px;border-radius:50%;flex:none}
+.dot.owner{background:var(--brand)}.dot.manager{background:var(--cyan)}.dot.accountant{background:var(--green)}
+
+/* ── tabs ── */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;color:var(--mute);font-family:var(--mono);
+  font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:12px 14px;cursor:pointer;white-space:nowrap;margin-bottom:-1px}
+body[dir="rtl"] .tabs button{font-family:var(--ar);letter-spacing:0;text-transform:none;font-size:13px}
+.tabs button:hover{color:var(--bone)}
+.tabs button[aria-selected="true"]{color:var(--brand);border-bottom-color:var(--brand)}
+
+/* ── generic ── */
+h2{font-size:15px;margin:0 0 3px;font-weight:600;letter-spacing:-.01em}
+.sub{color:var(--mute);font-size:12.5px;margin:0 0 16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+body[dir="rtl"] .eyebrow{font-family:var(--ar);letter-spacing:0;text-transform:none;font-size:12px}
+.sec{margin-top:26px}
+.rowhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;display:inline-block}
+.pos{color:var(--green)}.neg{color:var(--coral)}.acc{color:var(--brand)}.cy{color:var(--cyan)}.mut{color:var(--mute)}
+
+/* ── buttons ── */
+.btn{background:var(--panel-2);border:1px solid var(--line);color:var(--bone);font-family:var(--mono);font-size:11px;
+  letter-spacing:.09em;text-transform:uppercase;padding:9px 14px;border-radius:9px;cursor:pointer}
+body[dir="rtl"] .btn{font-family:var(--ar);letter-spacing:0;text-transform:none;font-size:12.5px}
+.btn:hover{border-color:var(--mute)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--ground);font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:none}
+.btn.sm{padding:6px 10px;font-size:10px}
+body[dir="rtl"] .btn.sm{font-size:11.5px}
+.btn.danger{color:var(--coral)}
+.btn.danger:hover{border-color:var(--coral)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+/* ── KPI strip ── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;position:relative;overflow:hidden}
+.kpi .v{font-family:var(--mono);font-size:25px;font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+  margin-top:6px;display:block;direction:ltr;unicode-bidi:isolate;line-height:1.1}
+body[dir="rtl"] .kpi .v{text-align:right}
+.kpi .n{font-size:11.5px;color:var(--mute);margin-top:5px;display:block}
+.kpi::after{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:3px;background:var(--line)}
+.kpi.in::after{background:var(--green)}.kpi.out::after{background:var(--coral)}
+.kpi.net::after{background:var(--brand)}.kpi.you::after{background:var(--cyan)}
+
+/* ── the cascade ── */
+.ledger{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.ledger-head{padding:18px 18px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.fall{padding:6px 18px 10px}
+.step{display:grid;grid-template-columns:158px 1fr 112px;gap:12px;align-items:center;padding:7px 0}
+.step .lab{font-size:12.5px;color:var(--mute)}
+.step .lab b{color:var(--bone);font-weight:500;display:block;font-size:13px}
+.step.total{margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}
+.track{height:26px;background:var(--ground);border-radius:4px;position:relative;overflow:hidden}
+.bar{position:absolute;inset-inline-start:0;top:0;bottom:0;border-radius:4px;width:0;transition:width .8s cubic-bezier(.22,1,.36,1)}
+.bar.keep{background:var(--brand);background:linear-gradient(90deg,var(--brand),color-mix(in srgb,var(--brand) 72%,#000))}
+.bar.cut{background:var(--coral);background:repeating-linear-gradient(45deg,var(--coral),var(--coral) 6px,color-mix(in srgb,var(--coral) 70%,#000) 6px,color-mix(in srgb,var(--coral) 70%,#000) 12px);opacity:.85}
+.step .amt{text-align:end;font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+.step.total .amt{font-size:16px;font-weight:600}
+.fork{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 18px 18px}
+.slice{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--ground)}
+.slice.mine{border-color:var(--brand)}
+.slice .who{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+body[dir="rtl"] .slice .who{font-family:var(--ar);letter-spacing:0;text-transform:none;font-size:12px}
+.slice .big{font-family:var(--mono);font-size:24px;font-variant-numeric:tabular-nums;display:block;margin:6px 0 2px;
+  direction:ltr;unicode-bidi:isolate;line-height:1.1}
+body[dir="rtl"] .slice .big{text-align:right}
+.slice .note{font-size:11.5px;color:var(--mute)}
+.carve{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:flex;justify-content:space-between;gap:8px;font-size:12px}
+.carve b{color:var(--bone)}
+
+/* ── tables ── */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse}
+th{text-align:start;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);
+  font-weight:400;padding:0 10px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+body[dir="rtl"] th{font-family:var(--ar);letter-spacing:0;text-transform:none;font-size:12px}
+td{padding:11px 10px;border-bottom:1px solid var(--panel-2);font-size:13px;vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.sum td{border-top:1px solid var(--line);border-bottom:0;padding-top:12px}
+td.r,th.r{text-align:end}
+.lnk{color:var(--bone);text-decoration:none;border-bottom:1px dotted var(--mute);font-weight:600}
+.lnk:hover{color:var(--brand);border-bottom-color:var(--brand)}
+.pill{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+  padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mute);white-space:nowrap}
+body[dir="rtl"] .pill{font-family:var(--ar);letter-spacing:0;text-transform:none;font-size:11px}
+.pill.on{color:var(--green);border-color:var(--line);border-color:color-mix(in srgb,var(--green) 45%,transparent)}
+.pill.amb{color:var(--brand);border-color:var(--line);border-color:color-mix(in srgb,var(--brand) 45%,transparent)}
+.pill.cy{color:var(--cyan);border-color:var(--line);border-color:color-mix(in srgb,var(--cyan) 45%,transparent)}
+.empty{text-align:center;padding:34px 14px;color:var(--mute);font-size:13px}
+
+.note{background:var(--brand-w);border:1px solid var(--line);border-color:color-mix(in srgb,var(--brand) 30%,transparent);
+  border-radius:10px;padding:12px 14px;font-size:12.5px;color:var(--bone);opacity:.92}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+
+/* ── modal ── */
+.scrim{position:fixed;inset:0;background:rgba(8,12,10,.72);display:flex;align-items:flex-start;justify-content:center;
+  padding:5vh 16px 40px;overflow:auto;z-index:60}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:100%;max-width:520px;padding:22px}
+.modal h3{margin:0 0 16px;font-size:15px;font-weight:600}
+.f{margin-bottom:13px}
+.f label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-bottom:6px}
+body[dir="rtl"] .f label{font-family:var(--ar);letter-spacing:0;text-transform:none;font-size:12px}
+.f .hint{font-size:11.5px;color:var(--mute);margin-top:5px}
+input,select,textarea{width:100%;background:var(--ground);border:1px solid var(--line);color:var(--bone);
+  border-radius:9px;padding:10px 11px;font-family:inherit;font-size:13.5px}
+input[type=number],input[type=date],input[type=month],input[type=time],input[type=password]{font-family:var(--mono);direction:ltr;text-align:start}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:transparent}
+.acts{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;flex-wrap:wrap}
+.chk{display:flex;align-items:center;gap:9px}
+.chk input{width:auto;accent-color:var(--brand)}
+.chk label{margin:0!important;font-family:inherit!important;text-transform:none!important;letter-spacing:0!important;
+  font-size:13px!important;color:var(--bone)!important}
+.sw{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.sw button{width:34px;height:34px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.sw button[aria-pressed="true"]{border-color:var(--bone);box-shadow:inset 0 0 0 2px var(--panel)}
+
+/* ── calendar ── */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal .dow{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);text-align:center;padding-bottom:6px}
+body[dir="rtl"] .cal .dow{font-family:var(--ar);letter-spacing:0;text-transform:none;font-size:11.5px}
+.day{background:var(--ground);border:1px solid var(--line);border-radius:9px;min-height:84px;padding:6px;cursor:pointer;position:relative}
+.day:hover{border-color:var(--mute)}
+.day.mute{opacity:.32;cursor:default}
+.day.off{border-style:dashed}
+.day.today{border-color:var(--brand)}
+.day .dn{font-family:var(--mono);font-size:11px;color:var(--mute)}
+.day .ev{background:var(--brand-w);border-inline-start:2px solid var(--brand);border-radius:3px;font-size:10.5px;
+  padding:2px 5px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.day .load{position:absolute;inset-inline-end:6px;top:6px;font-family:var(--mono);font-size:9px;color:var(--brand)}
+.day .load.over{color:var(--coral)}
+
+/* ── gate ── */
+.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.gatebox{width:100%;max-width:440px}
+.gatebox .head{text-align:center;margin-bottom:26px}
+.gatebox .stamp{margin:0 auto 16px;width:64px;height:64px;border-radius:18px;font-size:25px}
+.gatebox h1{font-size:22px;margin:0 0 4px;font-weight:600}
+.roles{display:grid;gap:10px}
+.rolebtn{display:flex;align-items:center;gap:13px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:15px 16px;cursor:pointer;text-align:start;width:100%;color:var(--bone);font-family:inherit;font-size:14px}
+.rolebtn:hover{border-color:var(--brand)}
+.rolebtn .ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:none;font-size:8px}
+.rolebtn .ic.owner{background:var(--brand-w);color:var(--brand)}
+.rolebtn .ic.manager{background:var(--panel-2);background:color-mix(in srgb,var(--cyan) 14%,transparent);color:var(--cyan)}
+.rolebtn .ic.accountant{background:var(--panel-2);background:color-mix(in srgb,var(--green) 14%,transparent);color:var(--green)}
+.rolebtn b{font-weight:600}
+.rolebtn small{display:block;color:var(--mute);font-size:11.5px;margin-top:2px;font-weight:400;line-height:1.45}
+.langsw{display:flex;gap:6px;justify-content:center;margin-top:22px}
+.langsw button{background:none;border:1px solid var(--line);color:var(--mute);border-radius:8px;padding:7px 16px;cursor:pointer;font-family:inherit;font-size:12.5px}
+.langsw button[aria-pressed="true"]{border-color:var(--brand);color:var(--brand);background:var(--brand-w)}
+
+.steps{counter-reset:s;padding:0;margin:0;list-style:none}
+.steps li{counter-increment:s;position:relative;padding-inline-start:32px;margin-bottom:12px;font-size:13px;line-height:1.6}
+.steps li::before{content:counter(s);position:absolute;inset-inline-start:0;top:1px;width:22px;height:22px;border-radius:7px;
+  background:var(--panel-2);border:1px solid var(--line);display:grid;place-items:center;font-family:var(--mono);font-size:10px;color:var(--brand)}
+code{background:var(--ground);border:1px solid var(--line);border-radius:5px;padding:3px 7px;font-family:var(--mono);
+  font-size:11.5px;color:var(--cyan);direction:ltr;display:inline-block;word-break:break-all;line-height:1.7}
+
+@media(max-width:820px){
+  .two,.three,.fork{grid-template-columns:1fr}
+  .step{grid-template-columns:1fr 96px;gap:6px 10px}
+  .step .track{grid-column:1/-1;order:3;height:14px;margin-top:2px}
+  .wrap{padding:0 13px 70px}
+  .kpis{grid-template-columns:1fr 1fr}
+  .day{min-height:64px}
+  .fall,.fork,.ledger-head{padding-inline:14px}
+}
+@media(max-width:420px){.kpis{grid-template-columns:1fr}.brand small{display:none}}
+@media print{
+  .tabs,.tools,.btn,.note{display:none!important}
+  body{background:#fff;color:#000}
+  .card,.ledger,.kpi{border-color:#ccc;break-inside:avoid}
+  .wrap{max-width:none;padding:0}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+</style>
+<div id="app"></div>
+<div id="modalHost"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ═════════════ i18n ═════════════ */
+var L={
+en:{
+ dir:"ltr", tagline:"Money in · money out · who gets what",
+ prev:"Previous month", next:"Next month", switchRole:"Switch role",
+ "role.owner":"Owner", "role.manager":"Manager", "role.accountant":"Accountant",
+ "role.owner.d":"Everything, including your private income",
+ "role.manager.d":"Company books and his own share — not your private work",
+ "role.accountant.d":"Enters work and costs, sees the company books only",
+ gate:"Who is using the app?", gatePin:"Enter the code", gateWrong:"That code is not right.",
+ unlock:"Unlock", cancel:"Cancel", save:"Save", del:"Delete", edit:"Edit", add:"Add",
+ "tab.flow":"Flow","tab.clients":"Clients","tab.team":"Team","tab.work":"Work log",
+ "tab.costs":"Costs","tab.calendar":"Calendar","tab.outside":"Outside","tab.setup":"Setup",
+ "k.in":"Money in","k.in.n":"{n} active clients",
+ "k.out":"Money out","k.out.n":"Wages, ads and running costs",
+ "k.net":"Profit to split","k.net.n":"Before the {p}% goes out","k.net.none":"No profit to split this month",
+ "k.pocket":"Lands in your pocket","k.pocket.n":"After rent, plus outside income",
+ "fall.t":"Where the money goes","fall.s":"Every bar is measured against the {v} that came in.",
+ "s.in":"Came in","s.in.d":"From clients",
+ "s.wage":"Wages","s.wage.d":"Editors and designer",
+ "s.ads":"Paid ads","s.ads.d":"Passed through to platforms",
+ "s.run":"Running costs","s.run.d":"Transport, phone, internet","s.run.dr":"Transport, phone, internet, rent",
+ "s.profit":"Profit","s.profit.d":"What is left to split",
+ "fork.mgr":"Manager · {p}%","fork.mgr.n":"His whole pay. No salary, no share of the rent.",
+ "fork.you":"Owner · {p}%","fork.you.n":"The owner's side of the profit.",
+ "fork.setaside":"Set aside for rent ({p}% of the share)","fork.keep":"Kept","fork.renttop":"Rent already taken off the top",
+ "rent.t":"Rent fund","rent.h":"{a} of {b} saved","rent.s":"{n} months until the next payment is due.",
+ "rent.add":"Add this month's {v}","rent.adj":"Adjust",
+ "out.t":"Outside the company","out.s":"Kept completely apart from the company books — the manager's {p}% never touches this.",
+ "out.proj":"Project payouts",
+ "cl.t":"Client by client","cl.s":"Log deliveries in the Work log and the per-video rows fill themselves in.",
+ "th.client":"Client","th.pay":"How they pay","th.videos":"Videos","th.posts":"Posts","th.month":"This month",
+ "th.billing":"Billing","th.rate":"Rate / fee","th.expected":"Expected","th.status":"Status",
+ "th.name":"Name","th.role":"Role","th.paid":"Paid","th.person":"Person","th.basis":"Basis","th.wage":"Pay",
+ "th.date":"Date","th.what":"What","th.qty":"Qty","th.by":"Done by","th.epay":"Editor pay","th.billed":"Billed",
+ "th.cost":"Cost","th.cat":"Category","th.from":"From","th.amt":"Amount","th.time":"Time","th.shoot":"Shoot","th.hours":"Hours",
+ "th.src":"Source","th.note":"Note","th.type":"Type","th.perm":"Per month","th.who":"Who","th.share":"Share","th.on":"On {v}",
+ "pay.t":"What you owe the team","pay.s":"Due at the end of {m}.","pay.mgr":"Manager","pay.mgrb":"{p}% of {v} profit","pay.tot":"Total leaving for wages",
+ "cli.t":"Clients","cli.s":"Rename these to your real client names whenever you like.","cli.add":"Add client","cli.edit":"Edit client","cli.none":"No clients yet.",
+ "b.package":"Package","b.per_video":"Per video","b.prepaid":"Prepaid credit",
+ "b.packageL":"Fixed monthly package","b.per_videoL":"Per video","b.prepaidL":"Paid up front, drawing down",
+ "th.billed2":"Billed","th.paid":"Paid","th.balance":"Balance","th.desc":"Detail","th.charge":"Charge","th.run":"Running",
+ "k.due":"Owed by clients","k.due.n":"{n} clients with a balance",
+ "cd.open":"Open statement","cd.back":"All clients","cd.stmt":"Statement","cd.stmt.s":"Every charge and every payment, oldest first.",
+ "cd.delivered":"What we delivered","cd.month":"This month","cd.all":"Since {m}",
+ "cd.owes":"Owes you","cd.credit":"In credit","cd.settled":"Settled up","cd.nothing":"Nothing recorded yet.",
+ "cd.pay":"Record payment","cd.rename":"Rename","cd.promised":"Promised each month","cd.none":"—",
+ "pm.add":"Record a payment","pm.edit":"Edit payment","pm.none":"No payments yet.",
+ "line.open":"Balance carried over","line.adv":"Paid in advance","line.sub":"Package — {m}","line.pay":"Payment",
+ "f.amountpaid":"Amount received","f.method":"How they paid","m.cash":"Cash","m.bank":"Bank transfer","m.other":"Other",
+ "f.start":"Client since","f.startH":"Monthly package fees are charged from this month onward.",
+ "f.end":"Stopped after","f.endH":"Leave empty while they are still a client.",
+ "f.opening":"Owed from before","f.openingH":"Any old balance they already owed when you started tracking.",
+ "f.advance":"Paid in advance","f.advanceH":"Money they handed over up front, before any work.",
+ "cli.total":"Total outstanding",
+ "th.earned":"Earned","th.adv":"Advances","th.carry":"Carried in","th.net":"Net due","th.month2":"Month","th.payout":"Paid out",
+ "ad.t":"Advances","ad.take":"Record an advance","ad.edit":"Edit advance","ad.none":"No advances taken.",
+ "ad.owes":"Still owes you","ad.clear":"Nothing outstanding",
+ "ad.note":"An advance is money handed over early, not a new cost. It never changes the company profit or the {p}% split — it only lowers what that person is still owed. If someone takes more than they earned, the rest carries into next month.",
+ "emp.back":"All team","emp.open":"Open account","emp.stmt":"Month by month","emp.stmt.s":"Earned, minus advances, carried forward when it goes negative.",
+ "emp.hist":"Advances taken","emp.thismonth":"Due at the end of {m}",
+ "f.who":"Person","f.advamount":"Advance amount","f.advnote":"What for",
+ "tm.total":"Total to pay out",
+ "tab.users":"People",
+ "cl.t2":"Cloud","cl.off":"Saved on this device only","cl.on":"Synced · {n} people",
+ "cl.offS":"Everything lives in this browser. If you clear it or change computer, it is gone. Connect a free database and it is backed up and shared.",
+ "cl.onS":"Your numbers are on the server. Everyone sees the same figures, live.",
+ "cl.connect":"Connect a database","cl.manage":"Manage","cl.disconnect":"Disconnect",
+ "cl.url":"Project URL","cl.key":"Anon public key","cl.keyH":"Supabase → Settings → API. The anon key is meant to be public; the database rules do the protecting.",
+ "cl.bad":"Could not reach that project. Check the URL and key.",
+ "cl.lib":"Could not load the database library. Check your internet connection.",
+ "cl.upload":"Send what is on this device to the cloud",
+ "cl.uploadH":"Do this once, from the computer that has your real numbers. It overwrites what is on the server.",
+ "cl.pulling":"Loading…","cl.syncing":"Saving…","cl.synced":"Saved","cl.err":"Not saved",
+ "au.in":"Sign in","au.up":"Create account","au.email":"Email","au.pass":"Password","au.name":"Your name",
+ "au.toUp":"No account yet? Create one","au.toIn":"Already have an account? Sign in",
+ "au.out":"Sign out","au.wait":"Waiting for approval","au.waitS":"Your account is created. {who} needs to switch it on and choose what you can see.",
+ "au.first":"The first account created becomes the owner.","au.weak":"Password must be at least 6 characters.",
+ "au.check":"Check your email to confirm the address, then sign in.",
+ "us.t":"People","us.s":"Switch someone on and pick exactly what they can reach.",
+ "us.none":"Nobody else has signed up yet. Send them the link and they will appear here.",
+ "us.owner":"Owner","us.staff":"Staff","us.pending":"Waiting","us.active":"Active","us.off":"Switched off",
+ "us.edit":"Permissions for {n}","us.presets":"Start from","us.p.manager":"Partner","us.p.acct":"Accountant","us.p.view":"View only","us.p.none":"Nothing",
+ "us.canSee":"Can open","us.canEdit":"Can change","us.personal":"Can see your private income and rent",
+ "us.personalH":"Leave this off and the database itself refuses to hand over that data.",
+ "us.on":"Account switched on","us.ownerLock":"The owner always has everything.",
+ "sec.flow":"Money flow","sec.clients":"Clients","sec.team":"Team","sec.work":"Work log","sec.costs":"Costs",
+ "sec.calendar":"Calendar","sec.outside":"Outside the company","sec.users":"People","sec.setup":"Setup",
+ "sec.payments":"Client payments","sec.advances":"Advances",
+ "pwa.t":"Install on your phone","pwa.h":"Add it to your home screen","pwa.b":"How",
+ "pwa.and":"Android","pwa.ios":"iPhone","pwa.now":"Install now",
+ "pwa.a1":"Open the link in Chrome","pwa.a2":"Tap the three dots at the top right","pwa.a3":"Tap Install app, or Add to home screen",
+ "pwa.i1":"Open the link in Safari (it must be Safari)","pwa.i2":"Tap the share button at the bottom","pwa.i3":"Scroll down and tap Add to Home Screen",
+ "pwa.note":"It opens full screen with your logo, exactly like a normal app.",
+ "sp.look":"Look and feel","sp.lookH":"{t} · {c}","sp.lookB":"Change",
+ "th.light":"Light","th.dark":"Dark","th.auto":"Match my device",
+ "f.theme":"Background","f.accent":"Your brand colour","f.accentH":"Buttons, highlights and the profit figure use this.",
+ "f.custom":"Or paste a hex code","f.logo":"Logo","f.logoH":"A square image works best. It is stored inside this app only.",
+ "f.logoPick":"Choose an image","f.logoClear":"Remove logo","f.logoBig":"That image is too large. Use one under 400 KB.",
+ "c.sage":"Sage","c.bone":"Bone","c.jade":"Green","c.seal":"Clay","c.brass":"Brass","c.ink":"Blue",
+ "print":"Print","today":"Today",
+ "cli.month":"{v} / month","cli.pv":"{v} / video","cli.inc":"{v} vid · {p} posts","cli.left":"{v} left","cli.over":"{v} over — settled","cli.exp":"{n} videos",
+ "cli.ads":"incl. {v} ads","st.active":"Active","st.paused":"Paused",
+ "tm.t":"Team","tm.s":"Add anyone, on any rate — monthly, per video, or per task.","tm.add":"Add person","tm.edit":"Edit person",
+ "p.percent":"% of profit","p.monthly":"Monthly","p.per_video":"Per video","p.per_task":"Per task",
+ "p.percentL":"Share of the profit","p.monthlyL":"Fixed monthly","p.per_videoL":"Per video","p.per_taskL":"Per task",
+ "st.on":"Active","st.off":"Off the books",
+ "tm.note":"The manager is the only one on a percentage. He is paid {p}% of the profit after every company cost is covered — that replaces a salary, and it is why the rent stays on the owner's side.",
+ "wk.t":"Work log — {m}","wk.s":"Every delivery logged pays an editor and bills a client at the same time.",
+ "wk.add":"Log a delivery","wk.edit":"Edit delivery","wk.none":"Nothing logged for {m} yet.","wk.inpack":"in package",
+ "d.video":"Video","d.post":"Post","d.design":"Design","d.task":"Task",
+ "cs.t":"Running costs — {m}","cs.s":"These come off before the profit is split, so the manager carries his share of them.",
+ "cs.add":"Add cost","cs.edit":"Edit cost","cs.none":"Nothing recorded for this month.","cs.tot":"Total",
+ "cs.note":"Rent is not in this list right now. The year was paid up front before the manager joined, so it comes out of the owner's share instead.",
+ "c.Transport":"Transport","c.Phone":"Phone","c.Internet":"Internet","c.Equipment":"Equipment","c.Software":"Software","c.Rent":"Rent","c.Other":"Other",
+ "cal.t":"Shoot calendar","cal.s":"About {h} free hours a day after the retainer job. Tap a day to book a shoot.",
+ "cal.add":"Book a shoot","cal.edit":"Edit shoot","cal.booked":"Booked this month","cal.none":"Nothing booked. Tap any day above to add a shoot.","cal.off":"off",
+ "os.t":"Outside the company","os.s":"The owner's own money. None of it is touched by the split.","os.add":"Add income",
+ "os.income":"Income","os.cost":"Cost","os.got":"Your cut received in {m}:","os.pay":"Record a payment","os.deal":"Edit deal","os.newproj":"Add another project",
+ "sp.t":"Setup","sp.s":"The rules the whole app calculates from.",
+ "sp.split":"The split","sp.splitH":"Manager {a}% · owner {b}%",
+ "sp.splitS":"Worked out on profit, after wages, ads and running costs are paid. If a month makes no profit, he gets nothing and the owner carries it.","sp.splitB":"Change the split",
+ "sp.rent":"Rent","sp.rentA":"{p}% of the owner's share, set aside","sp.rentB":"{v} a month off the top",
+ "sp.rentAS":"Rent comes only out of the owner's 70%. The year was paid up front before the manager joined, so he does not contribute.",
+ "sp.rentBS":"Rent is a company cost now — both partners carry it in proportion. Use this once you move to the new office.","sp.rentBtn":"Change how rent works",
+ "sp.day":"Your day","sp.dayH":"{h} free hours · {d} off","sp.dayS":"The calendar warns you when a day is booked past this.","sp.change":"Change",
+ "sp.co":"Company","sp.coS":"Name and currency shown throughout the app.",
+ "sp.pins":"Access codes","sp.pinsH":"{n} of 3 roles locked","sp.pinsS":"A code stops someone opening the wrong view on a shared computer. It is a lock on the door, not a safe — anyone with the file can still read it.","sp.pinsB":"Set codes",
+ "sp.data":"Your data","sp.dataH":"Everything is saved on this device","sp.dataS":"Export a backup to keep it safe or to hand a copy to your partner.",
+ "sp.exp":"Export backup","sp.imp":"Import backup","sp.reset":"Start over",
+ "sp.inst":"Install it","sp.instH":"Run it like a real program","sp.instB":"Show me how",
+ "ins.t":"Turn this into a Windows app","ins.w":"As a desktop app on Windows","ins.h":"Put it online for free",
+ "ins.w1":"Save this file somewhere permanent, for example C:\\StudioLedger\\index.html","ins.w2":"Right-click the desktop → New → Shortcut","ins.w3":"Paste this as the location, then finish:","ins.w4":"Open the shortcut. It runs in its own window with no browser bars — it looks and behaves like a normal program. Right-click it → Properties → Change Icon to give it your own logo.",
+ "ins.h1":"Go to app.netlify.com/drop","ins.h2":"Rename this file to index.html and drag it onto the page","ins.h3":"You get a free web address in about ten seconds. Anyone with the link can open it.",
+ "ins.warn":"Important: the numbers live inside each browser, not on the internet. If you put it online, you and your partner each get your own separate copy of the data. Use Export and Import to pass a copy across. For both of you to see the same live numbers, the app needs a shared database — ask me and I will add one.",
+ "f.name":"Name","f.cliname":"Client name","f.howpay":"How they pay","f.fee":"Monthly fee","f.vids":"Videos included","f.posts":"Posts included",
+ "f.ads":"Ad money inside the fee","f.adsH":"Money that passes straight to the ad platform, not profit.",
+ "f.rate":"Rate per video","f.exp":"Videos expected each month","f.credit":"Amount paid up front","f.note":"Note","f.activecli":"Active client",
+ "f.role":"Role","f.roleH":"Editor, designer, manager…","f.howpaid":"How they are paid","f.rate2":"Rate","f.rateH":"For a profit share, put the percentage here.","f.onbooks":"Currently on the books",
+ "f.date":"Date","f.client":"Client","f.delivered":"What was delivered","f.howmany":"How many","f.whodid":"Who did it","f.nobody":"Nobody / me",
+ "f.override":"Override their pay","f.overrideH":"Leave empty to use their normal rate.",
+ "f.whatis":"What is it","f.cat":"Category","f.amount":"Amount","f.repeats":"Repeats every month from this date",
+ "f.time":"Time","f.shooting":"What are you shooting","f.hours":"Hours it will take","f.notes":"Notes",
+ "f.source":"Source","f.type":"Type","f.permonth":"Per month","f.running":"Still running",
+ "f.project":"Project","f.status":"Status","f.terms":"Terms","f.person":"Person {n}","f.theirpct":"Their %","f.addperson":"Add another person",
+ "f.what4":"What for","f.total":"Total the client paid","f.yourcut":"Your cut","f.yourcutH":"Your share is {p}% of the total.",
+ "f.mgrpct":"Manager's share %","f.whopays":"Who pays the rent","f.rentmine":"Only the owner — from the owner's share","f.rentco":"Company cost — off the top, before the split",
+ "f.pctaside":"% of the share to set aside","f.offtop":"Monthly amount off the top","f.yearly":"Yearly rent","f.monthsleft":"Months until the next payment","f.saved":"Saved so far",
+ "f.freehours":"Free hours a day","f.freehoursH":"Hours left after the retainer job.","f.dayoff":"Day off",
+ "f.coname":"Company name","f.curr":"Currency symbol",
+ "f.pinowner":"Owner code","f.pinmgr":"Manager code","f.pinacc":"Accountant code","f.pinH":"Leave empty for no code.",
+ "confirmDel":"Delete this permanently?","confirmReset":"This clears everything and reloads the starting setup. Continue?",
+ "badFile":"That file could not be read. Pick a backup exported from this app.",
+ "readonly":"You are viewing this. Only the owner can change it.",
+ "st.In discussion":"In discussion","st.Agreed":"Agreed","st.Building":"Building","st.Free support month":"Free support month","st.Paid support":"Paid support","st.Closed":"Closed",
+ dows:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+ daysFull:["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+ months:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+},
+ar:{
+ dir:"rtl", tagline:"الداخل · الخارج · ومين بياخد شو",
+ prev:"الشهر السابق", next:"الشهر التالي", switchRole:"تبديل المستخدم",
+ "role.owner":"صاحب الشركة", "role.manager":"المدير", "role.accountant":"المحاسب",
+ "role.owner.d":"كل شي، بما فيه دخلك الخاص",
+ "role.manager.d":"حسابات الشركة وحصته هو — بدون شغلك الخاص",
+ "role.accountant.d":"بيسجّل الشغل والمصاريف، وبيشوف حسابات الشركة بس",
+ gate:"مين عم يستخدم البرنامج؟", gatePin:"اكتب الرمز", gateWrong:"الرمز غير صحيح.",
+ unlock:"دخول", cancel:"إلغاء", save:"حفظ", del:"حذف", edit:"تعديل", add:"إضافة",
+ "tab.flow":"الحركة","tab.clients":"الزبائن","tab.team":"الفريق","tab.work":"سجل الشغل",
+ "tab.costs":"المصاريف","tab.calendar":"التقويم","tab.outside":"خارج الشركة","tab.setup":"الإعدادات",
+ "k.in":"الداخل","k.in.n":"{n} زبائن فعّالين",
+ "k.out":"الخارج","k.out.n":"أجور وإعلانات ومصاريف تشغيل",
+ "k.net":"الربح القابل للتقسيم","k.net.n":"قبل ما تطلع الـ{p}%","k.net.none":"ما في ربح للتقسيم هالشهر",
+ "k.pocket":"اللي بيوصل جيبتك","k.pocket.n":"بعد الإيجار، مع الدخل الخارجي",
+ "fall.t":"وين بيروح المصاري","fall.s":"كل عمود مقاس على الـ{v} اللي دخلت.",
+ "s.in":"دخل","s.in.d":"من الزبائن",
+ "s.wage":"الأجور","s.wage.d":"المونتاج والتصميم",
+ "s.ads":"إعلانات مدفوعة","s.ads.d":"بتروح مباشرة للمنصّات",
+ "s.run":"مصاريف تشغيل","s.run.d":"مواصلات، اتصالات، إنترنت","s.run.dr":"مواصلات، اتصالات، إنترنت، إيجار",
+ "s.profit":"الربح","s.profit.d":"اللي باقي للتقسيم",
+ "fork.mgr":"المدير · {p}%","fork.mgr.n":"هاد كل دخله. بدون راتب، وبدون مشاركة بالإيجار.",
+ "fork.you":"صاحب الشركة · {p}%","fork.you.n":"حصة صاحب الشركة من الربح.",
+ "fork.setaside":"مجنّب للإيجار ({p}% من الحصة)","fork.keep":"الصافي","fork.renttop":"الإيجار انحسم من الأول",
+ "rent.t":"صندوق الإيجار","rent.h":"مجموع {a} من أصل {b}","rent.s":"باقي {n} شهور على الدفعة الجاية.",
+ "rent.add":"ضيف حصة هالشهر {v}","rent.adj":"تعديل",
+ "out.t":"خارج الشركة","out.s":"منفصل تماماً عن حسابات الشركة — الـ{p}% تبع المدير ما بتوصل لهون أبداً.",
+ "out.proj":"دفعات المشاريع",
+ "cl.t":"الزبائن واحد واحد","cl.s":"سجّل التسليمات بسجل الشغل والصفوف بتتعبّى لحالها.",
+ "th.client":"الزبون","th.pay":"طريقة الدفع","th.videos":"فيديوهات","th.posts":"منشورات","th.month":"هالشهر",
+ "th.billing":"الفوترة","th.rate":"السعر / الاشتراك","th.expected":"المتوقّع","th.status":"الحالة",
+ "th.name":"الاسم","th.role":"الدور","th.paid":"الدفع","th.person":"الشخص","th.basis":"الأساس","th.wage":"المستحق",
+ "th.date":"التاريخ","th.what":"الشغل","th.qty":"العدد","th.by":"نفّذه","th.epay":"أجر المونتير","th.billed":"المفوتر",
+ "th.cost":"المصروف","th.cat":"التصنيف","th.from":"من","th.amt":"المبلغ","th.time":"الوقت","th.shoot":"التصوير","th.hours":"ساعات",
+ "th.src":"المصدر","th.note":"ملاحظة","th.type":"النوع","th.perm":"شهرياً","th.who":"الشخص","th.share":"الحصة","th.on":"على {v}",
+ "pay.t":"المستحق للفريق","pay.s":"بيتدفع آخر {m}.","pay.mgr":"المدير","pay.mgrb":"{p}% من ربح {v}","pay.tot":"مجموع الأجور الطالعة",
+ "cli.t":"الزبائن","cli.s":"غيّر الأسماء لأسماء زبائنك الحقيقية وقت ما بدك.","cli.add":"إضافة زبون","cli.edit":"تعديل زبون","cli.none":"ما في زبائن بعد.",
+ "b.package":"باقة","b.per_video":"بالفيديو","b.prepaid":"رصيد مدفوع",
+ "b.packageL":"باقة شهرية ثابتة","b.per_videoL":"سعر لكل فيديو","b.prepaidL":"دفع مقدماً وبينخصم",
+ "th.billed2":"المفوتر","th.paid":"المدفوع","th.balance":"الباقي","th.desc":"البيان","th.charge":"مطلوب","th.run":"الرصيد",
+ "k.due":"مستحق على الزبائن","k.due.n":"{n} زبائن عليهم رصيد",
+ "cd.open":"فتح الحساب","cd.back":"كل الزبائن","cd.stmt":"كشف الحساب","cd.stmt.s":"كل مطلوب وكل دفعة، من الأقدم للأحدث.",
+ "cd.delivered":"شو قدّمنالو","cd.month":"هالشهر","cd.all":"من {m}",
+ "cd.owes":"عليه","cd.credit":"إله رصيد","cd.settled":"الحساب مسكّر","cd.nothing":"ما في حركات بعد.",
+ "cd.pay":"تسجيل دفعة","cd.rename":"تغيير الاسم","cd.promised":"المتفق عليه شهرياً","cd.none":"—",
+ "pm.add":"تسجيل دفعة","pm.edit":"تعديل الدفعة","pm.none":"ما في دفعات بعد.",
+ "line.open":"رصيد سابق","line.adv":"مدفوع مقدماً","line.sub":"اشتراك {m}","line.pay":"دفعة",
+ "f.amountpaid":"المبلغ المقبوض","f.method":"طريقة الدفع","m.cash":"كاش","m.bank":"تحويل بنكي","m.other":"غير ذلك",
+ "f.start":"زبون من تاريخ","f.startH":"اشتراك الباقة بينحسب من هالشهر وطالع.",
+ "f.end":"وقف بعد شهر","f.endH":"اتركه فاضي إذا لسا زبون.",
+ "f.opening":"مبلغ قديم عليه","f.openingH":"أي رصيد قديم كان عليه قبل ما تبلّش تسجّل.",
+ "f.advance":"مدفوع مقدماً","f.advanceH":"مصاري دفعها سلف قبل أي شغل.",
+ "cli.total":"إجمالي المستحق",
+ "th.earned":"المستحق","th.adv":"سلف","th.carry":"مرحّل عليه","th.net":"الصافي","th.month2":"الشهر","th.payout":"المدفوع له",
+ "ad.t":"السلف","ad.take":"تسجيل سلفة","ad.edit":"تعديل السلفة","ad.none":"ما أخد سلف.",
+ "ad.owes":"باقي عليه","ad.clear":"ما في شي عليه",
+ "ad.note":"السلفة مصاري بتنعطى بدري، مش مصروف جديد. أبداً ما بتغيّر ربح الشركة ولا الـ{p}% — بس بتنقّص اللي باقي إلو. وإذا حدا أخد أكتر من مستحقه، الباقي بينرحّل عالشهر الجاي.",
+ "emp.back":"كل الفريق","emp.open":"فتح الحساب","emp.stmt":"شهر شهر","emp.stmt.s":"المستحق، ناقص السلف، وبينرحّل لما يصير بالسالب.",
+ "emp.hist":"السلف المأخوذة","emp.thismonth":"المستحق آخر {m}",
+ "f.who":"الشخص","f.advamount":"مبلغ السلفة","f.advnote":"مقابل شو",
+ "tm.total":"إجمالي المطلوب دفعه",
+ "tab.users":"المستخدمين",
+ "cl.t2":"السحابة","cl.off":"محفوظ على هالجهاز بس","cl.on":"متصل · {n} أشخاص",
+ "cl.offS":"كل شي محفوظ جوّا هالمتصفح. إذا مسحته أو غيّرت الجهاز بيروح. اربط قاعدة بيانات مجانية وبيصير محفوظ ومشترك.",
+ "cl.onS":"أرقامك على السيرفر. الكل بيشوف نفس الأرقام لحظة بلحظة.",
+ "cl.connect":"اربط قاعدة بيانات","cl.manage":"إدارة","cl.disconnect":"فصل",
+ "cl.url":"رابط المشروع","cl.key":"المفتاح العام anon","cl.keyH":"من Supabase ← Settings ← API. المفتاح anon مصمّم ليكون علني، الحماية الحقيقية بقواعد قاعدة البيانات.",
+ "cl.bad":"ما قدرت أوصل للمشروع. تأكد من الرابط والمفتاح.",
+ "cl.lib":"ما قدرت أحمّل مكتبة قاعدة البيانات. تأكد من الإنترنت.",
+ "cl.upload":"ارفع بيانات هالجهاز عالسحابة",
+ "cl.uploadH":"اعملها مرة وحدة، من الجهاز اللي فيه أرقامك الحقيقية. بتستبدل اللي على السيرفر.",
+ "cl.pulling":"عم يحمّل…","cl.syncing":"عم يحفظ…","cl.synced":"محفوظ","cl.err":"ما انحفظ",
+ "au.in":"تسجيل دخول","au.up":"إنشاء حساب","au.email":"الإيميل","au.pass":"كلمة السر","au.name":"اسمك",
+ "au.toUp":"ما عندك حساب؟ اعمل واحد","au.toIn":"عندك حساب؟ سجّل دخول",
+ "au.out":"تسجيل خروج","au.wait":"بانتظار الموافقة","au.waitS":"حسابك انعمل. لازم {who} يفعّله ويحدد شو بتقدر تشوف.",
+ "au.first":"أول حساب بينعمل بيصير صاحب الشركة.","au.weak":"كلمة السر لازم 6 أحرف على الأقل.",
+ "au.check":"افحص إيميلك لتأكيد العنوان، وبعدين سجّل دخول.",
+ "us.t":"المستخدمين","us.s":"فعّل أي حدا وحدّد بالظبط شو بيقدر يوصلّو.",
+ "us.none":"ما حدا تاني عمل حساب بعد. ابعتلهم الرابط وبيظهروا هون.",
+ "us.owner":"صاحب الشركة","us.staff":"موظف","us.pending":"بالانتظار","us.active":"مفعّل","us.off":"موقوف",
+ "us.edit":"صلاحيات {n}","us.presets":"ابدأ من","us.p.manager":"الشريك","us.p.acct":"المحاسب","us.p.view":"عرض فقط","us.p.none":"لا شي",
+ "us.canSee":"بيقدر يفتح","us.canEdit":"بيقدر يعدّل","us.personal":"بيشوف دخلك الخاص والإيجار",
+ "us.personalH":"اتركها مطفية وقاعدة البيانات نفسها بترفض تعطيه هالبيانات.",
+ "us.on":"الحساب مفعّل","us.ownerLock":"صاحب الشركة عنده كل شي دايماً.",
+ "sec.flow":"حركة المصاري","sec.clients":"الزبائن","sec.team":"الفريق","sec.work":"سجل الشغل","sec.costs":"المصاريف",
+ "sec.calendar":"التقويم","sec.outside":"خارج الشركة","sec.users":"المستخدمين","sec.setup":"الإعدادات",
+ "sec.payments":"دفعات الزبائن","sec.advances":"السلف",
+ "pwa.t":"نزّله على موبايلك","pwa.h":"ضيفه على الشاشة الرئيسية","pwa.b":"كيف",
+ "pwa.and":"أندرويد","pwa.ios":"آيفون",
+ "pwa.now":"نزّله هلق",
+ "pwa.a1":"افتح الرابط بمتصفح كروم","pwa.a2":"اضغط النقاط الثلاث فوق عاليمين","pwa.a3":"اضغط تثبيت التطبيق أو إضافة للشاشة الرئيسية",
+ "pwa.i1":"افتح الرابط بمتصفح سفاري (لازم سفاري)","pwa.i2":"اضغط زر المشاركة تحت","pwa.i3":"انزل تحت واضغط إضافة إلى الشاشة الرئيسية",
+ "pwa.note":"بيفتح ملء الشاشة بشعارك، متل أي تطبيق عادي بالظبط.",
+ "sp.look":"الشكل والألوان","sp.lookH":"{t} · {c}","sp.lookB":"تعديل",
+ "th.light":"فاتح","th.dark":"غامق","th.auto":"حسب الجهاز",
+ "f.theme":"الخلفية","f.accent":"لون هويتك","f.accentH":"الأزرار والتمييز ورقم الربح بياخدوا هاللون.",
+ "f.custom":"أو الصق كود اللون","f.logo":"الشعار","f.logoH":"يفضّل صورة مربّعة. بتنحفظ جوّا البرنامج بس.",
+ "f.logoPick":"اختار صورة","f.logoClear":"شيل الشعار","f.logoBig":"الصورة كبيرة. استعمل وحدة أقل من 400 كيلوبايت.",
+ "c.sage":"مريمي","c.bone":"عظمي","c.jade":"أخضر","c.seal":"طيني","c.brass":"ذهبي","c.ink":"أزرق",
+ "print":"طباعة","today":"اليوم",
+ "cli.month":"{v} / شهر","cli.pv":"{v} / فيديو","cli.inc":"{v} فيديو · {p} منشور","cli.left":"باقي {v}","cli.over":"تجاوز {v} — مسدّد","cli.exp":"{n} فيديو",
+ "cli.ads":"منها {v} إعلانات","st.active":"فعّال","st.paused":"موقوف",
+ "tm.t":"الفريق","tm.s":"ضيف أي حدا بأي طريقة دفع — شهري، بالفيديو، أو بالمهمة.","tm.add":"إضافة شخص","tm.edit":"تعديل شخص",
+ "p.percent":"% من الربح","p.monthly":"شهري","p.per_video":"بالفيديو","p.per_task":"بالمهمة",
+ "p.percentL":"حصة من الربح","p.monthlyL":"مبلغ شهري ثابت","p.per_videoL":"لكل فيديو","p.per_taskL":"لكل مهمة",
+ "st.on":"على الملاك","st.off":"موقوف",
+ "tm.note":"المدير هو الوحيد بالنسبة المئوية. بياخد {p}% من الربح بعد ما تتغطى كل مصاريف الشركة — هاد بديل الراتب، ولهيك الإيجار بيضل على صاحب الشركة.",
+ "wk.t":"سجل الشغل — {m}","wk.s":"كل تسليم بتسجّله بيدفع للمونتير وبيفوتر الزبون بنفس الوقت.",
+ "wk.add":"تسجيل تسليم","wk.edit":"تعديل التسليم","wk.none":"ما في شي مسجّل لـ{m} بعد.","wk.inpack":"ضمن الباقة",
+ "d.video":"فيديو","d.post":"منشور","d.design":"تصميم","d.task":"مهمة",
+ "cs.t":"مصاريف التشغيل — {m}","cs.s":"هاي بتنحسم قبل تقسيم الربح، يعني المدير بيتحمّل حصته منها.",
+ "cs.add":"إضافة مصروف","cs.edit":"تعديل مصروف","cs.none":"ما في شي مسجّل هالشهر.","cs.tot":"المجموع",
+ "cs.note":"الإيجار مش موجود بهاللائحة حالياً. السنة مدفوعة سلف قبل ما يجي المدير، فبينحسم من حصة صاحب الشركة.",
+ "c.Transport":"مواصلات","c.Phone":"اتصالات","c.Internet":"إنترنت","c.Equipment":"معدات","c.Software":"برامج","c.Rent":"إيجار","c.Other":"غير ذلك",
+ "cal.t":"تقويم التصوير","cal.s":"عندك تقريباً {h} ساعات فاضية باليوم بعد شغل الشركة التانية. اضغط على أي يوم لحجز تصوير.",
+ "cal.add":"حجز تصوير","cal.edit":"تعديل التصوير","cal.booked":"المحجوز هالشهر","cal.none":"ما في شي محجوز. اضغط أي يوم فوق.","cal.off":"عطلة",
+ "os.t":"خارج الشركة","os.s":"مصاري صاحب الشركة الخاصة. ما إلها علاقة بالتقسيم أبداً.","os.add":"إضافة دخل",
+ "os.income":"دخل","os.cost":"مصروف","os.got":"حصتك المقبوضة بـ{m}:","os.pay":"تسجيل دفعة","os.deal":"تعديل الاتفاق","os.newproj":"إضافة مشروع",
+ "sp.t":"الإعدادات","sp.s":"القواعد اللي البرنامج كله بيحسب عليها.",
+ "sp.split":"التقسيم","sp.splitH":"المدير {a}% · صاحب الشركة {b}%",
+ "sp.splitS":"بينحسب على الربح، بعد دفع الأجور والإعلانات ومصاريف التشغيل. إذا الشهر ما ربّح، ما بياخد شي وصاحب الشركة بيتحمّل.","sp.splitB":"تعديل التقسيم",
+ "sp.rent":"الإيجار","sp.rentA":"{p}% من حصة صاحب الشركة، بتتجنّب","sp.rentB":"{v} بالشهر من الأول",
+ "sp.rentAS":"الإيجار بينحسم من الـ70% تبع صاحب الشركة بس. السنة مدفوعة سلف قبل ما يجي المدير، فما بيشارك فيه.",
+ "sp.rentBS":"الإيجار صار مصروف شركة — الشريكين بيتحمّلوه بالنسبة. استعمل هاد لما تنتقل للمكتب الجديد.","sp.rentBtn":"تعديل طريقة الإيجار",
+ "sp.day":"يومك","sp.dayH":"{h} ساعات فاضية · عطلة {d}","sp.dayS":"التقويم بينبّهك إذا اليوم انحجز أكتر من هيك.","sp.change":"تعديل",
+ "sp.co":"الشركة","sp.coS":"الاسم والعملة اللي بيظهروا بكل البرنامج.",
+ "sp.pins":"رموز الدخول","sp.pinsH":"{n} من 3 أدوار مقفلة","sp.pinsS":"الرمز بيمنع حدا يفتح شاشة مش إلو على كمبيوتر مشترك. هو قفل على الباب مش خزنة — أي حدا معه الملف بيقدر يقرأه.","sp.pinsB":"ضبط الرموز",
+ "sp.data":"بياناتك","sp.dataH":"كل شي محفوظ على هالجهاز","sp.dataS":"صدّر نسخة احتياطية للأمان أو لتعطي نسخة لشريكك.",
+ "sp.exp":"تصدير نسخة","sp.imp":"استيراد نسخة","sp.reset":"البدء من جديد",
+ "sp.inst":"التثبيت","sp.instH":"شغّله متل أي برنامج","sp.instB":"وريني كيف",
+ "ins.t":"كيف تخليه برنامج ويندوز","ins.w":"كتطبيق على سطح المكتب","ins.h":"ارفعه على الإنترنت مجاناً",
+ "ins.w1":"احفظ الملف بمكان ثابت، مثلاً C:\\StudioLedger\\index.html","ins.w2":"كبسة يمين على سطح المكتب ← جديد ← اختصار","ins.w3":"الصق هالسطر كموقع الاختصار وكمّل:","ins.w4":"افتح الاختصار. رح يشتغل بنافذة لحاله بدون شريط متصفح — بيبيّن ويتصرف متل أي برنامج عادي. كبسة يمين ← خصائص ← تغيير الأيقونة لتحط شعارك.",
+ "ins.h1":"افتح app.netlify.com/drop","ins.h2":"غيّر اسم الملف لـ index.html واسحبه على الصفحة","ins.h3":"بتاخد رابط مجاني بعشر ثواني. أي حدا معه الرابط بيقدر يفتحه.",
+ "ins.warn":"مهم: الأرقام محفوظة جوّا كل متصفح، مش على الإنترنت. إذا رفعته أونلاين، إنت وشريكك كل واحد بيصير عنده نسخة منفصلة من البيانات. استعمل التصدير والاستيراد لتمرّر نسخة. لتشوفوا الأرقام نفسها لحظة بلحظة، البرنامج بيحتاج قاعدة بيانات مشتركة — احكيلي وبضيفها.",
+ "f.name":"الاسم","f.cliname":"اسم الزبون","f.howpay":"طريقة الدفع","f.fee":"الاشتراك الشهري","f.vids":"عدد الفيديوهات","f.posts":"عدد المنشورات",
+ "f.ads":"مصاري الإعلانات ضمن الاشتراك","f.adsH":"مبلغ بيروح مباشرة لمنصة الإعلانات، مش ربح.",
+ "f.rate":"سعر الفيديو","f.exp":"عدد الفيديوهات المتوقّعة بالشهر","f.credit":"المبلغ المدفوع مقدماً","f.note":"ملاحظة","f.activecli":"زبون فعّال",
+ "f.role":"الدور","f.roleH":"مونتير، مصمم، مدير…","f.howpaid":"طريقة دفعه","f.rate2":"السعر","f.rateH":"إذا حصة من الربح، حط النسبة هون.","f.onbooks":"على الملاك حالياً",
+ "f.date":"التاريخ","f.client":"الزبون","f.delivered":"شو انسلّم","f.howmany":"العدد","f.whodid":"مين نفّذه","f.nobody":"محدا / أنا",
+ "f.override":"تعديل أجره لهالمرة","f.overrideH":"اتركه فاضي ليستعمل سعره العادي.",
+ "f.whatis":"شو هو","f.cat":"التصنيف","f.amount":"المبلغ","f.repeats":"بيتكرر كل شهر من هالتاريخ",
+ "f.time":"الوقت","f.shooting":"شو رح تصوّر","f.hours":"كم ساعة بدها","f.notes":"ملاحظات",
+ "f.source":"المصدر","f.type":"النوع","f.permonth":"شهرياً","f.running":"لسا شغّال",
+ "f.project":"المشروع","f.status":"الحالة","f.terms":"الشروط","f.person":"الشخص {n}","f.theirpct":"نسبته %","f.addperson":"إضافة شخص",
+ "f.what4":"مقابل شو","f.total":"المبلغ الكلي المدفوع","f.yourcut":"حصتك","f.yourcutH":"حصتك {p}% من الكلي.",
+ "f.mgrpct":"نسبة المدير %","f.whopays":"مين بيدفع الإيجار","f.rentmine":"صاحب الشركة بس — من حصته","f.rentco":"مصروف شركة — من الأول قبل التقسيم",
+ "f.pctaside":"% من الحصة بتتجنّب","f.offtop":"المبلغ الشهري من الأول","f.yearly":"الإيجار السنوي","f.monthsleft":"الشهور للدفعة الجاية","f.saved":"المجموع المحفوظ",
+ "f.freehours":"ساعات فاضية باليوم","f.freehoursH":"الساعات الباقية بعد شغل الشركة التانية.","f.dayoff":"يوم العطلة",
+ "f.coname":"اسم الشركة","f.curr":"رمز العملة",
+ "f.pinowner":"رمز صاحب الشركة","f.pinmgr":"رمز المدير","f.pinacc":"رمز المحاسب","f.pinH":"اتركه فاضي إذا ما بدك رمز.",
+ "confirmDel":"حذف نهائي؟","confirmReset":"هاد بيمسح كل شي ويرجّع الإعداد الأصلي. أكيد؟",
+ "badFile":"ما قدرت اقرأ الملف. اختار نسخة مصدّرة من هالبرنامج.",
+ "readonly":"إنت بتشوف بس. صاحب الشركة لحاله بيقدر يعدّل.",
+ "st.In discussion":"قيد التفاوض","st.Agreed":"متّفق عليه","st.Building":"قيد التنفيذ","st.Free support month":"شهر الدعم المجاني","st.Paid support":"دعم مدفوع","st.Closed":"مغلق",
+ dows:["أحد","اثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"],
+ daysFull:["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"],
+ months:["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"]
+}};
+var LANG="ar";
+function t(k,a){
+  var s=(L[LANG]&&L[LANG][k]!=null)?L[LANG][k]:(L.en[k]!=null?L.en[k]:k);
+  if(a&&typeof s==="string") Object.keys(a).forEach(function(x){s=s.split("{"+x+"}").join(a[x]);});
+  return s;
+}
+
+/* ═════════════ roles ═════════════ */
+var PERM={
+  owner:      {tabs:["flow","clients","team","work","costs","calendar","outside","setup"],edit:["clients","team","work","costs","calendar","outside","setup","payments","advances"],personal:true},
+  manager:    {tabs:["flow","clients","team","work","costs","calendar"],edit:["work","calendar"],personal:false},
+  accountant: {tabs:["flow","clients","team","work","costs","calendar"],edit:["clients","work","costs","payments"],personal:false}
+};
+var FULL={tabs:["flow","clients","team","work","costs","calendar","outside","users","setup"],
+          edit:["clients","team","work","costs","calendar","payments","advances","outside","setup","users"],personal:true};
+var SEC_TABS=["flow","clients","team","work","costs","calendar","outside","users","setup"];
+var SEC_EDIT=["clients","team","work","costs","calendar","payments","advances","outside","setup","users"];
+var PRESETS={
+  manager:{tabs:["flow","clients","team","work","costs","calendar"],edit:["work","calendar"],personal:false},
+  acct:{tabs:["flow","clients","team","work","costs","calendar"],edit:["clients","work","costs","payments"],personal:false},
+  view:{tabs:["flow","clients","team","work","costs","calendar"],edit:[],personal:false},
+  none:{tabs:[],edit:[],personal:false}
+};
+var MODE="local";      // "local" | "cloud"
+var ROLE=null;         // local mode
+var ME=null;           // cloud mode profile
+function myPerms(){
+  if(MODE==="cloud") return (ME&&ME.role==="owner")?FULL:((ME&&ME.perms)||{tabs:[],edit:[],personal:false});
+  return PERM[ROLE]||{tabs:[],edit:[],personal:false};
+}
+function can(sec){return (myPerms().edit||[]).indexOf(sec)>=0;}
+function sees(){return !!myPerms().personal;}
+function myTabs(){return myPerms().tabs||[];}
+function amOwner(){return MODE==="cloud"?(ME&&ME.role==="owner"):(ROLE==="owner");}
+
+/* ═════════════ storage ═════════════ */
+var KEY="studio_ledger_v2";
+var Store={
+  load:function(){return new Promise(function(res){
+    if(window.storage&&window.storage.get){
+      window.storage.get(KEY).then(function(r){res(r&&r.value?JSON.parse(r.value):null);}).catch(function(){res(lg());});
+    } else res(lg());});},
+  save:function(d){var s=JSON.stringify(d);
+    if(window.storage&&window.storage.set){window.storage.set(KEY,s).catch(function(){ls(s);});}else ls(s);}
+};
+function lg(){try{var v=window.localStorage.getItem(KEY);return v?JSON.parse(v):null;}catch(e){return null;}}
+function ls(s){try{window.localStorage.setItem(KEY,s);}catch(e){}}
+
+
+/* ═════════════ cloud ═════════════ */
+var SB=null, SYNC="", PULLED={}, RT=null, PUSHT=null;
+var TBL=[["customers","clients"],["employees","team"],["work","work"],["payments","payments"],
+         ["advances","advances"],["costs","costs"],["shoots","calendar"],["outside","outside"],["projects","outside"]];
+function cfg(){try{return{url:localStorage.getItem("sl_url")||"",key:localStorage.getItem("sl_key")||""};}catch(e){return{url:"",key:""};}}
+function setCfg(u,k){try{localStorage.setItem("sl_url",u);localStorage.setItem("sl_key",k);}catch(e){}}
+function clearCfg(){try{localStorage.removeItem("sl_url");localStorage.removeItem("sl_key");}catch(e){}}
+
+async function sbClient(url,key){
+  var m=await import("https://esm.sh/@supabase/supabase-js@2.45.4");
+  return m.createClient(url,key,{auth:{persistSession:true,autoRefreshToken:true}});
+}
+function setSync(v){SYNC=v;var n=el("syncDot");if(n)n.textContent=v?t(v):"";}
+
+async function pull(){
+  PULLED={};
+  setSync("cl.pulling");
+  for(var i=0;i<TBL.length;i++){
+    var key=TBL[i][0];
+    var r=await SB.from(key).select("id,data");
+    if(r.error) continue;           // no permission for this table — leave local copy alone
+    PULLED[key]=true;
+    S[key]=r.data.map(function(row){return Object.assign({id:row.id},row.data);});
+  }
+  var st=await SB.from("settings").select("data").eq("id",1).maybeSingle();
+  if(!st.error&&st.data&&st.data.data&&Object.keys(st.data.data).length){
+    var localOnly={theme:S.settings.theme,accent:S.settings.accent,lang:S.settings.lang};
+    S.settings=Object.assign({},S.settings,st.data.data,localOnly);
+    PULLED.settings=true;
+  }
+  setSync("cl.synced");
+}
+
+function queuePush(){
+  if(MODE!=="cloud"||!SB) return;
+  clearTimeout(PUSHT);
+  setSync("cl.syncing");
+  PUSHT=setTimeout(function(){push();},700);
+}
+async function push(){
+  try{
+    for(var i=0;i<TBL.length;i++){
+      var key=TBL[i][0], sec=TBL[i][1];
+      if(!PULLED[key]||!can(sec)) continue;   // never overwrite what we were not allowed to read
+      var rows=(S[key]||[]).map(function(o){
+        var d=Object.assign({},o); delete d.id;
+        return {id:o.id,data:d,updated_at:new Date().toISOString()};
+      });
+      if(rows.length) await SB.from(key).upsert(rows);
+      var ids=rows.map(function(r){return r.id;});
+      var del=SB.from(key).delete();
+      if(ids.length) del=del.not("id","in","("+ids.map(function(x){return '"'+x+'"';}).join(",")+")");
+      await del.neq("id","__none__");
+    }
+    if(can("setup")){
+      var out=Object.assign({},S.settings); delete out.theme; delete out.accent; delete out.lang;
+      await SB.from("settings").upsert({id:1,data:out,updated_at:new Date().toISOString()});
+    }
+    setSync("cl.synced");
+  }catch(e){ setSync("cl.err"); }
+}
+
+/* one-time upload of whatever is on this device */
+async function pushEverything(){
+  PULLED={}; TBL.forEach(function(x){PULLED[x[0]]=true;}); PULLED.settings=true;
+  await push(); await pull(); render();
+}
+
+function watch(){
+  if(RT) return;
+  RT=SB.channel("sl");
+  ["customers","employees","work","payments","advances","costs","shoots","outside","projects","settings","profiles"]
+    .forEach(function(tb){
+      RT.on("postgres_changes",{event:"*",schema:"public",table:tb},function(){
+        clearTimeout(RT._t); RT._t=setTimeout(async function(){await pull();render();},400);
+      });
+    });
+  RT.subscribe();
+}
+
+async function loadProfile(){
+  var u=(await SB.auth.getUser()).data.user;
+  if(!u) return null;
+  var r=await SB.from("profiles").select("*").eq("id",u.id).maybeSingle();
+  if(r.error||!r.data) return {id:u.id,email:u.email,name:u.email,role:"staff",active:false,perms:{tabs:[],edit:[],personal:false}};
+  return r.data;
+}
+
+async function bootCloud(){
+  var c=cfg();
+  if(!c.url||!c.key) return false;
+  try{ SB=await sbClient(c.url,c.key); }
+  catch(e){ alert(t("cl.lib")); return false; }
+  MODE="cloud";
+  var sess=(await SB.auth.getSession()).data.session;
+  if(!sess){ renderAuth(); return true; }
+  ME=await loadProfile();
+  if(!ME||!ME.active){ renderWait(); return true; }
+  await pull(); watch(); render();
+  return true;
+}
+
+/* ── auth screens ── */
+function renderAuth(mode){
+  applyTheme(); document.body.dir=t("dir");
+  var up=mode==="up";
+  el("app").innerHTML='<div class="gate"><div class="gatebox"><div class="head">'
+   +stampHTML()+(S.settings.company?'<h1>'+esc(S.settings.company)+'</h1>':'')
+   +'<p class="sub" style="margin:0">'+t(up?"au.up":"au.in")+'</p></div>'
+   +'<div class="card">'
+   +(up?'<div class="f"><label>'+t("au.name")+'</label><input id="aName" autocomplete="name"></div>':'')
+   +'<div class="f"><label>'+t("au.email")+'</label><input id="aMail" type="email" autocomplete="email" inputmode="email"></div>'
+   +'<div class="f"><label>'+t("au.pass")+'</label><input id="aPass" type="password" autocomplete="'+(up?"new-password":"current-password")+'"></div>'
+   +'<div id="aErr" style="display:none" class="note">&nbsp;</div>'
+   +'<button class="btn primary" id="aGo" style="width:100%;margin-top:6px">'+t(up?"au.up":"au.in")+'</button>'
+   +'<button class="btn ghost" id="aSwap" style="width:100%;margin-top:8px">'+t(up?"au.toIn":"au.toUp")+'</button>'
+   +(up?'<p class="sub" style="margin:12px 0 0;text-align:center">'+t("au.first")+'</p>':'')
+   +'</div>'
+   +'<div class="langsw"><button data-lang="ar" aria-pressed="'+(LANG==="ar")+'">العربية</button>'
+   +'<button data-lang="en" aria-pressed="'+(LANG==="en")+'">English</button></div>'
+   +'<div style="text-align:center;margin-top:14px"><button class="btn ghost sm" data-act="cloudoff">'+t("cl.disconnect")+'</button></div>'
+   +'</div></div>';
+  var err=function(m){var n=el("aErr");n.style.display="";n.textContent=m;};
+  el("aSwap").onclick=function(){renderAuth(up?"in":"up");};
+  el("aGo").onclick=async function(){
+    var mail=el("aMail").value.trim(), pass=el("aPass").value;
+    if(!mail||!pass) return err(t("au.email")+" / "+t("au.pass"));
+    if(up&&pass.length<6) return err(t("au.weak"));
+    el("aGo").disabled=true;
+    try{
+      if(up){
+        var r=await SB.auth.signUp({email:mail,password:pass,options:{data:{name:el("aName").value.trim()||mail}}});
+        if(r.error) throw r.error;
+        if(!r.data.session){ el("aGo").disabled=false; return err(t("au.check")); }
+      }else{
+        var r2=await SB.auth.signInWithPassword({email:mail,password:pass});
+        if(r2.error) throw r2.error;
+      }
+      ME=await loadProfile();
+      if(!ME||!ME.active){ renderWait(); return; }
+      await pull(); watch(); render();
+    }catch(e){ el("aGo").disabled=false; err(e.message||String(e)); }
+  };
+  ["aMail","aPass","aName"].forEach(function(id){
+    var n=el(id); if(n) n.addEventListener("keydown",function(e){if(e.key==="Enter")el("aGo").click();});
+  });
+}
+function renderWait(){
+  applyTheme(); document.body.dir=t("dir");
+  el("app").innerHTML='<div class="gate"><div class="gatebox"><div class="head">'
+   +stampHTML()+'<h1>'+t("au.wait")+'</h1>'
+   +'<p class="sub" style="margin:0">'+t("au.waitS",{who:t("us.owner")})+'</p></div>'
+   +'<div style="text-align:center"><button class="btn" data-act="signout">'+t("au.out")+'</button></div></div></div>';
+}
+
+/* ═════════════ helpers ═════════════ */
+function uid(){return Math.random().toString(36).slice(2,9);}
+function ymNow(){return new Date().toISOString().slice(0,7);}
+function todayISO(){return new Date().toISOString().slice(0,10);}
+function money(n){var neg=n<0;n=Math.abs(+n||0);
+  return (neg?"−":"")+S.settings.currency+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");}
+function monthName(y){var p=y.split("-");return t("months")[+p[1]-1]+" "+p[0];}
+function addMonth(y,n){var p=y.split("-"),d=new Date(+p[0],+p[1]-1+n,1);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function el(id){return document.getElementById(id);}
+var LOGO="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAACgBAMAAAB54XoeAAAAElBMVEX8+/P28ur18ur18un08upwd3CXTLV7AAAKeklEQVR42r2bzW8bxxnGfztatWxlSMuYQtKEpFe0A8iNxciJ2osVlYqUQwCjteD2r6zcuIZySMxGDEkBDaICNkWgl5RaSzoUEB2upbRFQWqnh1mSy+V+kTE6F0Lk6uHzzvs577zUCkSsgvMVmdX04O/O1T63zFbUv2gRgMIsa1tp35udQ3vbsaYCLHxnfWIEvC93xcetyQGFWc5shnzW3g8nGQYocvuB9PokM8UQxJl0MF62/jAVsVHvXau9b0/AUGTrOyOqVcur8PP6hpUY0IMn2xXe+MD94x/H6JtGNGIQ4BBPtiuZVQYKECZX+wPIYMQgwBu1nb42M6s+dQrzal93Pz5vzicCLFTUP8jyD6UA6xBm7+ttRfJcbyXQsjh86JpGtngcoEnZufyg/E4KYG7vrh3LUGRnDYB2ZSvcHQqH+iaA/FPJL4LwP5s9MADOv47Ao7V27TMA7XfVOJEL1R2lwd8cR8WUzsydL28DInO9E8lQHO4AyBCrHS7nbP0ZwOJfzEjA7CyAfBSHB85Z1wZ4WI0SWTQ+BeTu9jGxS858dz0FWiZthzPMbgK0t1skWM7aPkCmGs6wUFsFuof/JtHqFL+4DdqtuU4IQ9F7AMi9IgnX6boNzFbMEEDzAKAcr5ChYsoA90UwoCLY1RPjgbP5GJj9ygwENA8mExjg5J4N/PYkCFARbG9YkwA6Z/vArGUGaFk7Wgb5pWSiJVe6Kbj1X3ucYVYRZMKlKFbHGYqpCA4o/sz2M8yWpiLoUtSrfoaicXcqgi7FoUf3GebTUxJ0KWYaPpGdEsi6NQ2gs26DZo+KLI6WofeWPQ0gl8+Xh2pxAXM3U/BEToWHXJkD8cXCiMgG9AymXKIC2rx3D8UB0ClOC3jSATZMj8i5myn4Uk4LKFe6qb7MYiBxd4Op11kFNI/I4gB4xY9YC8B9cyByvpCazksGMr/bTSG++WmfoTSgFyGxKJhJZLb7Ios6EGHTol2umAlkXjcBHdR+1vOhD2eXjF5tPtr97gDGhcswW1JSh9b8oK/EmeIzN4aJvptEWPVpBRZiZBbHruEIdwv3ogKNTBJy3E0USqTYf9GfxT1hg6EYZkvRRgMaOEYCw9GriqERaTSuSGascatNFIgm8MLiRy4nB3xkIpQTn0Y9myslQbyhzFtFG2nECBO/J/2sIpROomOrMQhORFurXkUk0wm1+E1WWtHRgIbBj17OR8A8QtSAi0ivaibyFSRQNEUCPwndkEKArwiAq+h0ogFB0cssm35fAT23lESg3qo1oNQ/xIj97Yo/iOpVXQK2iLMaV8Qyhq31j6nZJWNdWH416/FGlltyv1IcfmJAp/yxBSDqO2Qeeyiq+KFrQC1PkmiYXTKA9O8VSnbJ/+AdYF7U4u3BgBMLRF3JrqkETKDtFkWygHwCZPu9nNmqa53+MGoDQgv7rhGwfnmh1n3TzXOjiUMDDEFcaBAnSobsA49xqFdfOXRaAUQyLzZUKvNQCXMCsRof6OCqSE71Vf5o068Rgrt9IlHwlP0YXN7+1qNgvTpuYCIWTCUAJXFPb63agN4IE10TsY7iJgANwC66IcCG5rh5GG6x9NyITwDZJUB6XErYwIrmtRtnxRX5IkkCMIgrB5QwesIA/2IRqBo+Mz4aD5OxShFNAHHKiChGaCyPZ2gPqgxpuMGMq6KVWwohkMSuXUK9Yj+SSPUqpwJUSMZY/DaCo4pIEg0htzqyYzZDypPuoUoActQxIlxBJHBjbzmilF6z1CtTiqxZw92yPa/2tEqpMR4LtRDJYwFfBAgvI0qyOEBx6jM3A2A+vIhP6stepdNbtW7oIdlSRJ1B+wkgP650OYXZ5MquFqXpedxwtWuElGQi5H0Qte334arktRaRq4+UZAFuL4D3A3NYdjMtTW4ME4BGIaduWhoWQXYtjtxIHry5dYOm1f/i0wqwXnZvbi5UArCDSl090ofnwVDF2QKQ2U6PSTjmqXr/JD72ieFl7twBtPRQw4EJQANEyLFVHEBvg0EMOHvsESs8AXCl29Fl62CLF4bsIhIAUgzrAL/E1K1hAnBWbAC5a4QngFwJEMEnQ1GnW97wxuXTb23k+aPSUOqrfFCNoYdoS+MxI80aZ+0pZLZai4PnpWkFZAv9o5BWDX+ge2ExPHS0tsGxTj6EWp4XiyGHkYaQ6iAelJp81Vqr1bLcg5w4RW3xyGoCF4JAV2l6DFfz/WNvI7iRIlTvK7BoF7Zno70J4Ko0zKEbASWBRJxWPD3jMa056+ONhbpFrhTSb+xtCICZRnDBsBGUA6Wh/HIsoWRVqduvhMZ7JkHm2YR2EezAbzPARrgne/9RuCOhbiHqox++Uu82g5plGtCwhHuy97c4en9GGuqizxt/DXXY0eiWxiO8ipSDLtjIh7n6A9pFJYZns7Il9twXh0AlM5O+fL7s9mM9eLUd1eVdmEP+c/CZaNzuvn2MaNztvn0sfIaYL6ToveW6z6jdiGxtB/qxoT2s2a5tyj0Heptyj8JLezw+ATNpjSVY9FiV6DV34LzXAS7+uuxpR7+TbpsW3DR2S3/7+703RxHtt6Gj2UJFd2/qbf+wA+eqySvXH214DP1cpa3dzf21rfRoB1CcqmJHB2zDm1ZyS4ZnhuHMc7OuHepFC2htHm2lx6zXde+ZNJfPlwe3IcDCTEq2Bzfg0nszO/cTGxAvs79IS/tfR/8ZCdc3U/TestGHvcn+Af57m0zw/aMyld5ams7V/hur1pifCDWWkF+kH0zdDlTUyA8Xm/Jl5bpvRENYO/BZ3k30toHeGHpY9P13fla+fL7V8j3k9BtUAu/NQJKlyfbR6th35lfdbCb66WrdTAj44rA5Pg0kmkpQJbKzHlaPBK61oB1+hXs/oW4rbAO9mk8I2ArOkq7vzaRRN33aYjrxNgb0dm5Dz7D7e+i8NyxepluvBm0mFW0Me+TSeeKVLQ3SqrrXu3y+DJmpZRaNu4ObVcXQuQe80ZiWYD49bKyJYR05M7VSnKHE/dvbkRvdiSX23iW7gCM3upOukbvkvsiiAlpi9xs7gHBl+I5mJx3GRmeS2swm8H1xdA/9swCT2szwZnUwOHH57Db8fIpdzN1Mea/3B4ByZY5pKIrGXbzX+8Phk8tvlqehmLuZgu5w/sBTeN9jCkWrbvle0AHc0R8DmepEiCK7CXQ9E3QehtY9QLs/kUfnDwzgiRPYIlAUZ69NQFHsPwC6H1vBPQfrHsBacqFFdhsYrRW9gIriBELnDgzfDvom0zor3RTMXPOPAIYsNVoonzjhbZYzNQ1XLiQS+FBN2o0eB0an++TKtyZov/z8brzDiN6KAVw9lVGNoLM5AO1hvGJE9l0D4LONyM6Sc0vNZt6PQxRZdaF0vuUrI/wznJ2Vp8vATObrD6I0U2g3dwC6Zf/xYmwO9vJONwXMvfnVh+GIhcPepwDyyYYd10xzzp4CcP1hWYSILZbKv1Kz37vjle5rH/2dZji5P5qedDj59Y9Pv/YB79c/gu5DDFpheGFT9/Jy5fN3wsfu5e4Pvw45yvzffmgAFHqV7SD+nfJUP4UAhHn46nX+WAMoUJ705yT/A4o6/GfT6PJWAAAAAElFTkSuQmCC";
+var SWATCH=[["#9DA79F","c.sage"],["#F5F2EA","c.bone"],["#7FBF9C","c.jade"],["#DE8A6E","c.seal"],["#D8B26A","c.brass"],["#8FB0B8","c.ink"]];
+function applyTheme(){
+  var th=S.settings.theme||"dark";
+  if(th==="auto") th=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light";
+  document.documentElement.setAttribute("data-theme",th);
+  document.documentElement.style.setProperty("--brand",S.settings.accent||"#9DA79F");
+}
+function stampHTML(cls){
+  var lg=S.settings.logo;
+  if(lg) return '<span class="stamp logo'+(cls?" "+cls:"")+'"><img src="'+esc(lg)+'" alt=""></span>';
+  var nm=(S.settings.company||"\u2022").trim();
+  return '<span class="stamp'+(cls?" "+cls:"")+'">'+esc(nm.charAt(0).toUpperCase())+'</span>';
+}
+function n(v){return '<span class="num">'+v+'</span>';}
+
+/* ═════════════ seed ═════════════ */
+function seed(){return{
+ settings:{company:"",currency:"$",managerPct:30,rentMode:"myshare",rentSharePct:20,
+   rentFlat:300,rentAnnual:3000,rentMonthsLeft:10,rentSetAside:0,dayCapacity:6,offDay:5,lang:"ar",theme:"dark",accent:"#9DA79F",logo:LOGO,
+   pins:{owner:"",manager:"",accountant:""}},
+ employees:[
+  {id:uid(),name:"المدير (الشريك)",role:"Manager",payType:"percent",rate:30,active:true,note:"بدون راتب — بياخد 30% من الربح بعد كل مصاريف الشركة. ما بيشارك بالإيجار."},
+  {id:uid(),name:"مونتير 1",role:"Editor",payType:"per_video",rate:8,active:true,note:""},
+  {id:uid(),name:"مونتير 2",role:"Editor",payType:"per_video",rate:10,active:true,note:""},
+  {id:uid(),name:"مصممة غرافيك",role:"Design",payType:"monthly",rate:75,active:true,note:"آخر شهر — بعد ما تدفعلها حوّلها لموقوف."}],
+ customers:[
+  {id:uid(),name:"زبون 1",billing:"package",monthlyFee:150,videos:8,posts:8,adSpend:10,rate:0,expected:8,credit:0,openingDue:0,startMonth:ymNow(),endMonth:"",active:true,note:"8 فيديو + 8 منشورات، منها 10$ إعلانات"},
+  {id:uid(),name:"زبون 2",billing:"per_video",monthlyFee:0,videos:0,posts:0,adSpend:0,rate:25,expected:10,credit:0,openingDue:0,startMonth:ymNow(),endMonth:"",active:true,note:""},
+  {id:uid(),name:"زبون 3",billing:"per_video",monthlyFee:0,videos:0,posts:0,adSpend:0,rate:25,expected:18,credit:0,openingDue:0,startMonth:ymNow(),endMonth:"",active:true,note:"15–20 فيديو بالشهر"},
+  {id:uid(),name:"زبون 4",billing:"package",monthlyFee:200,videos:6,posts:6,adSpend:0,rate:0,expected:6,credit:0,openingDue:0,startMonth:ymNow(),endMonth:"",active:true,note:"6 فيديو + 6 منشورات"},
+  {id:uid(),name:"زبون 5 (قريب)",billing:"prepaid",monthlyFee:0,videos:0,posts:0,adSpend:0,rate:12,expected:0,credit:79,openingDue:0,startMonth:ymNow(),endMonth:"",active:true,note:"دفع 79$ سلف — بيتسلّم فيديوهات بـ12$ لحد ما يخلص الرصيد"},
+  {id:uid(),name:"زبون 6",billing:"per_video",monthlyFee:0,videos:0,posts:0,adSpend:0,rate:15,expected:10,credit:0,openingDue:0,startMonth:ymNow(),endMonth:"",active:true,note:""}],
+ work:[],
+ payments:[],
+ advances:[],
+ costs:[
+  {id:uid(),date:todayISO(),category:"Transport",amount:0,note:"تكاسي رواح ورجعة للتصوير",recurring:true},
+  {id:uid(),date:todayISO(),category:"Phone",amount:0,note:"اتصالات",recurring:true},
+  {id:uid(),date:todayISO(),category:"Internet",amount:0,note:"",recurring:true}],
+ shoots:[],
+ outside:[{id:uid(),name:"الشركة التانية",kind:"income",amount:300,note:"4 ساعات باليوم، الجمعة عطلة",active:true}],
+ projects:[{id:uid(),name:"تطبيق التجارة الإلكترونية",status:"In discussion",
+   note:"إنت بتعمل UX/UI بس. شهر تعديلات مجاني، وبعدها دعم مدفوع وتصاميم موسمية مدفوعة — بنفس التقسيم.",
+   splits:[{who:"الشركة (إنت والمدير)",pct:10},{who:"إنت — UX/UI",pct:25},{who:"مدير الـIT — واجهة أمامية",pct:32.5},{who:"مبرمج الباك إند",pct:32.5}],
+   entries:[]}]
+};}
+
+var S=seed(), TAB="flow", MONTH=ymNow(), SEL=null, SELE=null;
+function save(){clearCalc();Store.save(S);queuePush();}
+
+/* ═════════════ engine ═════════════ */
+function inMonth(d,m){return (d||"").slice(0,7)===m;}
+var _cc={};
+function clearCalc(){_cc={};}
+function calc(m){
+  if(_cc[m]) return _cc[m];
+  return _cc[m]=_calc(m);
+}
+function _calc(m){
+  var work=S.work.filter(function(w){return inMonth(w.date,m);});
+  var clients=[],revenue=0,adSpend=0;
+  S.customers.forEach(function(c){
+    if(!c.active)return;
+    var mine=work.filter(function(w){return w.customerId===c.id;});
+    var vids=mine.filter(function(w){return w.type==="video";}).reduce(function(a,w){return a+(+w.qty||0);},0);
+    var posts=mine.filter(function(w){return w.type==="post";}).reduce(function(a,w){return a+(+w.qty||0);},0);
+    var amt=0,basis="";
+    if(c.billing==="package"){amt=+c.monthlyFee||0;adSpend+=+c.adSpend||0;basis=t("b.packageL");}
+    else{amt=vids*(+c.rate||0);basis=vids+" × "+money(+c.rate||0);}
+    revenue+=amt;clients.push({c:c,vids:vids,posts:posts,amt:amt,basis:basis});
+  });
+  var payroll=0,people=[];
+  S.employees.forEach(function(e){
+    if(!e.active||e.payType==="percent")return;
+    var pay=0,basis="";
+    if(e.payType==="monthly"){pay=+e.rate||0;basis=t("p.monthly");}
+    else{
+      var mine=work.filter(function(w){return w.editorId===e.id;});
+      var q=mine.reduce(function(a,w){return a+(+w.qty||0);},0);
+      var ov=mine.reduce(function(a,w){return a+((w.amount!==""&&w.amount!=null)?+w.amount:0);},0);
+      var noOv=mine.filter(function(w){return w.amount===""||w.amount==null;}).reduce(function(a,w){return a+(+w.qty||0);},0);
+      pay=noOv*(+e.rate||0)+ov; basis=q+" × "+money(+e.rate||0);
+    }
+    payroll+=pay;people.push({e:e,pay:pay,basis:basis});
+  });
+  var opex=0,costs=[];
+  S.costs.forEach(function(x){
+    var hit=x.recurring?((x.date||"").slice(0,7)<=m):inMonth(x.date,m);
+    if(!hit)return; opex+=+x.amount||0; costs.push(x);
+  });
+  var rentTop=S.settings.rentMode==="expense"?(+S.settings.rentFlat||0):0;
+  opex+=rentTop;
+  var totalOut=payroll+adSpend+opex, net=revenue-totalOut;
+  var mp=+S.settings.managerPct||0;
+  var mgr=net>0?net*mp/100:0, yours=net-mgr;
+  var rentSet=(S.settings.rentMode==="myshare"&&yours>0)?yours*(+S.settings.rentSharePct||0)/100:0;
+  var take=yours-rentSet;
+  var outside=S.outside.filter(function(o){return o.active;})
+    .reduce(function(a,o){return a+(o.kind==="income"?(+o.amount||0):-(+o.amount||0));},0);
+  var projIn=0;
+  S.projects.forEach(function(p){p.entries.forEach(function(e){if(inMonth(e.date,m))projIn+=+e.yours||0;});});
+  return{clients:clients,revenue:revenue,people:people,payroll:payroll,adSpend:adSpend,costs:costs,
+    opex:opex,rentTop:rentTop,totalOut:totalOut,net:net,mgr:mgr,mp:mp,yours:yours,rentSet:rentSet,
+    take:take,outside:outside,projIn:projIn,pocket:take+outside+projIn};
+}
+/* Full statement for one client, up to and including month `thru`.
+   balance > 0 = they owe us.  balance < 0 = they are in credit. */
+function stmt(c,thru){
+  var lines=[],billed=0,paid=0;
+  var open=+c.openingDue||0, adv=+c.credit||0;
+  if(open) {lines.push({date:(c.startMonth||thru)+"-01",desc:t("line.open"),charge:open,paid:0}); billed+=open;}
+  if(adv)  {lines.push({date:(c.startMonth||thru)+"-01",desc:t("line.adv"),charge:0,paid:adv}); paid+=adv;}
+
+  if(c.billing==="package"){
+    var m=c.startMonth||thru, guard=0, stop=c.endMonth&&c.endMonth<thru?c.endMonth:thru;
+    while(m<=stop && guard++<180){
+      var fee=+c.monthlyFee||0;
+      if(fee){lines.push({date:m+"-01",desc:t("line.sub",{m:monthName(m)}),charge:fee,paid:0}); billed+=fee;}
+      m=addMonth(m,1);
+    }
+  }else{
+    S.work.filter(function(w){return w.customerId===c.id&&w.type==="video"&&(w.date||"").slice(0,7)<=thru;})
+      .forEach(function(w){
+        var amt=(+w.qty||0)*(+c.rate||0);
+        lines.push({date:w.date,desc:w.qty+" × "+t("d.video")+(w.note?" — "+w.note:""),charge:amt,paid:0});
+        billed+=amt;});
+  }
+  S.payments.filter(function(x){return x.customerId===c.id&&(x.date||"").slice(0,7)<=thru;})
+    .forEach(function(x){
+      lines.push({date:x.date,desc:t("line.pay")+(x.note?" — "+x.note:"")+(x.method?" ("+t("m."+x.method)+")":""),charge:0,paid:+x.amount||0,pid:x.id});
+      paid+=+x.amount||0;});
+
+  lines.sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:0);});
+  var run=0; lines.forEach(function(l){run+=l.charge-l.paid; l.run=run;});
+  return {lines:lines,billed:billed,paid:paid,balance:billed-paid};
+}
+
+/* what has actually been delivered */
+function delivered(c,month){
+  var w=S.work.filter(function(x){return x.customerId===c.id&&(month?inMonth(x.date,month):true);});
+  var o={};
+  ["video","post","design","task"].forEach(function(k){
+    o[k]=w.filter(function(x){return x.type===k;}).reduce(function(a,x){return a+(+x.qty||0);},0);});
+  return o;
+}
+function deliveredChips(o){
+  var out=["video","post","design","task"].filter(function(k){return o[k]>0;})
+    .map(function(k){return '<span class="pill">'+o[k]+' '+t("d."+k)+'</span>';});
+  return out.length?out.join(" "):'<span class="mut">'+t("cd.none")+'</span>';
+}
+/* What one person earned in a given month (manager = his share of profit). */
+function earnedIn(e,m){
+  if(e.payType==="percent") return calc(m).mgr;
+  var hit=calc(m).people.filter(function(x){return x.e.id===e.id;})[0];
+  return hit?hit.pay:0;
+}
+/* Month-by-month ledger: earned − advances, with unrecovered advances carried forward.
+   Assumes you settle the net due at the end of each month. */
+function empLedger(e,thru){
+  var ds=[];
+  S.advances.filter(function(a){return a.employeeId===e.id;}).forEach(function(a){ds.push((a.date||"").slice(0,7));});
+  S.work.filter(function(w){return w.editorId===e.id;}).forEach(function(w){ds.push((w.date||"").slice(0,7));});
+  ds.sort();
+  var first=ds.length?ds[0]:thru;
+  var floor=addMonth(thru,-23);
+  if(first<floor) first=floor;
+  if(first>thru) first=thru;
+  var rows=[],carry=0,m=first,guard=0;
+  while(m<=thru&&guard++<40){
+    var earned=earnedIn(e,m);
+    var adv=S.advances.filter(function(a){return a.employeeId===e.id&&inMonth(a.date,m);})
+      .reduce(function(s2,a){return s2+(+a.amount||0);},0);
+    var due=earned-adv-carry;
+    var payout=due>0?due:0, out=due<0?-due:0;
+    rows.push({month:m,earned:earned,adv:adv,carryIn:carry,payout:payout,carryOut:out});
+    carry=out; m=addMonth(m,1);
+  }
+  var cur=rows[rows.length-1]||{month:thru,earned:0,adv:0,carryIn:0,payout:0,carryOut:0};
+  return {rows:rows,cur:cur};
+}
+function totalDue(thru){
+  var sum=0,cnt=0;
+  S.customers.forEach(function(c){var b=stmt(c,thru).balance; if(b>0.005){sum+=b;cnt++;}});
+  return {sum:sum,count:cnt};
+}
+
+/* ═════════════ gate ═════════════ */
+function renderGate(err){
+  applyTheme();
+  document.body.dir=t("dir");
+  var roles=["owner","manager","accountant"];
+  el("app").innerHTML='<div class="gate"><div class="gatebox"><div class="head">'
+   +stampHTML()
+   +(S.settings.company?'<h1>'+esc(S.settings.company)+'</h1>':'')
+   +'<p class="sub" style="margin:0">'+t("gate")+'</p></div>'
+   +(err?'<div class="note" style="margin-bottom:14px;border-inline-start-color:var(--seal);background:var(--seal-w);color:var(--seal)">'+t("gateWrong")+'</div>':'')
+   +'<div class="roles">'
+   +roles.map(function(r){
+     var locked=!!(S.settings.pins&&S.settings.pins[r]);
+     return '<button class="rolebtn" data-role="'+r+'"><span class="ic '+r+'">'+(locked?"●":"○")+'</span>'
+      +'<span><b>'+t("role."+r)+'</b><small>'+t("role."+r+".d")+'</small></span></button>';
+   }).join("")
+   +'</div><div class="langsw">'
+   +'<button data-lang="ar" aria-pressed="'+(LANG==="ar")+'">العربية</button>'
+   +'<button data-lang="en" aria-pressed="'+(LANG==="en")+'">English</button>'
+   +'</div></div></div>';
+}
+function tryEnter(r){
+  var pin=S.settings.pins&&S.settings.pins[r];
+  if(!pin){ROLE=r;TAB="flow";render();return;}
+  form(t("role."+r),[{k:"pin",label:t("gatePin"),type:"password"}],null,function(v){
+    if(String(v.pin)===String(pin)){ROLE=r;TAB="flow";render();}else renderGate(true);
+  },null,t("unlock"));
+}
+
+/* ═════════════ shell ═════════════ */
+var TABS=[["flow","tab.flow"],["clients","tab.clients"],["team","tab.team"],["work","tab.work"],
+          ["costs","tab.costs"],["calendar","tab.calendar"],["outside","tab.outside"],
+          ["users","tab.users"],["setup","tab.setup"]];
+function render(){
+  clearCalc();
+  applyTheme();
+  if(!ROLE){renderGate();return;}
+  document.body.dir=t("dir");
+  var allowed=myTabs();
+  if(!allowed.length){renderWait();return;}
+  if(allowed.indexOf(TAB)<0) TAB=allowed[0];
+  var views={flow:vFlow,clients:vClients,team:vTeam,work:vWork,costs:vCosts,calendar:vCalendar,outside:vOutside,users:vUsers,setup:vSetup};
+  el("app").innerHTML='<div class="wrap"><div class="mast">'
+   +'<div class="brand">'+stampHTML()+'<div>'+(S.settings.company?'<h1>'+esc(S.settings.company)+'</h1>':'')+'<small>'+t("tagline")+'</small></div></div>'
+   +'<div class="tools">'
+   +'<button class="chip" data-act="logout" title="'+t("switchRole")+'"><span class="dot '+ROLE+'"></span>'+t("role."+ROLE)+'</button>'
+   +'<button class="chip" data-act="theme" title="'+t("f.theme")+'">'+((S.settings.theme==="dark")?"\u25D1":"\u25D0")+'</button>'
+   +'<button class="chip" data-act="lang">'+(LANG==="ar"?"EN":"ع")+'</button>'
+   +'<div class="monthpick"><button data-act="mprev" title="'+t("prev")+'">'+(t("dir")==="rtl"?"›":"‹")+'</button>'
+   +'<span class="lbl" data-act="mtoday" title="'+t("today")+'">'+monthName(MONTH)+'</span>'
+   +'<button data-act="mnext" title="'+t("next")+'">'+(t("dir")==="rtl"?"‹":"›")+'</button></div>'
+   +'</div></div>'
+   +'<div class="tabs" role="tablist">'+TABS.filter(function(x){return allowed.indexOf(x[0])>=0;}).map(function(x){
+      return '<button role="tab" data-tab="'+x[0]+'" aria-selected="'+(TAB===x[0])+'">'+t(x[1])+'</button>';}).join("")+'</div>'
+   +'<div>'+views[TAB]()+'</div></div>';
+  if(TAB==="flow") requestAnimationFrame(function(){
+    Array.prototype.forEach.call(document.querySelectorAll(".bar[data-w]"),function(b){b.style.width=b.dataset.w+"%";});});
+}
+
+/* ═════════════ FLOW ═════════════ */
+function vFlow(){
+  var r=calc(MONTH),h="";
+  h+='<div class="sec"><div class="kpis">'
+   +kpi("in",t("k.in"),money(r.revenue),t("k.in.n",{n:r.clients.length}))
+   +kpi("out",t("k.out"),money(r.totalOut),t("k.out.n"))
+   +kpi("net",t("k.net"),money(r.net),r.net>0?t("k.net.n",{p:r.mp}):t("k.net.none"))
+   +(sees()?kpi("you",t("k.pocket"),money(r.pocket),t("k.pocket.n")):"")
+   +(function(){var d=totalDue(MONTH);return kpi("out",t("k.due"),money(d.sum),t("k.due.n",{n:d.count}));})()
+   +'</div></div>';
+
+  var base=Math.max(r.revenue,1);
+  h+='<div class="sec ledger"><div class="ledger-head"><div><h2>'+t("fall.t")+'</h2>'
+   +'<p class="sub" style="margin:0">'+t("fall.s",{v:money(r.revenue)})+'</p></div>'
+   +'<span class="eyebrow">'+monthName(MONTH)+'</span></div><div class="fall">'
+   +step(t("s.in"),t("s.in.d"),r.revenue,base,"keep")
+   +step(t("s.wage"),t("s.wage.d"),-r.payroll,base,"cut")
+   +step(t("s.ads"),t("s.ads.d"),-r.adSpend,base,"cut")
+   +step(t("s.run"),r.rentTop?t("s.run.dr"):t("s.run.d"),-r.opex,base,"cut")
+   +step(t("s.profit"),t("s.profit.d"),r.net,base,"keep",true)
+   +'</div><div class="fork">'
+   +'<div class="slice"><span class="who">'+t("fork.mgr",{p:r.mp})+'</span>'
+     +'<span class="big acc">'+money(r.mgr)+'</span><span class="note">'+t("fork.mgr.n")+'</span></div>'
+   +'<div class="slice mine"><span class="who">'+t("fork.you",{p:100-r.mp})+'</span>'
+     +'<span class="big">'+money(r.yours)+'</span><span class="note">'+t("fork.you.n")+'</span>'
+     +(sees()
+       ? (S.settings.rentMode==="myshare"
+          ? '<div class="carve"><span>'+t("fork.setaside",{p:S.settings.rentSharePct})+'</span><span class="num neg">−'+money(r.rentSet)+'</span></div>'
+            +'<div class="carve" style="border:0;padding-top:6px"><span><b>'+t("fork.keep")+'</b></span><span class="num" style="font-weight:600">'+money(r.take)+'</span></div>'
+          : '<div class="carve"><span>'+t("fork.renttop")+'</span><span class="num">'+money(r.rentTop)+'</span></div>')
+       : "")
+   +'</div></div></div>';
+
+  if(sees()){
+    var tg=+S.settings.rentAnnual||0,sv=+S.settings.rentSetAside||0,pc=tg?Math.min(100,sv/tg*100):0;
+    h+='<div class="sec two"><div class="card"><span class="eyebrow">'+t("rent.t")+'</span>'
+     +'<h2 style="margin-top:8px">'+t("rent.h",{a:money(sv),b:money(tg)})+'</h2>'
+     +'<p class="sub">'+t("rent.s",{n:S.settings.rentMonthsLeft})+'</p>'
+     +'<div class="track" style="height:10px"><div class="bar keep" style="width:'+pc.toFixed(1)+'%"></div></div>'
+     +'<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">'
+     +'<button class="btn sm" data-act="addrent" data-amt="'+r.rentSet.toFixed(2)+'">'+t("rent.add",{v:money(r.rentSet)})+'</button>'
+     +'<button class="btn sm ghost" data-act="editrent">'+t("rent.adj")+'</button></div></div>'
+     +'<div class="card"><span class="eyebrow">'+t("out.t")+'</span>'
+     +'<h2 style="margin-top:8px">'+money(r.outside+r.projIn)+'</h2>'
+     +'<p class="sub">'+t("out.s",{p:r.mp})+'</p><table><tbody>'
+     +S.outside.filter(function(o){return o.active;}).map(function(o){
+       return '<tr><td>'+esc(o.name)+'</td><td class="r"><span class="num '+(o.kind==="income"?"pos":"neg")+'">'+(o.kind==="income"?"+":"−")+money(o.amount)+'</span></td></tr>';}).join("")
+     +(r.projIn?'<tr><td>'+t("out.proj")+'</td><td class="r"><span class="num pos">+'+money(r.projIn)+'</span></td></tr>':"")
+     +'</tbody></table></div></div>';
+  }
+
+  h+='<div class="sec card"><h2>'+t("cl.t")+'</h2><p class="sub">'+t("cl.s")+'</p><div class="tbl-wrap"><table><thead><tr>'
+   +'<th>'+t("th.client")+'</th><th>'+t("th.pay")+'</th><th class="r">'+t("th.videos")+'</th><th class="r">'+t("th.posts")+'</th><th class="r">'+t("th.month")+'</th></tr></thead><tbody>'
+   +(r.clients.length?r.clients.map(function(x){
+      var tgt=x.c.billing==="package"?x.c.videos:(x.c.expected||0);
+      return '<tr><td><b>'+esc(x.c.name)+'</b></td><td class="mut">'+esc(x.basis)+'</td>'
+       +'<td class="r">'+n(x.vids+(tgt?' <span class="mut">/ '+tgt+'</span>':''))+'</td>'
+       +'<td class="r">'+n(x.posts+(x.c.posts?' <span class="mut">/ '+x.c.posts+'</span>':''))+'</td>'
+       +'<td class="r"><span class="num acc">'+money(x.amt)+'</span></td></tr>';}).join("")
+     :'<tr><td colspan="5" class="empty">'+t("cli.none")+'</td></tr>')
+   +'</tbody></table></div></div>';
+
+  var payTot=0;
+  h+='<div class="sec card"><h2>'+t("pay.t")+'</h2><p class="sub">'+t("pay.s",{m:monthName(MONTH)})+'</p><div class="tbl-wrap"><table><thead><tr>'
+   +'<th>'+t("th.person")+'</th><th>'+t("th.basis")+'</th><th class="r">'+t("th.earned")+'</th>'
+   +'<th class="r">'+t("th.adv")+'</th><th class="r">'+t("th.net")+'</th></tr></thead><tbody>'
+   +S.employees.filter(function(e){return e.active;}).map(function(e){
+      var lg=empLedger(e,MONTH).cur; payTot+=lg.payout;
+      var basis=e.payType==="percent"?t("pay.mgrb",{p:r.mp,v:money(r.net)})
+        :(function(){var x=r.people.filter(function(y){return y.e.id===e.id;})[0];return x?x.basis:"—";})();
+      var ded=lg.adv+lg.carryIn;
+      return '<tr><td><a href="#" data-act="openemp" data-id="'+e.id+'" class="lnk"><b>'+esc(e.name)+'</b></a></td>'
+       +'<td class="mut">'+esc(basis)+'</td>'
+       +'<td class="r"><span class="num">'+money(lg.earned)+'</span></td>'
+       +'<td class="r">'+(ded?'<span class="num neg">−'+money(ded)+'</span>':'—')+'</td>'
+       +'<td class="r"><span class="num '+(lg.carryOut?"neg":"acc")+'" style="font-weight:600">'
+       +(lg.carryOut?t("ad.owes")+" "+money(lg.carryOut):money(lg.payout))+'</span></td></tr>';}).join("")
+   +'<tr class="sum"><td colspan="4" class="r mut">'+t("tm.total")+'</td>'
+   +'<td class="r"><span class="num" style="font-weight:600">'+money(payTot)+'</span></td></tr>'
+   +'</tbody></table></div></div>';
+  return h;
+}
+function kpi(c,l,v,nn){return '<div class="kpi '+c+'"><span class="eyebrow">'+l+'</span><span class="v">'+v+'</span><span class="n">'+nn+'</span></div>';}
+function step(a,b,amt,base,k,total){
+  var w=Math.min(100,Math.abs(amt)/base*100);
+  return '<div class="step'+(total?" total":"")+'"><div class="lab"><b>'+a+'</b><span>'+b+'</span></div>'
+   +'<div class="track"><div class="bar '+k+'" data-w="'+w.toFixed(1)+'"></div></div>'
+   +'<div class="amt '+(amt<0?"neg":(k==="keep"?"acc":""))+'">'+(amt<0?"−":"")+money(Math.abs(amt))+'</div></div>';
+}
+
+/* ═════════════ CLIENTS ═════════════ */
+function vClients(){
+  if(SEL) return vClient();
+  var w=can("clients");
+  var h='<div class="sec"><div class="rowhead"><div><h2>'+t("cli.t")+'</h2>'
+   +'<p class="sub" style="margin:0">'+(w?t("cli.s"):t("readonly"))+'</p></div>'
+   +(w?'<button class="btn primary" data-act="newclient">'+t("cli.add")+'</button>':'')+'</div>'
+   +'<div class="card"><div class="tbl-wrap"><table><thead><tr><th>'+t("th.client")+'</th><th>'+t("th.billing")+'</th>'
+   +'<th class="r">'+t("th.rate")+'</th><th class="r">'+t("th.billed2")+'</th><th class="r">'+t("th.paid")+'</th>'
+   +'<th class="r">'+t("th.balance")+'</th><th></th></tr></thead><tbody>';
+  if(!S.customers.length) h+='<tr><td colspan="7" class="empty">'+t("cli.none")+'</td></tr>';
+  var tot=0;
+  S.customers.forEach(function(c){
+    var st=stmt(c,MONTH); tot+=st.balance;
+    var rate=c.billing==="package"?t("cli.month",{v:money(c.monthlyFee)}):t("cli.pv",{v:money(c.rate)});
+    var bal=Math.abs(st.balance)<0.005
+      ? '<span class="mut">'+money(0)+'</span>'
+      : '<span class="num '+(st.balance>0?"neg":"pos")+'">'+(st.balance>0?"":"−")+money(Math.abs(st.balance))+'</span>';
+    h+='<tr><td><a href="#" data-act="opencli" data-id="'+c.id+'" class="lnk"><b>'+esc(c.name)+'</b></a>'
+     +(c.active?'':' <span class="pill">'+t("st.paused")+'</span>')
+     +(c.note?'<div class="mut" style="font-size:11.5px">'+esc(c.note)+'</div>':'')+'</td>'
+     +'<td><span class="pill '+(c.billing==="prepaid"?"cy":"amb")+'">'+t("b."+c.billing)+'</span></td>'
+     +'<td class="r"><span class="num">'+rate+'</span></td>'
+     +'<td class="r"><span class="num mut">'+money(st.billed)+'</span></td>'
+     +'<td class="r"><span class="num mut">'+money(st.paid)+'</span></td>'
+     +'<td class="r">'+bal+'</td>'
+     +'<td class="r"><button class="btn sm ghost" data-act="opencli" data-id="'+c.id+'">'+t("cd.open")+'</button></td></tr>';
+  });
+  h+='<tr class="sum"><td colspan="5" class="r mut">'+t("cli.total")+'</td>'
+   +'<td class="r"><span class="num '+(tot>0?"neg":"pos")+'" style="font-weight:600">'+(tot>0?"":"−")+money(Math.abs(tot))+'</span></td><td></td></tr>';
+  return h+'</tbody></table></div></div></div>';
+}
+
+/* ══════ one client's full account ══════ */
+function vClient(){
+  var c=S.customers.filter(function(x){return x.id===SEL;})[0];
+  if(!c){SEL=null;return vClients();}
+  var w=can("clients"), wp=can("payments");
+  var st=stmt(c,MONTH), dm=delivered(c,MONTH), da=delivered(c,null);
+  var state = st.balance>0.005 ? {k:"cd.owes",cls:"neg",v:st.balance}
+            : (st.balance<-0.005 ? {k:"cd.credit",cls:"pos",v:-st.balance}
+            : {k:"cd.settled",cls:"",v:0});
+
+  var h='<div class="sec"><button class="btn ghost sm" data-act="closecli">← '+t("cd.back")+'</button></div>';
+
+  h+='<div class="sec"><div class="rowhead"><div>'
+   +'<h2 style="font-size:20px">'+esc(c.name)+'</h2>'
+   +'<p class="sub" style="margin:0"><span class="pill '+(c.billing==="prepaid"?"cy":"amb")+'">'+t("b."+c.billing)+'</span> '
+   +(c.billing==="package"?t("cli.month",{v:money(c.monthlyFee)}):t("cli.pv",{v:money(c.rate)}))+'</p></div>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      +'<button class="btn" data-act="print">'+t("print")+'</button>'
+      +(wp?'<button class="btn primary" data-act="newpay" data-id="'+c.id+'">'+t("cd.pay")+'</button>':'')
+      +(w?'<button class="btn" data-act="editclient" data-id="'+c.id+'">'+t("cd.rename")+'</button>':'')+'</div>' 
+   +'</div>';
+
+  h+='<div class="kpis">'
+   +kpi(st.balance>0.005?"out":"net",t(state.k),money(state.v),t("cd.stmt"))
+   +kpi("",t("th.billed2"),money(st.billed),t("cd.all",{m:monthName(c.startMonth||MONTH)}))
+   +kpi("in",t("th.paid"),money(st.paid),t("cd.all",{m:monthName(c.startMonth||MONTH)}))
+   +'</div>';
+
+  h+='<div class="sec two"><div class="card"><span class="eyebrow">'+t("cd.delivered")+'</span>'
+   +'<div class="mut" style="margin-top:14px;font-size:12px">'+t("cd.month")+' — '+monthName(MONTH)+'</div>'
+   +'<div style="margin-top:6px">'+deliveredChips(dm)+'</div>'
+   +'<div class="mut" style="margin-top:16px;font-size:12px">'+t("cd.all",{m:monthName(c.startMonth||MONTH)})+'</div>'
+   +'<div style="margin-top:6px">'+deliveredChips(da)+'</div>'
+   +(c.billing==="package"?'<div class="carve" style="margin-top:14px"><span>'+t("cd.promised")+'</span>'
+      +'<span class="num">'+c.videos+' '+t("d.video")+' · '+c.posts+' '+t("d.post")+'</span></div>':'')
+   +'</div>'
+   +'<div class="card"><span class="eyebrow">'+t("f.note")+'</span>'
+   +'<p style="margin-top:10px;font-size:13px">'+(c.note?esc(c.note):'<span class="mut">'+t("cd.none")+'</span>')+'</p>'
+   +'<div class="carve"><span>'+t("f.start")+'</span><span class="num">'+esc(c.startMonth||"—")+'</span></div>'
+   +(c.endMonth?'<div class="carve"><span>'+t("f.end")+'</span><span class="num">'+esc(c.endMonth)+'</span></div>':'')
+   +'<div class="carve"><span>'+t("th.status")+'</span><span class="pill '+(c.active?"on":"")+'">'+(c.active?t("st.active"):t("st.paused"))+'</span></div>'
+   +'</div></div>';
+
+  h+='<div class="sec card"><h2>'+t("cd.stmt")+'</h2><p class="sub">'+t("cd.stmt.s")+'</p><div class="tbl-wrap"><table><thead><tr>'
+   +'<th>'+t("th.date")+'</th><th>'+t("th.desc")+'</th><th class="r">'+t("th.charge")+'</th>'
+   +'<th class="r">'+t("th.paid")+'</th><th class="r">'+t("th.run")+'</th><th></th></tr></thead><tbody>';
+  if(!st.lines.length) h+='<tr><td colspan="6" class="empty">'+t("cd.nothing")+'</td></tr>';
+  st.lines.forEach(function(l){
+    h+='<tr><td>'+n(esc(l.date))+'</td><td>'+esc(l.desc)+'</td>'
+     +'<td class="r">'+(l.charge?'<span class="num">'+money(l.charge)+'</span>':'')+'</td>'
+     +'<td class="r">'+(l.paid?'<span class="num pos">'+money(l.paid)+'</span>':'')+'</td>'
+     +'<td class="r"><span class="num '+(l.run>0.005?"neg":(l.run<-0.005?"pos":""))+'">'+(l.run>=0?"":"−")+money(Math.abs(l.run))+'</span></td>'
+     +'<td class="r">'+(l.pid&&wp?'<button class="btn sm ghost" data-act="editpay" data-id="'+l.pid+'">'+t("edit")+'</button>':'')+'</td></tr>';
+  });
+  h+='<tr class="sum"><td colspan="2" class="r mut"><b>'+t(state.k)+'</b></td>'
+   +'<td class="r"><span class="num mut">'+money(st.billed)+'</span></td>'
+   +'<td class="r"><span class="num mut">'+money(st.paid)+'</span></td>'
+   +'<td class="r"><span class="num '+state.cls+'" style="font-weight:600">'+money(state.v)+'</span></td><td></td></tr>';
+  return h+'</tbody></table></div></div>';
+}
+
+/* ═════════════ TEAM ═════════════ */
+function vTeam(){
+  if(SELE) return vEmployee();
+  var w=can("team"), wa=can("advances");
+  var h='<div class="sec"><div class="rowhead"><div><h2>'+t("tm.t")+'</h2>'
+   +'<p class="sub" style="margin:0">'+(w?t("tm.s"):t("readonly"))+'</p></div>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+   +(wa?'<button class="btn" data-act="newadv">'+t("ad.take")+'</button>':'')
+   +(w?'<button class="btn primary" data-act="newemp">'+t("tm.add")+'</button>':'')+'</div></div>'
+   +'<div class="card"><div class="tbl-wrap"><table><thead><tr><th>'+t("th.name")+'</th><th>'+t("th.paid")+'</th>'
+   +'<th class="r">'+t("th.rate")+'</th><th class="r">'+t("th.earned")+'</th><th class="r">'+t("th.adv")+'</th>'
+   +'<th class="r">'+t("th.carry")+'</th><th class="r">'+t("th.net")+'</th><th></th></tr></thead><tbody>';
+  var tot=0;
+  S.employees.forEach(function(e){
+    var lg=empLedger(e,MONTH).cur; tot+=lg.payout;
+    h+='<tr><td><a href="#" data-act="openemp" data-id="'+e.id+'" class="lnk"><b>'+esc(e.name)+'</b></a>'
+     +(e.active?'':' <span class="pill">'+t("st.off")+'</span>')
+     +(e.role?'<div class="mut" style="font-size:11.5px">'+esc(e.role)+'</div>':'')+'</td>'
+     +'<td><span class="pill '+(e.payType==="percent"?"amb":"")+'">'+t("p."+e.payType)+'</span></td>'
+     +'<td class="r"><span class="num">'+(e.payType==="percent"?e.rate+"%":money(e.rate))+'</span></td>'
+     +'<td class="r"><span class="num">'+money(lg.earned)+'</span></td>'
+     +'<td class="r">'+(lg.adv?'<span class="num neg">−'+money(lg.adv)+'</span>':'<span class="mut">—</span>')+'</td>'
+     +'<td class="r">'+(lg.carryIn?'<span class="num neg">−'+money(lg.carryIn)+'</span>':'<span class="mut">—</span>')+'</td>'
+     +'<td class="r"><span class="num '+(lg.carryOut?"neg":"acc")+'" style="font-weight:600">'
+       +(lg.carryOut?t("ad.owes")+" "+money(lg.carryOut):money(lg.payout))+'</span></td>'
+     +'<td class="r">'+(w?'<button class="btn sm ghost" data-act="editemp" data-id="'+e.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
+  });
+  h+='<tr class="sum"><td colspan="6" class="r mut">'+t("tm.total")+'</td>'
+   +'<td class="r"><span class="num" style="font-weight:600">'+money(tot)+'</span></td><td></td></tr>';
+  h+='</tbody></table></div></div>'
+   +'<div class="note" style="margin-top:14px">'+t("ad.note",{p:S.settings.managerPct})+'</div></div>';
+  return h;
+}
+
+/* ══════ one person's account ══════ */
+function vEmployee(){
+  var e=S.employees.filter(function(x){return x.id===SELE;})[0];
+  if(!e){SELE=null;return vTeam();}
+  var wa=can("advances"), w=can("team");
+  var lg=empLedger(e,MONTH), cur=lg.cur;
+  var advs=S.advances.filter(function(a){return a.employeeId===e.id;})
+    .sort(function(a,b){return a.date<b.date?1:-1;});
+
+  var h='<div class="sec"><button class="btn ghost sm" data-act="closeemp">← '+t("emp.back")+'</button></div>';
+  h+='<div class="sec"><div class="rowhead"><div><h2 style="font-size:20px">'+esc(e.name)+'</h2>'
+   +'<p class="sub" style="margin:0"><span class="pill '+(e.payType==="percent"?"amb":"")+'">'+t("p."+e.payType)+'</span> '
+   +(e.payType==="percent"?e.rate+"%":money(e.rate))+'</p></div>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+   +'<button class="btn" data-act="print">'+t("print")+'</button>'
+   +(wa?'<button class="btn primary" data-act="newadv" data-id="'+e.id+'">'+t("ad.take")+'</button>':'')
+   +(w?'<button class="btn" data-act="editemp" data-id="'+e.id+'">'+t("edit")+'</button>':'')+'</div></div>';
+
+  h+='<div class="kpis">'
+   +kpi("net",t("th.net"),money(cur.payout),t("emp.thismonth",{m:monthName(MONTH)}))
+   +kpi("in",t("th.earned"),money(cur.earned),monthName(MONTH))
+   +kpi("out",t("th.adv"),money(cur.adv),monthName(MONTH))
+   +kpi(cur.carryOut?"out":"",t("ad.owes"),money(cur.carryOut),cur.carryOut?"":t("ad.clear"))
+   +'</div>';
+
+  h+='<div class="sec card"><h2>'+t("emp.stmt")+'</h2><p class="sub">'+t("emp.stmt.s")+'</p><div class="tbl-wrap"><table><thead><tr>'
+   +'<th>'+t("th.month2")+'</th><th class="r">'+t("th.earned")+'</th><th class="r">'+t("th.adv")+'</th>'
+   +'<th class="r">'+t("th.carry")+'</th><th class="r">'+t("th.payout")+'</th><th class="r">'+t("ad.owes")+'</th></tr></thead><tbody>';
+  lg.rows.slice().reverse().forEach(function(r){
+    h+='<tr><td>'+esc(monthName(r.month))+'</td>'
+     +'<td class="r"><span class="num">'+money(r.earned)+'</span></td>'
+     +'<td class="r">'+(r.adv?'<span class="num neg">−'+money(r.adv)+'</span>':'—')+'</td>'
+     +'<td class="r">'+(r.carryIn?'<span class="num neg">−'+money(r.carryIn)+'</span>':'—')+'</td>'
+     +'<td class="r"><span class="num acc">'+money(r.payout)+'</span></td>'
+     +'<td class="r">'+(r.carryOut?'<span class="num neg">'+money(r.carryOut)+'</span>':'—')+'</td></tr>';
+  });
+  h+='</tbody></table></div></div>';
+
+  h+='<div class="sec card"><h2>'+t("emp.hist")+'</h2><div class="tbl-wrap"><table><thead><tr>'
+   +'<th>'+t("th.date")+'</th><th>'+t("th.desc")+'</th><th class="r">'+t("th.amt")+'</th><th></th></tr></thead><tbody>';
+  if(!advs.length) h+='<tr><td colspan="4" class="empty">'+t("ad.none")+'</td></tr>';
+  advs.forEach(function(a){
+    h+='<tr><td>'+n(esc(a.date))+'</td><td>'+esc(a.note||"—")+'</td>'
+     +'<td class="r"><span class="num neg">−'+money(a.amount)+'</span></td>'
+     +'<td class="r">'+(wa?'<button class="btn sm ghost" data-act="editadv" data-id="'+a.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
+  });
+  return h+'</tbody></table></div></div>';
+}
+
+/* ═════════════ WORK ═════════════ */
+function vWork(){
+  var w=can("work");
+  var rows=S.work.filter(function(x){return inMonth(x.date,MONTH);}).sort(function(a,b){return a.date<b.date?1:-1;});
+  var h='<div class="sec"><div class="rowhead"><div><h2>'+t("wk.t",{m:monthName(MONTH)})+'</h2>'
+   +'<p class="sub" style="margin:0">'+(w?t("wk.s"):t("readonly"))+'</p></div>'
+   +(w?'<button class="btn primary" data-act="newwork">'+t("wk.add")+'</button>':'')+'</div>'
+   +'<div class="card"><div class="tbl-wrap"><table><thead><tr><th>'+t("th.date")+'</th><th>'+t("th.client")+'</th>'
+   +'<th>'+t("th.what")+'</th><th class="r">'+t("th.qty")+'</th><th>'+t("th.by")+'</th>'
+   +'<th class="r">'+t("th.epay")+'</th><th class="r">'+t("th.billed")+'</th><th></th></tr></thead><tbody>';
+  if(!rows.length) h+='<tr><td colspan="8" class="empty">'+t("wk.none",{m:monthName(MONTH)})+'</td></tr>';
+  rows.forEach(function(x){
+    var c=S.customers.filter(function(y){return y.id===x.customerId;})[0];
+    var e=S.employees.filter(function(y){return y.id===x.editorId;})[0];
+    var pay=e?((x.amount!==""&&x.amount!=null)?+x.amount:(+x.qty||0)*(+e.rate||0)):0;
+    var bill=c?(c.billing==="package"?0:(x.type==="video"?(+x.qty||0)*(+c.rate||0):0)):0;
+    h+='<tr><td>'+n(esc(x.date))+'</td><td>'+esc(c?c.name:"—")+'</td>'
+     +'<td><span class="pill">'+t("d."+x.type)+'</span>'+(x.note?' <span class="mut" style="font-size:11.5px">'+esc(x.note)+'</span>':'')+'</td>'
+     +'<td class="r">'+n(x.qty)+'</td><td class="mut">'+esc(e?e.name:"—")+'</td>'
+     +'<td class="r"><span class="num neg">'+(pay?"−"+money(pay):"—")+'</span></td>'
+     +'<td class="r">'+(bill?'<span class="num pos">'+money(bill)+'</span>':(c&&c.billing==="package"?'<span class="mut">'+t("wk.inpack")+'</span>':"—"))+'</td>'
+     +'<td class="r">'+(w?'<button class="btn sm ghost" data-act="editwork" data-id="'+x.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
+  });
+  return h+'</tbody></table></div></div></div>';
+}
+
+/* ═════════════ COSTS ═════════════ */
+function vCosts(){
+  var w=can("costs"),r=calc(MONTH);
+  var h='<div class="sec"><div class="rowhead"><div><h2>'+t("cs.t",{m:monthName(MONTH)})+'</h2>'
+   +'<p class="sub" style="margin:0">'+(w?t("cs.s"):t("readonly"))+'</p></div>'
+   +(w?'<button class="btn primary" data-act="newcost">'+t("cs.add")+'</button>':'')+'</div>'
+   +'<div class="card"><div class="tbl-wrap"><table><thead><tr><th>'+t("th.cost")+'</th><th>'+t("th.cat")+'</th>'
+   +'<th>'+t("th.from")+'</th><th class="r">'+t("th.amt")+'</th><th></th></tr></thead><tbody>';
+  if(!r.costs.length) h+='<tr><td colspan="5" class="empty">'+t("cs.none")+'</td></tr>';
+  r.costs.forEach(function(x){
+    h+='<tr><td><b>'+esc(x.note||t("c."+x.category))+'</b></td><td><span class="pill">'+t("c."+x.category)+'</span></td>'
+     +'<td>'+n(esc(x.date))+(x.recurring?' <span class="pill cy">'+t("f.repeats").split(" ").slice(0,3).join(" ")+'</span>':'')+'</td>'
+     +'<td class="r"><span class="num neg">−'+money(x.amount)+'</span></td>'
+     +'<td class="r">'+(w?'<button class="btn sm ghost" data-act="editcost" data-id="'+x.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
+  });
+  h+='<tr class="sum"><td colspan="3" class="r mut">'+t("cs.tot")+'</td><td class="r"><span class="num" style="font-weight:600">−'+money(r.opex)+'</span></td><td></td></tr>';
+  return h+'</tbody></table></div></div>'
+   +'<div class="note" style="margin-top:14px">'+t("cs.note")+'</div></div>';
+}
+
+/* ═════════════ CALENDAR ═════════════ */
+function vCalendar(){
+  var w=can("calendar");
+  var p=MONTH.split("-"),Y=+p[0],M=+p[1]-1;
+  var start=new Date(Y,M,1).getDay(), days=new Date(Y,M+1,0).getDate();
+  var cap=+S.settings.dayCapacity||0, off=+S.settings.offDay;
+  var h='<div class="sec"><div class="rowhead"><div><h2>'+t("cal.t")+'</h2>'
+   +'<p class="sub" style="margin:0">'+t("cal.s",{h:cap})+'</p></div>'
+   +(w?'<button class="btn primary" data-act="newshoot">'+t("cal.add")+'</button>':'')+'</div>'
+   +'<div class="card"><div class="cal">';
+  t("dows").forEach(function(d){h+='<div class="dow">'+d+'</div>';});
+  for(var i=0;i<start;i++) h+='<div class="day mute"></div>';
+  for(var d=1;d<=days;d++){
+    var iso=Y+"-"+String(M+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+    var dow=new Date(Y,M,d).getDay();
+    var evs=S.shoots.filter(function(s){return s.date===iso;});
+    var load=evs.reduce(function(a,s){return a+(+s.hours||0);},0);
+    var isOff=dow===off;
+    h+='<div class="day'+(isOff?" off":"")+(iso===todayISO()?" today":"")+'"'+(w?' data-act="dayclick" data-date="'+iso+'"':' style="cursor:default"')+'>'
+     +'<div class="dn">'+d+(isOff?' <span class="cy">'+t("cal.off")+'</span>':'')+'</div>'
+     +(load?'<span class="load'+(!isOff&&load>cap?" over":"")+'">'+load+'h</span>':'')
+     +evs.map(function(s){var c=S.customers.filter(function(y){return y.id===s.customerId;})[0];
+       return '<div class="ev">'+esc(c?c.name:s.title)+'</div>';}).join("")+'</div>';
+  }
+  h+='</div></div>';
+  var up=S.shoots.filter(function(s){return inMonth(s.date,MONTH);}).sort(function(a,b){return a.date>b.date?1:-1;});
+  h+='<div class="sec card"><h2>'+t("cal.booked")+'</h2><div class="tbl-wrap"><table><thead><tr>'
+   +'<th>'+t("th.date")+'</th><th>'+t("th.time")+'</th><th>'+t("th.client")+'</th><th>'+t("th.shoot")+'</th>'
+   +'<th class="r">'+t("th.hours")+'</th><th></th></tr></thead><tbody>';
+  if(!up.length) h+='<tr><td colspan="6" class="empty">'+t("cal.none")+'</td></tr>';
+  up.forEach(function(s){
+    var c=S.customers.filter(function(y){return y.id===s.customerId;})[0];
+    h+='<tr><td>'+n(esc(s.date))+'</td><td>'+n(esc(s.time||"—"))+'</td><td>'+esc(c?c.name:"—")+'</td>'
+     +'<td>'+esc(s.title)+'</td><td class="r">'+n((s.hours||0)+"h")+'</td>'
+     +'<td class="r">'+(w?'<button class="btn sm ghost" data-act="editshoot" data-id="'+s.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
+  });
+  return h+'</tbody></table></div></div></div>';
+}
+
+/* ═════════════ OUTSIDE ═════════════ */
+function vOutside(){
+  var h='<div class="sec"><div class="rowhead"><div><h2>'+t("os.t")+'</h2>'
+   +'<p class="sub" style="margin:0">'+t("os.s")+'</p></div>'
+   +'<button class="btn primary" data-act="newoutside">'+t("os.add")+'</button></div>'
+   +'<div class="card"><div class="tbl-wrap"><table><thead><tr><th>'+t("th.src")+'</th><th>'+t("th.note")+'</th>'
+   +'<th>'+t("th.type")+'</th><th class="r">'+t("th.perm")+'</th><th></th></tr></thead><tbody>';
+  S.outside.forEach(function(o){
+    h+='<tr><td><b>'+esc(o.name)+'</b></td><td class="mut">'+esc(o.note)+'</td>'
+     +'<td><span class="pill '+(o.kind==="income"?"on":"")+'">'+(o.kind==="income"?t("os.income"):t("os.cost"))+'</span></td>'
+     +'<td class="r"><span class="num '+(o.kind==="income"?"pos":"neg")+'">'+(o.kind==="income"?"+":"−")+money(o.amount)+'</span></td>'
+     +'<td class="r"><button class="btn sm ghost" data-act="editoutside" data-id="'+o.id+'">'+t("edit")+'</button></td></tr>';
+  });
+  h+='</tbody></table></div></div></div>';
+  S.projects.forEach(function(p){
+    var got=p.entries.filter(function(e){return inMonth(e.date,MONTH);}).reduce(function(a,e){return a+(+e.yours||0);},0);
+    h+='<div class="sec card"><div class="rowhead"><div><h2>'+esc(p.name)+'</h2>'
+     +'<p class="sub" style="margin:0">'+esc(p.note)+'</p></div><span class="pill amb">'+t("st."+p.status)+'</span></div>'
+     +'<div class="tbl-wrap"><table><thead><tr><th>'+t("th.who")+'</th><th class="r">'+t("th.share")+'</th>'
+     +'<th class="r">'+t("th.on",{v:money(1000)})+'</th></tr></thead><tbody>'
+     +p.splits.map(function(s){return '<tr><td>'+esc(s.who)+'</td><td class="r"><span class="num acc">'+s.pct+'%</span></td>'
+       +'<td class="r"><span class="num mut">'+money(1000*s.pct/100)+'</span></td></tr>';}).join("")
+     +'</tbody></table></div>'
+     +'<div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">'
+     +'<span class="mut" style="font-size:12.5px">'+t("os.got",{m:monthName(MONTH)})+' <b class="num cy">'+money(got)+'</b></span>'
+     +'<div style="display:flex;gap:8px"><button class="btn sm" data-act="projpay" data-id="'+p.id+'">'+t("os.pay")+'</button>'
+     +'<button class="btn sm ghost" data-act="editproj" data-id="'+p.id+'">'+t("os.deal")+'</button></div></div></div>';
+  });
+  return h+'<div class="sec"><button class="btn ghost" data-act="newproj">'+t("os.newproj")+'</button></div>';
+}
+
+
+/* ═════════════ PEOPLE ═════════════ */
+var USERS=[];
+async function loadUsers(){
+  if(MODE!=="cloud") return;
+  var r=await SB.from("profiles").select("*").order("created_at");
+  if(!r.error){USERS=r.data;render();}
+}
+function vUsers(){
+  if(MODE!=="cloud"){
+    return '<div class="sec card"><h2>'+t("us.t")+'</h2><p class="sub">'+t("cl.offS")+'</p>'
+      +'<button class="btn primary" data-act="cloudon">'+t("cl.connect")+'</button></div>';
+  }
+  if(!USERS.length) loadUsers();
+  var h='<div class="sec"><div class="rowhead"><div><h2>'+t("us.t")+'</h2>'
+   +'<p class="sub" style="margin:0">'+t("us.s")+'</p></div></div>'
+   +'<div class="card"><div class="tbl-wrap"><table><thead><tr><th>'+t("th.name")+'</th>'
+   +'<th>'+t("th.status")+'</th><th>'+t("us.canSee")+'</th><th>'+t("us.personal")+'</th><th></th></tr></thead><tbody>';
+  if(!USERS.length) h+='<tr><td colspan="5" class="empty">'+t("us.none")+'</td></tr>';
+  USERS.forEach(function(u){
+    var own=u.role==="owner";
+    var pm=own?FULL:(u.perms||{tabs:[],edit:[],personal:false});
+    var nTabs=(pm.tabs||[]).length;
+    h+='<tr><td><b>'+esc(u.name||u.email)+'</b><div class="mut" style="font-size:11.5px">'+esc(u.email||"")+'</div></td>'
+     +'<td><span class="pill '+(own?"amb":(u.active?"on":""))+'">'
+       +(own?t("us.owner"):(u.active?t("us.active"):t("us.pending")))+'</span></td>'
+     +'<td>'+(own?'<span class="mut">'+t("sec.setup")+' + '+t("sec.flow")+'…</span>'
+        :'<span class="num">'+nTabs+'</span> <span class="mut" style="font-size:11.5px">/ '+SEC_TABS.length+'</span>')+'</td>'
+     +'<td>'+((own||pm.personal)?'<span class="pill on">'+t("st.active")+'</span>':'<span class="pill">'+t("us.off")+'</span>')+'</td>'
+     +'<td class="r">'+(own?'<span class="mut" style="font-size:11.5px">'+t("us.ownerLock")+'</span>'
+        :'<button class="btn sm ghost" data-act="edituser" data-id="'+u.id+'">'+t("edit")+'</button>')+'</td></tr>';
+  });
+  return h+'</tbody></table></div></div></div>';
+}
+function userForm(u){
+  var pm=JSON.parse(JSON.stringify(u.perms||{tabs:[],edit:[],personal:false}));
+  var box=function(list,keyName,sel){
+    return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-top:4px">'
+      +list.map(function(k){
+        var on=(sel||[]).indexOf(k)>=0;
+        return '<label class="chk" style="cursor:pointer"><input type="checkbox" data-grp="'+keyName+'" value="'+k+'"'+(on?" checked":"")+'>'
+          +'<span style="font-size:13px">'+t("sec."+k)+'</span></label>';}).join("")
+      +'</div>';
+  };
+  var body='<div class="f"><label>'+t("us.presets")+'</label>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+    +[["manager","us.p.manager"],["acct","us.p.acct"],["view","us.p.view"],["none","us.p.none"]].map(function(x){
+       return '<button type="button" class="btn sm" data-preset="'+x[0]+'">'+t(x[1])+'</button>';}).join("")
+    +'</div></div>'
+    +'<div class="f"><label>'+t("us.canSee")+'</label>'+box(SEC_TABS,"tabs",pm.tabs)+'</div>'
+    +'<div class="f"><label>'+t("us.canEdit")+'</label>'+box(SEC_EDIT,"edit",pm.edit)+'</div>'
+    +'<div class="f"><label class="chk" style="cursor:pointer"><input type="checkbox" id="pPersonal"'+(pm.personal?" checked":"")+'>'
+      +'<span style="font-size:13px">'+t("us.personal")+'</span></label>'
+      +'<div class="hint">'+t("us.personalH")+'</div></div>'
+    +'<div class="f"><label class="chk" style="cursor:pointer"><input type="checkbox" id="pActive"'+(u.active?" checked":"")+'>'
+      +'<span style="font-size:13px">'+t("us.on")+'</span></label></div>';
+
+  el("modalHost").innerHTML='<div class="scrim"><div class="modal" role="dialog" aria-modal="true">'
+    +'<h3>'+esc(t("us.edit",{n:u.name||u.email}))+'</h3>'+body
+    +'<div class="acts"><button class="btn ghost" id="uCancel">'+t("cancel")+'</button>'
+    +'<button class="btn primary" id="uSave">'+t("save")+'</button></div></div></div>';
+  var host=el("modalHost").querySelector(".modal");
+  host.addEventListener("click",function(e){
+    var pb=e.target.closest("[data-preset]");
+    if(pb){
+      var pr=PRESETS[pb.dataset.preset];
+      Array.prototype.forEach.call(host.querySelectorAll('[data-grp]'),function(cb){
+        cb.checked=(pr[cb.dataset.grp]||[]).indexOf(cb.value)>=0;});
+      el("pPersonal").checked=!!pr.personal;
+    }
+  });
+  el("uCancel").onclick=function(){el("modalHost").innerHTML="";};
+  el("uSave").onclick=async function(){
+    var out={tabs:[],edit:[],personal:el("pPersonal").checked};
+    Array.prototype.forEach.call(host.querySelectorAll('[data-grp]'),function(cb){
+      if(cb.checked) out[cb.dataset.grp].push(cb.value);});
+    el("uSave").disabled=true;
+    var r=await SB.from("profiles").update({perms:out,active:el("pActive").checked}).eq("id",u.id);
+    el("modalHost").innerHTML="";
+    if(r.error) alert(r.error.message); else await loadUsers();
+  };
+}
+
+/* ═════════════ SETUP ═════════════ */
+function vSetup(){
+  var s=S.settings;
+  var nLocked=["owner","manager","accountant"].filter(function(r){return s.pins&&s.pins[r];}).length;
+  var h='<div class="sec"><h2>'+t("sp.t")+'</h2><p class="sub">'+t("sp.s")+'</p><div class="three">';
+  h+=box(t("sp.split"),t("sp.splitH",{a:s.managerPct,b:100-s.managerPct}),t("sp.splitS"),"editsplit",t("sp.splitB"));
+  h+=box(t("sp.rent"),s.rentMode==="myshare"?t("sp.rentA",{p:s.rentSharePct}):t("sp.rentB",{v:money(s.rentFlat)}),
+        s.rentMode==="myshare"?t("sp.rentAS"):t("sp.rentBS"),"editrent",t("sp.rentBtn"));
+  h+=box(t("sp.day"),t("sp.dayH",{h:s.dayCapacity,d:t("daysFull")[s.offDay]}),t("sp.dayS"),"editday",t("sp.change"));
+  h+=box(t("sp.co"),s.company?esc(s.company):'<span class="mut">'+t("f.coname")+'</span>',t("sp.coS"),"editco",t("sp.change"));
+  h+=box(t("sp.pins"),t("sp.pinsH",{n:nLocked}),t("sp.pinsS"),"editpins",t("sp.pinsB"));
+  var swName=(SWATCH.filter(function(x){return x[0].toLowerCase()===(s.accent||"").toLowerCase();})[0]||[null,"f.custom"])[1];
+  h+=box(t("sp.look"),t("sp.lookH",{t:t("th."+(s.theme||"dark")),c:t(swName)}),t("f.accentH"),"editlook",t("sp.lookB"));
+  h+=box(t("sp.inst"),t("sp.instH"),"","install",t("sp.instB"));
+  h+=box(t("cl.t2"), MODE==="cloud"?t("cl.on",{n:USERS.length||1}):t("cl.off"),
+        MODE==="cloud"?t("cl.onS"):t("cl.offS"),
+        MODE==="cloud"?"cloudmanage":"cloudon",
+        MODE==="cloud"?t("cl.manage"):t("cl.connect"));
+  h+=box(t("pwa.t"),t("pwa.h"),t("pwa.note"),"pwa",t("pwa.b"));
+  h+='</div>';
+  h+='<div class="sec card"><span class="eyebrow">'+t("sp.data")+'</span>'
+   +'<h2 style="margin-top:8px">'+t("sp.dataH")+'</h2><p class="sub">'+t("sp.dataS")+'</p>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="export">'+t("sp.exp")+'</button>'
+   +'<button class="btn" data-act="import">'+t("sp.imp")+'</button>'
+   +'<button class="btn danger ghost" data-act="reset">'+t("sp.reset")+'</button></div></div>';
+  return h+'</div>';
+}
+function box(eyebrow,head,sub,act,btn){
+  return '<div class="card"><span class="eyebrow">'+eyebrow+'</span><h2 style="margin-top:8px">'+head+'</h2>'
+   +(sub?'<p class="sub">'+sub+'</p>':'<div style="height:10px"></div>')
+   +'<button class="btn sm" data-act="'+act+'">'+btn+'</button></div>';
+}
+function installGuide(){
+  var cmd='"C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe" --app="file:///C:/StudioLedger/index.html"';
+  el("modalHost").innerHTML='<div class="scrim"><div class="modal" style="max-width:600px" role="dialog" aria-modal="true">'
+   +'<h3>'+t("ins.t")+'</h3>'
+   +'<div class="eyebrow" style="margin-bottom:10px">'+t("ins.w")+'</div><ol class="steps">'
+   +'<li>'+t("ins.w1")+'</li><li>'+t("ins.w2")+'</li>'
+   +'<li>'+t("ins.w3")+'<div style="margin-top:6px"><code>'+esc(cmd)+'</code></div></li>'
+   +'<li>'+t("ins.w4")+'</li></ol>'
+   +'<div class="eyebrow" style="margin:22px 0 10px">'+t("ins.h")+'</div><ol class="steps">'
+   +'<li>'+t("ins.h1")+'</li><li>'+t("ins.h2")+'</li><li>'+t("ins.h3")+'</li></ol>'
+   +'<div class="note" style="margin-top:18px">'+t("ins.warn")+'</div>'
+   +'<div class="acts"><button class="btn primary" id="fCancel">'+t("cancel")+'</button></div></div></div>';
+  el("fCancel").onclick=function(){el("modalHost").innerHTML="";};
+}
+
+
+function cloudForm(){
+  var c=cfg();
+  form(t("cl.connect"),[
+    {k:"url",label:t("cl.url"),def:c.url,hint:"https://xxxx.supabase.co"},
+    {k:"key",label:t("cl.key"),def:c.key,hint:t("cl.keyH")}
+  ],null,async function(v){
+    var u=(v.url||"").trim().replace(/\/+$/,""), k=(v.key||"").trim();
+    if(!u||!k) return;
+    try{
+      var test=await sbClient(u,k);
+      var r=await test.from("profiles").select("id").limit(1);
+      if(r.error&&r.error.code!=="PGRST116"&&!/row-level|permission|JWT/i.test(r.error.message||"")) throw r.error;
+      setCfg(u,k); SB=test; MODE="cloud"; ROLE=null; renderAuth("up");
+    }catch(e){ alert(t("cl.bad")+"\n"+(e.message||"")); }
+  });
+}
+function cloudManage(){
+  el("modalHost").innerHTML='<div class="scrim"><div class="modal" role="dialog" aria-modal="true">'
+   +'<h3>'+t("cl.t2")+'</h3>'
+   +'<p class="sub">'+t("cl.onS")+'</p>'
+   +'<div class="note" style="margin-bottom:16px">'+t("cl.uploadH")+'</div>'
+   +(can("setup")?'<button class="btn" id="cUp" style="width:100%;margin-bottom:8px">'+t("cl.upload")+'</button>':'')
+   +'<button class="btn ghost" id="cOut" style="width:100%;margin-bottom:8px">'+t("au.out")+'</button>'
+   +'<button class="btn ghost danger" id="cOff" style="width:100%">'+t("cl.disconnect")+'</button>'
+   +'<div class="acts"><button class="btn ghost" id="cClose">'+t("cancel")+'</button></div></div></div>';
+  el("cClose").onclick=function(){el("modalHost").innerHTML="";};
+  if(el("cUp")) el("cUp").onclick=async function(){
+    el("cUp").disabled=true; await pushEverything(); el("modalHost").innerHTML="";
+  };
+  el("cOut").onclick=async function(){ if(SB) await SB.auth.signOut(); el("modalHost").innerHTML=""; ME=null; renderAuth(); };
+  el("cOff").onclick=function(){ clearCfg(); location.reload(); };
+}
+var DEFER=null;
+window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();DEFER=e;});
+function pwaGuide(){
+  el("modalHost").innerHTML='<div class="scrim"><div class="modal" style="max-width:560px" role="dialog" aria-modal="true">'
+   +'<h3>'+t("pwa.t")+'</h3>'
+   +(DEFER?'<button class="btn primary" id="pNow" style="width:100%;margin-bottom:18px">'+t("pwa.now")+'</button>':'')
+   +'<div class="eyebrow" style="margin-bottom:10px">'+t("pwa.and")+'</div><ol class="steps">'
+   +'<li>'+t("pwa.a1")+'</li><li>'+t("pwa.a2")+'</li><li>'+t("pwa.a3")+'</li></ol>'
+   +'<div class="eyebrow" style="margin:20px 0 10px">'+t("pwa.ios")+'</div><ol class="steps">'
+   +'<li>'+t("pwa.i1")+'</li><li>'+t("pwa.i2")+'</li><li>'+t("pwa.i3")+'</li></ol>'
+   +'<div class="note" style="margin-top:16px">'+t("pwa.note")+'</div>'
+   +'<div class="acts"><button class="btn primary" id="pClose">'+t("cancel")+'</button></div></div></div>';
+  el("pClose").onclick=function(){el("modalHost").innerHTML="";};
+  if(el("pNow")) el("pNow").onclick=function(){DEFER.prompt();el("modalHost").innerHTML="";};
+}
+
+/* ═════════════ forms ═════════════ */
+function form(title,fields,vals,onSave,extra,saveLabel){
+  var body=fields.map(function(f){
+    var v=(vals&&vals[f.k]!=null)?vals[f.k]:(f.def!=null?f.def:"");
+    var i;
+    if(f.type==="select") i='<select name="'+f.k+'">'+f.options.map(function(o){
+        return '<option value="'+esc(o[0])+'"'+(String(v)===String(o[0])?" selected":"")+'>'+esc(o[1])+'</option>';}).join("")+'</select>';
+    else if(f.type==="textarea") i='<textarea name="'+f.k+'" rows="2">'+esc(v)+'</textarea>';
+    else if(f.type==="check") i='<div class="chk"><input type="checkbox" name="'+f.k+'" id="k_'+f.k+'"'+(v?" checked":"")+'>'
+        +'<label for="k_'+f.k+'">'+esc(f.checkLabel||"")+'</label></div>';
+    else i='<input type="'+(f.type||"text")+'" name="'+f.k+'" value="'+esc(v)+'"'+(f.step?' step="'+f.step+'"':"")+'>';
+    return '<div class="f" data-field="'+f.k+'"'+(f.showIf?" data-showif='"+JSON.stringify(f.showIf)+"'":"")+'>'
+      +(f.type==="check"?"":'<label>'+esc(f.label)+'</label>')+i
+      +(f.hint?'<div class="hint">'+esc(f.hint)+'</div>':"")+'</div>';
+  }).join("");
+  el("modalHost").innerHTML='<div class="scrim"><div class="modal" role="dialog" aria-modal="true"><h3>'+esc(title)+'</h3>'
+   +'<div id="formBody">'+body+'</div>'+(extra||"")
+   +'<div class="acts">'+((vals&&vals.id)?'<button class="btn danger ghost" id="fDel">'+t("del")+'</button>':"")
+   +'<button class="btn ghost" id="fCancel">'+t("cancel")+'</button>'
+   +'<button class="btn primary" id="fSave">'+(saveLabel||t("save"))+'</button></div></div></div>';
+  function toggles(){
+    Array.prototype.forEach.call(document.querySelectorAll("[data-showif]"),function(d){
+      var c=JSON.parse(d.getAttribute("data-showif"));
+      var cur=el("formBody").querySelector('[name="'+c.k+'"]');
+      d.style.display=(cur&&c.in.indexOf(cur.value)>=0)?"":"none";});
+  }
+  toggles();
+  el("formBody").addEventListener("change",toggles);
+  var scrim=document.querySelector(".scrim");
+  scrim.addEventListener("mousedown",function(e){if(e.target===this)close();});
+  el("fCancel").onclick=close;
+  if(el("fDel")) el("fDel").onclick=function(){if(confirm(t("confirmDel"))){onSave(null);close();save();render();}};
+  el("fSave").onclick=function(){
+    var out={};
+    fields.forEach(function(f){var q=el("formBody").querySelector('[name="'+f.k+'"]');
+      out[f.k]=f.type==="check"?q.checked:(f.type==="number"?(q.value===""?"":+q.value):q.value);});
+    close(); onSave(out); save(); if(ROLE) render();
+  };
+  function close(){el("modalHost").innerHTML="";applyTheme();}
+}
+
+function clientForm(c){
+  form(c?t("cli.edit"):t("cli.add"),[
+    {k:"name",label:t("f.cliname")},
+    {k:"billing",label:t("f.howpay"),type:"select",options:[["package",t("b.packageL")],["per_video",t("b.per_videoL")],["prepaid",t("b.prepaidL")]]},
+    {k:"monthlyFee",label:t("f.fee"),type:"number",step:"0.01",showIf:{k:"billing",in:["package"]}},
+    {k:"videos",label:t("f.vids"),type:"number",showIf:{k:"billing",in:["package"]}},
+    {k:"posts",label:t("f.posts"),type:"number",showIf:{k:"billing",in:["package"]}},
+    {k:"adSpend",label:t("f.ads"),type:"number",step:"0.01",hint:t("f.adsH"),showIf:{k:"billing",in:["package"]}},
+    {k:"rate",label:t("f.rate"),type:"number",step:"0.01",showIf:{k:"billing",in:["per_video","prepaid"]}},
+    {k:"expected",label:t("f.exp"),type:"number",showIf:{k:"billing",in:["per_video"]}},
+    {k:"credit",label:t("f.advance"),type:"number",step:"0.01",hint:t("f.advanceH")},
+    {k:"openingDue",label:t("f.opening"),type:"number",step:"0.01",hint:t("f.openingH")},
+    {k:"startMonth",label:t("f.start"),type:"month",def:ymNow(),hint:t("f.startH")},
+    {k:"endMonth",label:t("f.end"),type:"month",hint:t("f.endH")},
+    {k:"note",label:t("f.note"),type:"textarea"},
+    {k:"active",label:"",type:"check",checkLabel:t("f.activecli"),def:true}
+  ],c,function(v){
+    if(v===null){S.customers=S.customers.filter(function(x){return x.id!==c.id;});return;}
+    if(c) Object.assign(c,v); else {v.id=uid();S.customers.push(v);}});
+}
+function empForm(e){
+  form(e?t("tm.edit"):t("tm.add"),[
+    {k:"name",label:t("f.name")},{k:"role",label:t("f.role"),hint:t("f.roleH")},
+    {k:"payType",label:t("f.howpaid"),type:"select",options:[["per_video",t("p.per_videoL")],["monthly",t("p.monthlyL")],["per_task",t("p.per_taskL")],["percent",t("p.percentL")]]},
+    {k:"rate",label:t("f.rate2"),type:"number",step:"0.01",hint:t("f.rateH")},
+    {k:"note",label:t("f.note"),type:"textarea"},
+    {k:"active",label:"",type:"check",checkLabel:t("f.onbooks"),def:true}
+  ],e,function(v){
+    if(v===null){S.employees=S.employees.filter(function(x){return x.id!==e.id;});return;}
+    if(e) Object.assign(e,v); else {v.id=uid();S.employees.push(v);}
+    if(v.payType==="percent") S.settings.managerPct=+v.rate||S.settings.managerPct;});
+}
+function workForm(w){
+  form(w?t("wk.edit"):t("wk.add"),[
+    {k:"date",label:t("f.date"),type:"date",def:todayISO()},
+    {k:"customerId",label:t("f.client"),type:"select",options:S.customers.map(function(c){return [c.id,c.name];})},
+    {k:"type",label:t("f.delivered"),type:"select",options:[["video",t("d.video")],["post",t("d.post")],["design",t("d.design")],["task",t("d.task")]]},
+    {k:"qty",label:t("f.howmany"),type:"number",def:1},
+    {k:"editorId",label:t("f.whodid"),type:"select",options:[["",t("f.nobody")]].concat(S.employees.filter(function(e){return e.payType!=="percent";}).map(function(e){return [e.id,e.name];}))},
+    {k:"amount",label:t("f.override"),type:"number",step:"0.01",hint:t("f.overrideH")},
+    {k:"note",label:t("f.note"),type:"textarea"}
+  ],w,function(v){
+    if(v===null){S.work=S.work.filter(function(x){return x.id!==w.id;});return;}
+    if(w) Object.assign(w,v); else {v.id=uid();S.work.push(v);}});
+}
+function costForm(x){
+  form(x?t("cs.edit"):t("cs.add"),[
+    {k:"note",label:t("f.whatis")},
+    {k:"category",label:t("f.cat"),type:"select",options:["Transport","Phone","Internet","Equipment","Software","Rent","Other"].map(function(c){return [c,t("c."+c)];})},
+    {k:"amount",label:t("f.amount"),type:"number",step:"0.01"},
+    {k:"date",label:t("f.date"),type:"date",def:todayISO()},
+    {k:"recurring",label:"",type:"check",checkLabel:t("f.repeats")}
+  ],x,function(v){
+    if(v===null){S.costs=S.costs.filter(function(y){return y.id!==x.id;});return;}
+    if(x) Object.assign(x,v); else {v.id=uid();S.costs.push(v);}});
+}
+function shootForm(s,date){
+  form(s?t("cal.edit"):t("cal.add"),[
+    {k:"date",label:t("f.date"),type:"date",def:date||todayISO()},
+    {k:"time",label:t("f.time"),type:"time"},
+    {k:"customerId",label:t("f.client"),type:"select",options:[["","—"]].concat(S.customers.map(function(c){return [c.id,c.name];}))},
+    {k:"title",label:t("f.shooting")},
+    {k:"hours",label:t("f.hours"),type:"number",step:"0.5",def:2},
+    {k:"notes",label:t("f.notes"),type:"textarea"}
+  ],s,function(v){
+    if(v===null){S.shoots=S.shoots.filter(function(x){return x.id!==s.id;});return;}
+    if(s) Object.assign(s,v); else {v.id=uid();S.shoots.push(v);}});
+}
+function outsideForm(o){
+  form(o?t("edit"):t("os.add"),[
+    {k:"name",label:t("f.source")},
+    {k:"kind",label:t("f.type"),type:"select",options:[["income",t("os.income")],["cost",t("os.cost")]]},
+    {k:"amount",label:t("f.permonth"),type:"number",step:"0.01"},
+    {k:"note",label:t("f.note"),type:"textarea"},
+    {k:"active",label:"",type:"check",checkLabel:t("f.running"),def:true}
+  ],o,function(v){
+    if(v===null){S.outside=S.outside.filter(function(x){return x.id!==o.id;});return;}
+    if(o) Object.assign(o,v); else {v.id=uid();S.outside.push(v);}});
+}
+function lookForm(){
+  var cur=S.settings.accent||"#B2842E";
+  var swHTML='<div class="f"><label>'+t("f.accent")+'</label><div class="sw">'
+    +SWATCH.map(function(x){return '<button type="button" data-sw="'+x[0]+'" title="'+t(x[1])+'" '
+      +'style="background:'+x[0]+'" aria-pressed="'+(x[0].toLowerCase()===cur.toLowerCase())+'"></button>';}).join("")
+    +'</div><div class="hint">'+t("f.accentH")+'</div></div>';
+  var logoHTML='<div class="f"><label>'+t("f.logo")+'</label>'
+    +'<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+stampHTML()
+    +'<button type="button" class="btn sm" id="logoPick">'+t("f.logoPick")+'</button>'
+    +(S.settings.logo?'<button type="button" class="btn sm ghost danger" id="logoClear">'+t("f.logoClear")+'</button>':'')
+    +'</div><div class="hint">'+t("f.logoH")+'</div></div>';
+  form(t("sp.look"),[
+    {k:"theme",label:t("f.theme"),type:"select",options:[["light",t("th.light")],["dark",t("th.dark")],["auto",t("th.auto")]],def:S.settings.theme||"dark"},
+    {k:"accent",label:t("f.custom"),def:cur}
+  ],null,function(v){
+    S.settings.theme=v.theme;
+    if(/^#?[0-9a-fA-F]{6}$/.test((v.accent||"").trim()))
+      S.settings.accent=(v.accent.trim().charAt(0)==="#"?v.accent.trim():"#"+v.accent.trim());
+    applyTheme();
+  },swHTML+logoHTML);
+  // live preview + logo handling — bound to the modal itself so it dies with the modal
+  var host=el("modalHost").querySelector(".modal");
+  host.addEventListener("click",function(e){
+    var sw=e.target.closest("[data-sw]");
+    if(sw){
+      document.documentElement.style.setProperty("--brand",sw.dataset.sw);
+      host.querySelector('[name="accent"]').value=sw.dataset.sw;
+      Array.prototype.forEach.call(host.querySelectorAll("[data-sw]"),function(b){
+        b.setAttribute("aria-pressed",String(b===sw));});
+    }
+    if(e.target.id==="logoClear"){S.settings.logo="";save();el("modalHost").innerHTML="";render();}
+    if(e.target.id==="logoPick"){
+      var inp=document.createElement("input"); inp.type="file"; inp.accept="image/*";
+      inp.onchange=function(){
+        var fl=inp.files[0]; if(!fl) return;
+        if(fl.size>400*1024){alert(t("f.logoBig"));return;}
+        var rd=new FileReader();
+        rd.onload=function(){S.settings.logo=rd.result;save();el("modalHost").innerHTML="";render();};
+        rd.readAsDataURL(fl);
+      };
+      inp.click();
+    }
+  });
+  var th=host.querySelector('[name="theme"]');
+  if(th) th.addEventListener("change",function(){
+    var v=th.value==="auto"?((window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light"):th.value;
+    document.documentElement.setAttribute("data-theme",v);});
+}
+function advForm(a,empId){
+  form(a?t("ad.edit"):t("ad.take"),[
+    {k:"date",label:t("f.date"),type:"date",def:todayISO()},
+    {k:"employeeId",label:t("f.who"),type:"select",options:S.employees.map(function(e){return [e.id,e.name];}),def:empId||""},
+    {k:"amount",label:t("f.advamount"),type:"number",step:"0.01"},
+    {k:"note",label:t("f.advnote"),type:"textarea"}
+  ],a,function(v){
+    if(v===null){S.advances=S.advances.filter(function(x){return x.id!==a.id;});return;}
+    if(a) Object.assign(a,v); else {v.id=uid();S.advances.push(v);}});
+}
+function payForm(pay,custId){
+  form(pay?t("pm.edit"):t("pm.add"),[
+    {k:"date",label:t("f.date"),type:"date",def:todayISO()},
+    {k:"customerId",label:t("f.client"),type:"select",options:S.customers.map(function(c){return [c.id,c.name];}),def:custId||""},
+    {k:"amount",label:t("f.amountpaid"),type:"number",step:"0.01"},
+    {k:"method",label:t("f.method"),type:"select",options:[["cash",t("m.cash")],["bank",t("m.bank")],["other",t("m.other")]]},
+    {k:"note",label:t("f.note"),type:"textarea"}
+  ],pay,function(v){
+    if(v===null){S.payments=S.payments.filter(function(x){return x.id!==pay.id;});return;}
+    if(pay) Object.assign(pay,v); else {v.id=uid();S.payments.push(v);}});
+}
+function projForm(p){
+  var st=["In discussion","Agreed","Building","Free support month","Paid support","Closed"];
+  var f=[{k:"name",label:t("f.project")},
+    {k:"status",label:t("f.status"),type:"select",options:st.map(function(x){return [x,t("st."+x)];})},
+    {k:"note",label:t("f.terms"),type:"textarea"}];
+  (p?p.splits:[{who:"",pct:0}]).forEach(function(s,i){
+    f.push({k:"who"+i,label:t("f.person",{n:i+1}),def:s.who});
+    f.push({k:"pct"+i,label:t("f.theirpct"),type:"number",step:"0.5",def:s.pct});});
+  f.push({k:"whoN",label:t("f.addperson")});
+  f.push({k:"pctN",label:t("f.theirpct"),type:"number",step:"0.5"});
+  form(p?t("os.deal"):t("os.newproj"),f,p,function(v){
+    if(v===null){S.projects=S.projects.filter(function(x){return x.id!==p.id;});return;}
+    var splits=[];
+    Object.keys(v).forEach(function(k){var m=k.match(/^who(\d+|N)$/);if(!m)return;
+      if(v[k]) splits.push({who:v[k],pct:+v["pct"+m[1]]||0});});
+    var b={name:v.name,status:v.status,note:v.note,splits:splits};
+    if(p) Object.assign(p,b); else {b.id=uid();b.entries=[];S.projects.push(b);}});
+}
+function projPay(p){
+  var mine=p.splits.filter(function(s){return /إنت|you/i.test(s.who);})[0];
+  form(t("os.pay"),[
+    {k:"date",label:t("f.date"),type:"date",def:todayISO()},
+    {k:"desc",label:t("f.what4")},
+    {k:"total",label:t("f.total"),type:"number",step:"0.01"},
+    {k:"yours",label:t("f.yourcut"),type:"number",step:"0.01",hint:t("f.yourcutH",{p:mine?mine.pct:"?"})}
+  ],null,function(v){v.id=uid();p.entries.push(v);});
+}
+
+/* ═════════════ events ═════════════ */
+document.addEventListener("click",function(ev){
+  var g=ev.target.closest("[data-role]");
+  if(g){tryEnter(g.dataset.role);return;}
+  var lb=ev.target.closest("[data-lang]");
+  if(lb){LANG=lb.dataset.lang;S.settings.lang=LANG;save();if(ROLE)render();else renderGate();return;}
+  var tb=ev.target.closest("[data-tab]");
+  if(tb){if(tb.dataset.tab!==TAB){SEL=null;SELE=null;}TAB=tb.dataset.tab;render();return;}
+  var a=ev.target.closest("[data-act]"); if(!a) return;
+  var id=a.dataset.id, act=a.dataset.act;
+  var f=function(arr){return arr.filter(function(x){return x.id===id;})[0];};
+
+  if(act==="mprev"){MONTH=addMonth(MONTH,-1);render();}
+  else if(act==="mnext"){MONTH=addMonth(MONTH,1);render();}
+  else if(act==="lang"){LANG=LANG==="ar"?"en":"ar";S.settings.lang=LANG;save();render();}
+  else if(act==="logout"){ if(MODE==="cloud"){cloudManage();} else {ROLE=null;renderGate();} }
+  else if(act==="opencli"){ev.preventDefault();SEL=id;TAB="clients";render();}
+  else if(act==="closecli"){SEL=null;render();}
+  else if(act==="openemp"){ev.preventDefault();SELE=id;TAB="team";render();}
+  else if(act==="closeemp"){SELE=null;render();}
+  else if(act==="newadv") advForm(null,id);
+  else if(act==="editadv") advForm(f(S.advances));
+  else if(act==="newpay") payForm(null,id);
+  else if(act==="editpay") payForm(f(S.payments));
+  else if(act==="newclient") clientForm(null);
+  else if(act==="editclient") clientForm(f(S.customers));
+  else if(act==="newemp") empForm(null);
+  else if(act==="editemp") empForm(f(S.employees));
+  else if(act==="newwork") workForm(null);
+  else if(act==="editwork") workForm(f(S.work));
+  else if(act==="newcost") costForm(null);
+  else if(act==="editcost") costForm(f(S.costs));
+  else if(act==="newshoot") shootForm(null);
+  else if(act==="editshoot") shootForm(f(S.shoots));
+  else if(act==="dayclick") shootForm(null,a.dataset.date);
+  else if(act==="newoutside") outsideForm(null);
+  else if(act==="editoutside") outsideForm(f(S.outside));
+  else if(act==="newproj") projForm(null);
+  else if(act==="editproj") projForm(f(S.projects));
+  else if(act==="projpay") projPay(f(S.projects));
+  else if(act==="install") installGuide();
+  else if(act==="editlook") lookForm();
+  else if(act==="cloudon") cloudForm();
+  else if(act==="cloudmanage") cloudManage();
+  else if(act==="cloudoff"){clearCfg();location.reload();}
+  else if(act==="pwa") pwaGuide();
+  else if(act==="edituser"){var u=USERS.filter(function(x){return x.id===id;})[0];if(u)userForm(u);}
+  else if(act==="signout"){(async function(){if(SB)await SB.auth.signOut();ME=null;renderAuth();})();}
+  else if(act==="theme"){S.settings.theme=(S.settings.theme==="dark")?"light":"dark";save();render();}
+  else if(act==="mtoday"){MONTH=ymNow();render();}
+  else if(act==="print") window.print();
+  else if(act==="addrent"){S.settings.rentSetAside=(+S.settings.rentSetAside||0)+(+a.dataset.amt||0);save();render();}
+  else if(act==="editsplit") form(t("sp.split"),[{k:"managerPct",label:t("f.mgrpct"),type:"number",step:"0.5",def:S.settings.managerPct}],
+    null,function(v){S.settings.managerPct=+v.managerPct||0;
+      var m=S.employees.filter(function(e){return e.payType==="percent";})[0]; if(m)m.rate=S.settings.managerPct;});
+  else if(act==="editrent") form(t("sp.rentBtn"),[
+    {k:"rentMode",label:t("f.whopays"),type:"select",options:[["myshare",t("f.rentmine")],["expense",t("f.rentco")]]},
+    {k:"rentSharePct",label:t("f.pctaside"),type:"number",step:"0.5",showIf:{k:"rentMode",in:["myshare"]}},
+    {k:"rentFlat",label:t("f.offtop"),type:"number",step:"0.01",showIf:{k:"rentMode",in:["expense"]}},
+    {k:"rentAnnual",label:t("f.yearly"),type:"number",step:"0.01"},
+    {k:"rentMonthsLeft",label:t("f.monthsleft"),type:"number"},
+    {k:"rentSetAside",label:t("f.saved"),type:"number",step:"0.01"}
+  ],S.settings,function(v){Object.assign(S.settings,{rentMode:v.rentMode,rentSharePct:+v.rentSharePct||0,
+    rentFlat:+v.rentFlat||0,rentAnnual:+v.rentAnnual||0,rentMonthsLeft:+v.rentMonthsLeft||0,rentSetAside:+v.rentSetAside||0});});
+  else if(act==="editday") form(t("sp.day"),[
+    {k:"dayCapacity",label:t("f.freehours"),type:"number",step:"0.5",def:S.settings.dayCapacity,hint:t("f.freehoursH")},
+    {k:"offDay",label:t("f.dayoff"),type:"select",options:t("daysFull").map(function(d,i){return [String(i),d];}),def:String(S.settings.offDay)}
+  ],null,function(v){S.settings.dayCapacity=+v.dayCapacity||0;S.settings.offDay=+v.offDay;});
+  else if(act==="editco") form(t("sp.co"),[
+    {k:"company",label:t("f.coname"),def:S.settings.company},
+    {k:"currency",label:t("f.curr"),def:S.settings.currency}
+  ],null,function(v){S.settings.company=v.company;S.settings.currency=v.currency||"$";});
+  else if(act==="editpins") form(t("sp.pins"),[
+    {k:"owner",label:t("f.pinowner"),def:S.settings.pins.owner,hint:t("f.pinH")},
+    {k:"manager",label:t("f.pinmgr"),def:S.settings.pins.manager},
+    {k:"accountant",label:t("f.pinacc"),def:S.settings.pins.accountant}
+  ],null,function(v){S.settings.pins={owner:v.owner,manager:v.manager,accountant:v.accountant};});
+  else if(act==="export"){
+    var b=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+    var u=URL.createObjectURL(b),l=document.createElement("a");
+    l.href=u;l.download="studio-ledger-"+todayISO()+".json";l.click();URL.revokeObjectURL(u);}
+  else if(act==="import"){
+    var q=document.createElement("input");q.type="file";q.accept="application/json";
+    q.onchange=function(){var rd=new FileReader();rd.onload=function(){
+      try{S=JSON.parse(rd.result);save();render();}catch(e){alert(t("badFile"));}};rd.readAsText(q.files[0]);};
+    q.click();}
+  else if(act==="reset"){if(confirm(t("confirmReset"))){S=seed();save();render();}}
+});
+document.addEventListener("keydown",function(e){if(e.key==="Escape")el("modalHost").innerHTML="";});
+
+/* ═════════════ boot ═════════════ */
+if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
+  window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});
+}
+Store.load().then(async function(d){
+  if(d&&d.settings){S=d;
+    if(!S.settings.pins)S.settings.pins={owner:"",manager:"",accountant:""};
+    if(!S.payments)S.payments=[];
+    if(!S.advances)S.advances=[];
+    if(!S.settings.theme)S.settings.theme="dark";
+    if(!S.settings.accent)S.settings.accent="#9DA79F";
+    if(S.settings.logo==null)S.settings.logo=LOGO;
+    S.customers.forEach(function(c){
+      if(c.openingDue==null)c.openingDue=0;
+      if(!c.startMonth)c.startMonth=ymNow();
+      if(c.endMonth==null)c.endMonth="";});
+  }
+  LANG=S.settings.lang||"ar";
+  applyTheme();
+  var went=false;
+  try{ went=await bootCloud(); }catch(e){ went=false; }
+  if(!went){ MODE="local"; renderGate(); }
+});
+})();
+</script>
