@@ -253,7 +253,7 @@ en:{
  "role.accountant.d":"Enters work and costs, sees the company books only",
  gate:"Who is using the app?", gatePin:"Enter the code", gateWrong:"That code is not right.",
  unlock:"Unlock", cancel:"Cancel", save:"Save", del:"Delete", edit:"Edit", add:"Add",
- "tab.flow":"Flow","tab.clients":"Clients","tab.team":"Team","tab.work":"Work log",
+ "tab.flow":"Summary","tab.clients":"Clients","tab.team":"Team","tab.work":"Work log",
  "tab.costs":"Costs","tab.calendar":"Calendar","tab.outside":"Outside","tab.setup":"Setup",
  "k.in":"Money in","k.in.n":"{n} active clients",
  "k.out":"Money out","k.out.n":"Wages, ads and running costs",
@@ -300,18 +300,82 @@ en:{
  "th.earned":"Earned","th.adv":"Advances","th.carry":"Carried in","th.net":"Net due","th.month2":"Month","th.payout":"Paid out",
  "ad.t":"Advances","ad.take":"Record an advance","ad.edit":"Edit advance","ad.none":"No advances taken.",
  "ad.owes":"Still owes you","ad.clear":"Nothing outstanding",
- "ad.note":"An advance is money handed over early, not a new cost. It never changes the company profit or the {p}% split — it only lowers what that person is still owed. If someone takes more than they earned, the rest carries into next month.",
+ "ad.note":"An advance is an early payment, not a new cost, so it never changes profit or the split. Anything above what was earned carries into next month.",
  "emp.back":"All team","emp.open":"Open account","emp.stmt":"Month by month","emp.stmt.s":"Earned, minus advances, carried forward when it goes negative.",
  "emp.hist":"Advances taken","emp.thismonth":"Due at the end of {m}",
  "f.who":"Person","f.advamount":"Advance amount","f.advnote":"What for",
  "tm.total":"Total to pay out",
- "tab.users":"People",
+ "tab.users":"People","tab.ledger":"Ledger",
+ "part.none":"Nobody is on a profit share yet. Add a partner in Team with \"Share of the profit\".",
+ "part.warn":"The partner shares add up to {n}%, not 100%. Someone\'s figure will be wrong until you fix it.",
+ "part.rent":"Whose share pays the rent",
+ "k.mytotal":"Total reaching you","k.mytotal.n":"Company share plus everything outside it",
+ "os.bal":"Personal balances","os.bal.s":"Advances you took, and money owed either way. None of it touches the company.",
+ "os.k.advance":"Advance you took","os.k.iowe":"You owe","os.k.owedme":"Owed to you",
+ "os.balnone":"Nothing recorded.","os.owe":"You owe in total","os.due":"Owed to you in total",
+ "os.addbal":"Add a balance","f.balkind":"Type","f.balamt":"Amount","f.who2":"Who with",
+ "os.toco":"Move money into the company","os.toco.n":"Goes into the company box and clears your draw",
+ "os.toco.b":"Transfer to the company","f.tocoamt":"Amount to transfer",
+ "f.tocoH":"You have drawn {v} more than your share.","lg.repay":"Owner top-up",
+ "draw.kind":"Movement","draw.k.draw":"Draw","draw.k.repay":"Top-up",
+ "osa.t":"Advances you took elsewhere","osa.add":"Record an advance","osa.none":"None.","osa.from":"From",
+ "dbt.t":"Debts","dbt.add":"Record a debt","dbt.none":"None.","dbt.mine":"Owed to me","dbt.theirs":"I owe",
+ "dbt.party":"Who","dbt.dir":"Direction","dbt.settled":"Settled","dbt.net":"Net position",
+ "trf.t":"Money you put into the company","trf.add":"Transfer into the company","trf.none":"None.",
+ "trf.n":"Leaves your own money, lands in the company box, and pays down your draw",
+ "trf.settle":"Counts against the draw of","lg.trans":"Owner put money in",
+ "os.priv":"Only you can see this page. It never appears on the summary and no one else can reach it, not even in the database.",
+ "avail.t":"Safe to draw","avail.n":"What is left once everyone else is paid",
+ "avail.h":"Box {b} − owed to others {c}{f}",
+ "avail.f":" − unspent ad funding {v}",
+ "avail.neg":"The box is short. Collect from clients before drawing anything.",
+ "avail.over":"That is more than the box can spare. Others are still owed {v}.",
+ "draw.t":"Draw against your share","draw.n":"Not a cost — it comes off what you are owed",
+ "part.owed":"Still owed to them","part.over":"Overdrawn",
+ "part.expl":"A draw never changes the split. Profit comes from the business, not from what is left in the box — otherwise whoever draws first would shrink everyone else\'s share.",
+ "k.fromco":"Your share from the company","k.fromco.n":"After the rent is set aside",
+ "os.net":"Your outside income","os.net.n":"Nothing here touches the company or the split",
+ "os.days":"Days worked in {m}","os.of":"{d} of {n} days",
+ "os.full":"Full monthly amount","os.daily":"Pro rata by days worked",
+ "f.osmode":"How it is paid","f.osdays":"Days worked this month","f.osbase":"Days in a full month",
+ "f.osdaysH":"Only this month is affected. Each month keeps its own count.",
+ "tm.work":"Delivered in {m}","th.deliv":"Work done",
+ "wk.mine":"Me","wk.mineN":"Me ({n})",
+ "basis.t":"Profit is worked out on","basis.cash":"Money actually collected","basis.billed":"Everything invoiced",
+ "basis.h":"{v}","basis.s":"Cash basis only shares out money that has arrived. Invoiced basis shares out what clients owe, paid or not.",
+ "fund.t":"Ad funding","fund.n":"Held for the platforms, never counted as profit",
+ "fund.add":"Record ad funding","fund.left":"Unspent funding","fund.spent":"Spent on ads",
+ "f.paykind":"What is this money","k.payment":"Payment against the account","k.funding":"Ad funding",
+ "cost.payer":"Paid by","cost.box":"The company box","cost.owner":"{n} personally",
+ "reim.t":"Owed back to {n}","reim.n":"Costs paid personally, not yet reimbursed",
+ "reim.add":"Record a reimbursement","reim.none":"Nothing outstanding","reim.line":"Reimbursement",
+ "lg.work":"Delivery","lg.fund":"Ad funding","lg.reim":"Reimbursement",
+ "lg.all":"Every movement","lg.money":"Money only",
+ "sp.basis":"Basis of the split",
+ "box.brk":"What the box is made of","box.open2":"Opening balance","box.in2":"Client payments and funding",
+ "box.cost2":"Costs paid by the box","box.adv2":"Draws and advances","box.wage2":"Wages paid",
+ "box.reim2":"Reimbursements","box.trf2":"Put in by a partner","box.eq":"Balance",
+ "box.pre":"Box before wages","box.pre.n":"Adding back the {v} already paid out","box.pre.none":"No wages paid yet",
+ "box.post":"Box after wages","box.post.n":"Once the {v} still owed is paid",
+ "box.post.clear":"Everyone is paid",
+ "box.t":"Cash in hand","box.n":"After every payment, cost and wage","box.open":"Opening balance",
+ "box.in":"Received","box.out":"Paid out","box.set":"Set the opening balance",
+ "lg.t":"Every movement — {m}","lg.s":"Each payment in and out, oldest first, with the running balance. Print it for the month-end review.",
+ "lg.none":"Nothing recorded this month.","lg.run":"In the box",
+ "lg.pay":"Client payment","lg.cost":"Cost","lg.adv":"Advance","lg.out":"Wage paid",
+ "th.action":"Movement","th.inout":"In / out","th.by":"Recorded by",
+ "po.add":"Record a wage payment","po.edit":"Edit payment","po.none":"Nothing paid yet.",
+ "po.paid":"Paid so far","po.left":"Still owed","po.t":"Wages paid",
+ "f.payamount":"Amount handed over","f.paynote":"Note",
+ "hi.morning":"Good morning","hi.afternoon":"Good afternoon","hi.evening":"Good evening",
+ "hi.sub":"Here is where things stand for {m}.",
  "cl.t2":"Cloud","cl.off":"Saved on this device only","cl.on":"Synced · {n} people",
- "cl.offS":"Everything lives in this browser. If you clear it or change computer, it is gone. Connect a free database and it is backed up and shared.",
- "cl.onS":"Your numbers are on the server. Everyone sees the same figures, live.",
+ "cl.offS":"Data is stored on this device only.",
+ "cl.onS":"Data is on the server and everyone sees it live.",
  "cl.connect":"Connect a database","cl.manage":"Manage","cl.disconnect":"Disconnect",
- "cl.url":"Project URL","cl.key":"Anon public key","cl.keyH":"Supabase → Settings → API. The anon key is meant to be public; the database rules do the protecting.",
+ "cl.url":"Project URL","cl.urlH":"Take the code from your dashboard address bar and put it before .supabase.co","cl.key":"Anon public key","cl.keyH":"Publishable or anon key. Never a secret key.",
  "cl.bad":"Could not reach that project. Check the URL and key.",
+ "cl.secret":"That is a secret key. It would give anyone with the link full control of your data. Use the Publishable or anon key instead.",
  "cl.lib":"Could not load the database library. Check your internet connection.",
  "cl.upload":"Send what is on this device to the cloud",
  "cl.uploadH":"Do this once, from the computer that has your real numbers. It overwrites what is on the server.",
@@ -326,9 +390,9 @@ en:{
  "us.owner":"Owner","us.staff":"Staff","us.pending":"Waiting","us.active":"Active","us.off":"Switched off",
  "us.edit":"Permissions for {n}","us.presets":"Start from","us.p.manager":"Partner","us.p.acct":"Accountant","us.p.view":"View only","us.p.none":"Nothing",
  "us.canSee":"Can open","us.canEdit":"Can change","us.personal":"Can see your private income and rent",
- "us.personalH":"Leave this off and the database itself refuses to hand over that data.",
+ "us.personalH":"The database itself blocks access while this is off.",
  "us.on":"Account switched on","us.ownerLock":"The owner always has everything.",
- "sec.flow":"Money flow","sec.clients":"Clients","sec.team":"Team","sec.work":"Work log","sec.costs":"Costs",
+ "sec.flow":"Summary","sec.ledger":"Ledger","sec.clients":"Clients","sec.team":"Team","sec.work":"Work log","sec.costs":"Costs",
  "sec.calendar":"Calendar","sec.outside":"Outside the company","sec.users":"People","sec.setup":"Setup",
  "sec.payments":"Client payments","sec.advances":"Advances",
  "pwa.t":"Install on your phone","pwa.h":"Add it to your home screen","pwa.b":"How",
@@ -342,21 +406,21 @@ en:{
  "f.custom":"Or paste a hex code","f.logo":"Logo","f.logoH":"A square image works best. It is stored inside this app only.",
  "f.logoPick":"Choose an image","f.logoClear":"Remove logo","f.logoBig":"That image is too large. Use one under 400 KB.",
  "c.sage":"Sage","c.bone":"Bone","c.jade":"Green","c.seal":"Clay","c.brass":"Brass","c.ink":"Blue",
- "print":"Print","today":"Today",
+ "print":"Print","today":"Today","retry":"Try again",
  "cli.month":"{v} / month","cli.pv":"{v} / video","cli.inc":"{v} vid · {p} posts","cli.left":"{v} left","cli.over":"{v} over — settled","cli.exp":"{n} videos",
  "cli.ads":"incl. {v} ads","st.active":"Active","st.paused":"Paused",
  "tm.t":"Team","tm.s":"Add anyone, on any rate — monthly, per video, or per task.","tm.add":"Add person","tm.edit":"Edit person",
  "p.percent":"% of profit","p.monthly":"Monthly","p.per_video":"Per video","p.per_task":"Per task",
  "p.percentL":"Share of the profit","p.monthlyL":"Fixed monthly","p.per_videoL":"Per video","p.per_taskL":"Per task",
  "st.on":"Active","st.off":"Off the books",
- "tm.note":"The manager is the only one on a percentage. He is paid {p}% of the profit after every company cost is covered — that replaces a salary, and it is why the rent stays on the owner's side.",
+ "tm.note":"Partners on a percentage share the profit once company costs are covered, instead of taking a salary. Their percentages should total 100%.",
  "wk.t":"Work log — {m}","wk.s":"Every delivery logged pays an editor and bills a client at the same time.",
  "wk.add":"Log a delivery","wk.edit":"Edit delivery","wk.none":"Nothing logged for {m} yet.","wk.inpack":"in package",
  "d.video":"Video","d.post":"Post","d.design":"Design","d.task":"Task",
  "cs.t":"Running costs — {m}","cs.s":"These come off before the profit is split, so the manager carries his share of them.",
  "cs.add":"Add cost","cs.edit":"Edit cost","cs.none":"Nothing recorded for this month.","cs.tot":"Total",
- "cs.note":"Rent is not in this list right now. The year was paid up front before the manager joined, so it comes out of the owner's share instead.",
- "c.Transport":"Transport","c.Phone":"Phone","c.Internet":"Internet","c.Equipment":"Equipment","c.Software":"Software","c.Rent":"Rent","c.Other":"Other",
+ "cs.note":"Rent is not listed here; it comes out of the owner's share.",
+ "c.Transport":"Transport","c.Ads":"Ads","c.Phone":"Phone","c.Internet":"Internet","c.Equipment":"Equipment","c.Software":"Software","c.Rent":"Rent","c.Other":"Other",
  "cal.t":"Shoot calendar","cal.s":"About {h} free hours a day after the retainer job. Tap a day to book a shoot.",
  "cal.add":"Book a shoot","cal.edit":"Edit shoot","cal.booked":"Booked this month","cal.none":"Nothing booked. Tap any day above to add a shoot.","cal.off":"off",
  "os.t":"Outside the company","os.s":"The owner's own money. None of it is touched by the split.","os.add":"Add income",
@@ -369,14 +433,14 @@ en:{
  "sp.rentBS":"Rent is a company cost now — both partners carry it in proportion. Use this once you move to the new office.","sp.rentBtn":"Change how rent works",
  "sp.day":"Your day","sp.dayH":"{h} free hours · {d} off","sp.dayS":"The calendar warns you when a day is booked past this.","sp.change":"Change",
  "sp.co":"Company","sp.coS":"Name and currency shown throughout the app.",
- "sp.pins":"Access codes","sp.pinsH":"{n} of 3 roles locked","sp.pinsS":"A code stops someone opening the wrong view on a shared computer. It is a lock on the door, not a safe — anyone with the file can still read it.","sp.pinsB":"Set codes",
+ "sp.pins":"Access codes","sp.pinsH":"{n} of 3 roles locked","sp.pinsS":"A simple lock for shared computers.","sp.pinsB":"Set codes",
  "sp.data":"Your data","sp.dataH":"Everything is saved on this device","sp.dataS":"Export a backup to keep it safe or to hand a copy to your partner.",
  "sp.exp":"Export backup","sp.imp":"Import backup","sp.reset":"Start over",
  "sp.inst":"Install it","sp.instH":"Run it like a real program","sp.instB":"Show me how",
  "ins.t":"Turn this into a Windows app","ins.w":"As a desktop app on Windows","ins.h":"Put it online for free",
  "ins.w1":"Save this file somewhere permanent, for example C:\\StudioLedger\\index.html","ins.w2":"Right-click the desktop → New → Shortcut","ins.w3":"Paste this as the location, then finish:","ins.w4":"Open the shortcut. It runs in its own window with no browser bars — it looks and behaves like a normal program. Right-click it → Properties → Change Icon to give it your own logo.",
  "ins.h1":"Go to app.netlify.com/drop","ins.h2":"Rename this file to index.html and drag it onto the page","ins.h3":"You get a free web address in about ten seconds. Anyone with the link can open it.",
- "ins.warn":"Important: the numbers live inside each browser, not on the internet. If you put it online, you and your partner each get your own separate copy of the data. Use Export and Import to pass a copy across. For both of you to see the same live numbers, the app needs a shared database — ask me and I will add one.",
+ "ins.warn":"Data is on the server and shared by everyone.",
  "f.name":"Name","f.cliname":"Client name","f.howpay":"How they pay","f.fee":"Monthly fee","f.vids":"Videos included","f.posts":"Posts included",
  "f.ads":"Ad money inside the fee","f.adsH":"Money that passes straight to the ad platform, not profit.",
  "f.rate":"Rate per video","f.exp":"Videos expected each month","f.credit":"Amount paid up front","f.note":"Note","f.activecli":"Active client",
@@ -402,159 +466,219 @@ en:{
  months:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
 },
 ar:{
- dir:"rtl", tagline:"الداخل · الخارج · ومين بياخد شو",
- prev:"الشهر السابق", next:"الشهر التالي", switchRole:"تبديل المستخدم",
+ dir:"rtl", tagline:"الوارد · الصادر · وحصة كل شريك",
+ prev:"الشهر السابق", next:"الشهر التالي", switchRole:"الحساب",
  "role.owner":"صاحب الشركة", "role.manager":"المدير", "role.accountant":"المحاسب",
- "role.owner.d":"كل شي، بما فيه دخلك الخاص",
- "role.manager.d":"حسابات الشركة وحصته هو — بدون شغلك الخاص",
- "role.accountant.d":"بيسجّل الشغل والمصاريف، وبيشوف حسابات الشركة بس",
- gate:"مين عم يستخدم البرنامج؟", gatePin:"اكتب الرمز", gateWrong:"الرمز غير صحيح.",
+ "role.owner.d":"صلاحية كاملة", "role.manager.d":"حسابات الشركة وحصته", "role.accountant.d":"تسجيل الأعمال والمصروفات",
+ gate:"من يستخدم البرنامج؟", gatePin:"أدخل الرمز", gateWrong:"الرمز غير صحيح.",
  unlock:"دخول", cancel:"إلغاء", save:"حفظ", del:"حذف", edit:"تعديل", add:"إضافة",
- "tab.flow":"الحركة","tab.clients":"الزبائن","tab.team":"الفريق","tab.work":"سجل الشغل",
- "tab.costs":"المصاريف","tab.calendar":"التقويم","tab.outside":"خارج الشركة","tab.setup":"الإعدادات",
- "k.in":"الداخل","k.in.n":"{n} زبائن فعّالين",
- "k.out":"الخارج","k.out.n":"أجور وإعلانات ومصاريف تشغيل",
- "k.net":"الربح القابل للتقسيم","k.net.n":"قبل ما تطلع الـ{p}%","k.net.none":"ما في ربح للتقسيم هالشهر",
- "k.pocket":"اللي بيوصل جيبتك","k.pocket.n":"بعد الإيجار، مع الدخل الخارجي",
- "fall.t":"وين بيروح المصاري","fall.s":"كل عمود مقاس على الـ{v} اللي دخلت.",
- "s.in":"دخل","s.in.d":"من الزبائن",
+ "tab.flow":"الملخّص","tab.clients":"العملاء","tab.team":"الفريق","tab.work":"سجل الأعمال",
+ "tab.costs":"المصروفات","tab.calendar":"التقويم","tab.outside":"خارج الشركة","tab.setup":"الإعدادات",
+ "tab.users":"المستخدمون","tab.ledger":"السجل",
+ "part.none":"لا يوجد شركاء بنسب بعد. أضف شريكاً من تبويب الفريق واختر «حصة من الربح».",
+ "part.warn":"مجموع نسب الشركاء {n}% وليس 100%. الأرقام ستبقى خاطئة حتى تُصحَّح.",
+ "part.rent":"من يتحمّل الإيجار من حصته",
+ "k.mytotal":"إجمالي ما يصلك","k.mytotal.n":"حصة الشركة مع كل ما خارجها",
+ "os.bal":"أرصدة وديون شخصية","os.bal.s":"سلف أخذتها وديون لك أو عليك. لا علاقة لأيٍّ منها بالشركة.",
+ "os.k.advance":"سلفة أخذتها","os.k.iowe":"عليك دين","os.k.owedme":"لك دين",
+ "os.balnone":"لا يوجد.","os.owe":"إجمالي ما عليك","os.due":"إجمالي ما لك",
+ "os.addbal":"إضافة رصيد","f.balkind":"النوع","f.balamt":"المبلغ","f.who2":"الجهة",
+ "os.toco":"تحويل إلى الشركة","os.toco.n":"يدخل صندوق الشركة ويُسدّد سحبك",
+ "os.toco.b":"تحويل إلى الشركة","f.tocoamt":"المبلغ المحوَّل",
+ "f.tocoH":"سحبت {v} زيادة عن حصتك.","lg.repay":"إيداع من صاحب الشركة",
+ "draw.kind":"الحركة","draw.k.draw":"سحب","draw.k.repay":"إيداع",
+ "osa.t":"سلف قبضتها من جهات خارجية","osa.add":"تسجيل سلفة","osa.none":"لا يوجد.","osa.from":"من",
+ "dbt.t":"الديون","dbt.add":"تسجيل دين","dbt.none":"لا يوجد.","dbt.mine":"لي","dbt.theirs":"عليّ",
+ "dbt.party":"الطرف","dbt.dir":"الاتجاه","dbt.settled":"مُسدَّد","dbt.net":"الصافي",
+ "trf.t":"تحويلات إلى الشركة","trf.add":"تحويل إلى الشركة","trf.none":"لا يوجد.",
+ "trf.n":"يخرج من مالك الخاص، ويدخل صندوق الشركة، ويسدّد سحبك",
+ "trf.settle":"يُخصم من سحب","lg.trans":"تحويل من صاحب الشركة",
+ "os.priv":"هذه الصفحة لك وحدك. لا تظهر في الملخّص، ولا يصل إليها أحد غيرك حتى من قاعدة البيانات.",
+ "avail.t":"المتاح للسحب","avail.n":"ما يتبقّى بعد سداد مستحقات الآخرين",
+ "avail.h":"الصندوق {b} − مستحقات الآخرين {c}{f}",
+ "avail.f":" − تمويل إعلاني غير مصروف {v}",
+ "avail.neg":"الصندوق لا يكفي. حصّل من العملاء قبل أي سحب.",
+ "avail.over":"المبلغ يتجاوز ما يحتمله الصندوق. مستحقات الآخرين {v}.",
+ "draw.t":"سحب على الحساب","draw.n":"ليس مصروفاً — يُخصم مما هو مستحق لك",
+ "part.owed":"باقٍ له","part.over":"سحب زيادة",
+ "part.expl":"السحب لا يغيّر التقسيم أبداً. الربح يُحتسب من نشاط الشركة لا من رصيد الصندوق، وإلا لَنَقَص نصيب الآخرين كلما سحب أحدهم مبكراً.",
+ "k.fromco":"صافي حصتك من الشركة","k.fromco.n":"بعد تجنيب الإيجار",
+ "os.net":"صافي دخلك الخارجي","os.net.n":"لا علاقة له بالشركة ولا بالتقسيم",
+ "os.days":"أيام العمل في {m}","os.of":"{d} من {n} يوماً",
+ "os.full":"المبلغ الشهري كاملاً","os.daily":"بحسب أيام العمل",
+ "f.osmode":"طريقة الاحتساب","f.osdays":"أيام العمل هذا الشهر","f.osbase":"أيام الشهر الكامل",
+ "f.osdaysH":"يخصّ هذا الشهر وحده. لكل شهر عدد أيامه.",
+ "tm.work":"المنجز في {m}","th.deliv":"الأعمال",
+ "wk.mine":"أنا","wk.mineN":"أنا ({n})",
+ "basis.t":"الربح يُحتسب على","basis.cash":"المقبوض فعلاً","basis.billed":"المفوتر كاملاً",
+ "basis.h":"{v}","basis.s":"على المقبوض: لا يُقسَّم إلا ما دخل الصندوق. على المفوتر: يُقسَّم كل ما استحقّ على العملاء ولو لم يُدفع.",
+ "fund.t":"التمويل الإعلاني","fund.n":"محجوز للمنصّات ولا يُحتسب ربحاً",
+ "fund.add":"تسجيل تمويل إعلاني","fund.left":"تمويل غير مصروف","fund.spent":"المصروف على الإعلانات",
+ "f.paykind":"طبيعة المبلغ","k.payment":"دفعة على الحساب","k.funding":"تمويل إعلاني",
+ "cost.payer":"دفعه","cost.box":"صندوق الشركة","cost.owner":"{n} من جيبه",
+ "reim.t":"مستحق الاسترداد لـ{n}","reim.n":"مصروفات دفعها من جيبه ولم تُسترد",
+ "reim.add":"تسجيل استرداد","reim.none":"لا يوجد","reim.line":"استرداد مصروفات",
+ "lg.work":"تسليم","lg.fund":"تمويل إعلاني","lg.reim":"استرداد مصروفات",
+ "lg.all":"كل الحركات","lg.money":"الحركات المالية فقط",
+ "sp.basis":"أساس التقسيم",
+ "box.brk":"مِمّ يتكوّن الصندوق","box.open2":"الرصيد الافتتاحي","box.in2":"دفعات العملاء والتمويل",
+ "box.cost2":"مصروفات دفعها الصندوق","box.adv2":"السلف والسحوبات","box.wage2":"أجور مدفوعة",
+ "box.reim2":"استردادات","box.trf2":"تحويلات من الشركاء","box.eq":"الرصيد",
+ "box.pre":"الصندوق قبل الأجور","box.pre.n":"بإضافة {v} المدفوعة فعلاً","box.pre.none":"لم يُدفع أي أجر بعد",
+ "box.post":"الصندوق بعد الأجور","box.post.n":"بعد سداد {v} المتبقية",
+ "box.post.clear":"لا مستحقات متبقية",
+ "box.t":"الصندوق","box.n":"بعد كل دفعة ومصروف وأجر","box.open":"الرصيد الافتتاحي",
+ "box.in":"المقبوض","box.out":"المدفوع","box.set":"تحديد الرصيد الافتتاحي",
+ "lg.t":"كل الحركات — {m}","lg.s":"كل مقبوض ومدفوع بالترتيب مع رصيد الصندوق. اطبعه لمراجعة نهاية الشهر.",
+ "lg.none":"لا توجد حركات هذا الشهر.","lg.run":"رصيد الصندوق",
+ "lg.pay":"دفعة عميل","lg.cost":"مصروف","lg.adv":"سلفة","lg.out":"أجر مدفوع",
+ "th.action":"الحركة","th.inout":"وارد / صادر","th.by":"المنفّذ",
+ "po.add":"تسجيل دفع أجر","po.edit":"تعديل الدفعة","po.none":"لم يُدفع شيء بعد.",
+ "po.paid":"المدفوع","po.left":"المتبقي له","po.t":"الأجور المدفوعة",
+ "f.payamount":"المبلغ المدفوع","f.paynote":"ملاحظة",
+ "hi.morning":"صباح الخير","hi.afternoon":"طاب يومك","hi.evening":"مساء الخير",
+ "hi.sub":"هذا وضع {m} حتى الآن.",
+ "k.in":"الوارد","k.in.n":"{n} عملاء نشطون",
+ "k.out":"الصادر","k.out.n":"أجور وإعلانات ومصروفات تشغيل",
+ "k.net":"الربح القابل للتقسيم","k.net.n":"قبل خصم {p}%","k.net.none":"لا يوجد ربح هذا الشهر",
+ "k.pocket":"صافي ما تقبضه","k.pocket.n":"بعد الإيجار، مع الدخل الخارجي",
+ "k.due":"مستحق على العملاء","k.due.n":"{n} عملاء عليهم رصيد",
+ "fall.t":"مسار الأموال","fall.s":"كل عمود مقاس على {v} الواردة.",
+ "s.in":"الوارد","s.in.d":"من العملاء",
  "s.wage":"الأجور","s.wage.d":"المونتاج والتصميم",
- "s.ads":"إعلانات مدفوعة","s.ads.d":"بتروح مباشرة للمنصّات",
- "s.run":"مصاريف تشغيل","s.run.d":"مواصلات، اتصالات، إنترنت","s.run.dr":"مواصلات، اتصالات، إنترنت، إيجار",
- "s.profit":"الربح","s.profit.d":"اللي باقي للتقسيم",
- "fork.mgr":"المدير · {p}%","fork.mgr.n":"هاد كل دخله. بدون راتب، وبدون مشاركة بالإيجار.",
- "fork.you":"صاحب الشركة · {p}%","fork.you.n":"حصة صاحب الشركة من الربح.",
- "fork.setaside":"مجنّب للإيجار ({p}% من الحصة)","fork.keep":"الصافي","fork.renttop":"الإيجار انحسم من الأول",
- "rent.t":"صندوق الإيجار","rent.h":"مجموع {a} من أصل {b}","rent.s":"باقي {n} شهور على الدفعة الجاية.",
- "rent.add":"ضيف حصة هالشهر {v}","rent.adj":"تعديل",
- "out.t":"خارج الشركة","out.s":"منفصل تماماً عن حسابات الشركة — الـ{p}% تبع المدير ما بتوصل لهون أبداً.",
+ "s.ads":"إعلانات مدفوعة","s.ads.d":"تُحوَّل إلى المنصّات",
+ "s.run":"مصروفات التشغيل","s.run.d":"مواصلات واتصالات وإنترنت","s.run.dr":"مواصلات واتصالات وإنترنت وإيجار",
+ "s.profit":"الربح","s.profit.d":"المتبقّي للتقسيم",
+ "fork.mgr":"المدير · {p}%","fork.mgr.n":"كامل دخله، دون راتب أو مشاركة في الإيجار.",
+ "fork.you":"صاحب الشركة · {p}%","fork.you.n":"حصته من الربح.",
+ "fork.setaside":"مُجنَّب للإيجار ({p}%)","fork.keep":"الصافي","fork.renttop":"الإيجار مخصوم مسبقاً",
+ "rent.t":"صندوق الإيجار","rent.h":"{a} من {b}","rent.s":"يتبقّى {n} أشهر على الدفعة القادمة.",
+ "rent.add":"إضافة حصة الشهر {v}","rent.adj":"تعديل",
+ "out.t":"خارج الشركة","out.s":"منفصل تماماً عن حسابات الشركة.",
  "out.proj":"دفعات المشاريع",
- "cl.t":"الزبائن واحد واحد","cl.s":"سجّل التسليمات بسجل الشغل والصفوف بتتعبّى لحالها.",
- "th.client":"الزبون","th.pay":"طريقة الدفع","th.videos":"فيديوهات","th.posts":"منشورات","th.month":"هالشهر",
- "th.billing":"الفوترة","th.rate":"السعر / الاشتراك","th.expected":"المتوقّع","th.status":"الحالة",
- "th.name":"الاسم","th.role":"الدور","th.paid":"الدفع","th.person":"الشخص","th.basis":"الأساس","th.wage":"المستحق",
- "th.date":"التاريخ","th.what":"الشغل","th.qty":"العدد","th.by":"نفّذه","th.epay":"أجر المونتير","th.billed":"المفوتر",
- "th.cost":"المصروف","th.cat":"التصنيف","th.from":"من","th.amt":"المبلغ","th.time":"الوقت","th.shoot":"التصوير","th.hours":"ساعات",
- "th.src":"المصدر","th.note":"ملاحظة","th.type":"النوع","th.perm":"شهرياً","th.who":"الشخص","th.share":"الحصة","th.on":"على {v}",
- "pay.t":"المستحق للفريق","pay.s":"بيتدفع آخر {m}.","pay.mgr":"المدير","pay.mgrb":"{p}% من ربح {v}","pay.tot":"مجموع الأجور الطالعة",
- "cli.t":"الزبائن","cli.s":"غيّر الأسماء لأسماء زبائنك الحقيقية وقت ما بدك.","cli.add":"إضافة زبون","cli.edit":"تعديل زبون","cli.none":"ما في زبائن بعد.",
+ "cl.t":"تفصيل العملاء","cl.s":"تُحتسب تلقائياً من سجل الأعمال.",
+ "th.client":"العميل","th.pay":"طريقة الدفع","th.videos":"فيديو","th.posts":"منشورات","th.month":"هذا الشهر",
+ "th.billing":"الفوترة","th.rate":"السعر","th.expected":"المتوقّع","th.status":"الحالة",
+ "th.name":"الاسم","th.role":"الدور","th.paid":"المدفوع","th.person":"الاسم","th.basis":"الأساس","th.wage":"المستحق",
+ "th.date":"التاريخ","th.what":"البند","th.qty":"العدد","th.by":"المنفّذ","th.epay":"أجر المونتير","th.billed":"المفوتر",
+ "th.cost":"البند","th.cat":"التصنيف","th.from":"من","th.amt":"المبلغ","th.time":"الوقت","th.shoot":"التصوير","th.hours":"ساعات",
+ "th.src":"المصدر","th.note":"ملاحظة","th.type":"النوع","th.perm":"شهرياً","th.who":"الشريك","th.share":"الحصة","th.on":"على {v}",
+ "th.billed2":"المفوتر","th.balance":"الرصيد","th.desc":"البيان","th.charge":"مستحق","th.run":"الرصيد الجاري",
+ "th.earned":"المستحق","th.adv":"سُلف","th.carry":"مُرحَّل","th.net":"الصافي","th.month2":"الشهر","th.payout":"المصروف",
+ "pay.t":"مستحقات الفريق","pay.s":"نهاية {m}.","pay.mgr":"المدير","pay.mgrb":"{p}% من ربح {v}","pay.tot":"الإجمالي",
+ "cli.t":"العملاء","cli.s":"أضف عملاءك وحدّد طريقة الفوترة.","cli.add":"إضافة عميل","cli.edit":"تعديل عميل","cli.none":"لا يوجد عملاء بعد.",
  "b.package":"باقة","b.per_video":"بالفيديو","b.prepaid":"رصيد مدفوع",
- "b.packageL":"باقة شهرية ثابتة","b.per_videoL":"سعر لكل فيديو","b.prepaidL":"دفع مقدماً وبينخصم",
- "th.billed2":"المفوتر","th.paid":"المدفوع","th.balance":"الباقي","th.desc":"البيان","th.charge":"مطلوب","th.run":"الرصيد",
- "k.due":"مستحق على الزبائن","k.due.n":"{n} زبائن عليهم رصيد",
- "cd.open":"فتح الحساب","cd.back":"كل الزبائن","cd.stmt":"كشف الحساب","cd.stmt.s":"كل مطلوب وكل دفعة، من الأقدم للأحدث.",
- "cd.delivered":"شو قدّمنالو","cd.month":"هالشهر","cd.all":"من {m}",
- "cd.owes":"عليه","cd.credit":"إله رصيد","cd.settled":"الحساب مسكّر","cd.nothing":"ما في حركات بعد.",
- "cd.pay":"تسجيل دفعة","cd.rename":"تغيير الاسم","cd.promised":"المتفق عليه شهرياً","cd.none":"—",
- "pm.add":"تسجيل دفعة","pm.edit":"تعديل الدفعة","pm.none":"ما في دفعات بعد.",
- "line.open":"رصيد سابق","line.adv":"مدفوع مقدماً","line.sub":"اشتراك {m}","line.pay":"دفعة",
- "f.amountpaid":"المبلغ المقبوض","f.method":"طريقة الدفع","m.cash":"كاش","m.bank":"تحويل بنكي","m.other":"غير ذلك",
- "f.start":"زبون من تاريخ","f.startH":"اشتراك الباقة بينحسب من هالشهر وطالع.",
- "f.end":"وقف بعد شهر","f.endH":"اتركه فاضي إذا لسا زبون.",
- "f.opening":"مبلغ قديم عليه","f.openingH":"أي رصيد قديم كان عليه قبل ما تبلّش تسجّل.",
- "f.advance":"مدفوع مقدماً","f.advanceH":"مصاري دفعها سلف قبل أي شغل.",
- "cli.total":"إجمالي المستحق",
- "th.earned":"المستحق","th.adv":"سلف","th.carry":"مرحّل عليه","th.net":"الصافي","th.month2":"الشهر","th.payout":"المدفوع له",
- "ad.t":"السلف","ad.take":"تسجيل سلفة","ad.edit":"تعديل السلفة","ad.none":"ما أخد سلف.",
- "ad.owes":"باقي عليه","ad.clear":"ما في شي عليه",
- "ad.note":"السلفة مصاري بتنعطى بدري، مش مصروف جديد. أبداً ما بتغيّر ربح الشركة ولا الـ{p}% — بس بتنقّص اللي باقي إلو. وإذا حدا أخد أكتر من مستحقه، الباقي بينرحّل عالشهر الجاي.",
- "emp.back":"كل الفريق","emp.open":"فتح الحساب","emp.stmt":"شهر شهر","emp.stmt.s":"المستحق، ناقص السلف، وبينرحّل لما يصير بالسالب.",
- "emp.hist":"السلف المأخوذة","emp.thismonth":"المستحق آخر {m}",
- "f.who":"الشخص","f.advamount":"مبلغ السلفة","f.advnote":"مقابل شو",
- "tm.total":"إجمالي المطلوب دفعه",
- "tab.users":"المستخدمين",
- "cl.t2":"السحابة","cl.off":"محفوظ على هالجهاز بس","cl.on":"متصل · {n} أشخاص",
- "cl.offS":"كل شي محفوظ جوّا هالمتصفح. إذا مسحته أو غيّرت الجهاز بيروح. اربط قاعدة بيانات مجانية وبيصير محفوظ ومشترك.",
- "cl.onS":"أرقامك على السيرفر. الكل بيشوف نفس الأرقام لحظة بلحظة.",
- "cl.connect":"اربط قاعدة بيانات","cl.manage":"إدارة","cl.disconnect":"فصل",
- "cl.url":"رابط المشروع","cl.key":"المفتاح العام anon","cl.keyH":"من Supabase ← Settings ← API. المفتاح anon مصمّم ليكون علني، الحماية الحقيقية بقواعد قاعدة البيانات.",
- "cl.bad":"ما قدرت أوصل للمشروع. تأكد من الرابط والمفتاح.",
- "cl.lib":"ما قدرت أحمّل مكتبة قاعدة البيانات. تأكد من الإنترنت.",
- "cl.upload":"ارفع بيانات هالجهاز عالسحابة",
- "cl.uploadH":"اعملها مرة وحدة، من الجهاز اللي فيه أرقامك الحقيقية. بتستبدل اللي على السيرفر.",
- "cl.pulling":"عم يحمّل…","cl.syncing":"عم يحفظ…","cl.synced":"محفوظ","cl.err":"ما انحفظ",
- "au.in":"تسجيل دخول","au.up":"إنشاء حساب","au.email":"الإيميل","au.pass":"كلمة السر","au.name":"اسمك",
- "au.toUp":"ما عندك حساب؟ اعمل واحد","au.toIn":"عندك حساب؟ سجّل دخول",
- "au.out":"تسجيل خروج","au.wait":"بانتظار الموافقة","au.waitS":"حسابك انعمل. لازم {who} يفعّله ويحدد شو بتقدر تشوف.",
- "au.first":"أول حساب بينعمل بيصير صاحب الشركة.","au.weak":"كلمة السر لازم 6 أحرف على الأقل.",
- "au.check":"افحص إيميلك لتأكيد العنوان، وبعدين سجّل دخول.",
- "us.t":"المستخدمين","us.s":"فعّل أي حدا وحدّد بالظبط شو بيقدر يوصلّو.",
- "us.none":"ما حدا تاني عمل حساب بعد. ابعتلهم الرابط وبيظهروا هون.",
- "us.owner":"صاحب الشركة","us.staff":"موظف","us.pending":"بالانتظار","us.active":"مفعّل","us.off":"موقوف",
- "us.edit":"صلاحيات {n}","us.presets":"ابدأ من","us.p.manager":"الشريك","us.p.acct":"المحاسب","us.p.view":"عرض فقط","us.p.none":"لا شي",
- "us.canSee":"بيقدر يفتح","us.canEdit":"بيقدر يعدّل","us.personal":"بيشوف دخلك الخاص والإيجار",
- "us.personalH":"اتركها مطفية وقاعدة البيانات نفسها بترفض تعطيه هالبيانات.",
- "us.on":"الحساب مفعّل","us.ownerLock":"صاحب الشركة عنده كل شي دايماً.",
- "sec.flow":"حركة المصاري","sec.clients":"الزبائن","sec.team":"الفريق","sec.work":"سجل الشغل","sec.costs":"المصاريف",
- "sec.calendar":"التقويم","sec.outside":"خارج الشركة","sec.users":"المستخدمين","sec.setup":"الإعدادات",
- "sec.payments":"دفعات الزبائن","sec.advances":"السلف",
- "pwa.t":"نزّله على موبايلك","pwa.h":"ضيفه على الشاشة الرئيسية","pwa.b":"كيف",
- "pwa.and":"أندرويد","pwa.ios":"آيفون",
- "pwa.now":"نزّله هلق",
- "pwa.a1":"افتح الرابط بمتصفح كروم","pwa.a2":"اضغط النقاط الثلاث فوق عاليمين","pwa.a3":"اضغط تثبيت التطبيق أو إضافة للشاشة الرئيسية",
- "pwa.i1":"افتح الرابط بمتصفح سفاري (لازم سفاري)","pwa.i2":"اضغط زر المشاركة تحت","pwa.i3":"انزل تحت واضغط إضافة إلى الشاشة الرئيسية",
- "pwa.note":"بيفتح ملء الشاشة بشعارك، متل أي تطبيق عادي بالظبط.",
- "sp.look":"الشكل والألوان","sp.lookH":"{t} · {c}","sp.lookB":"تعديل",
- "th.light":"فاتح","th.dark":"غامق","th.auto":"حسب الجهاز",
- "f.theme":"الخلفية","f.accent":"لون هويتك","f.accentH":"الأزرار والتمييز ورقم الربح بياخدوا هاللون.",
- "f.custom":"أو الصق كود اللون","f.logo":"الشعار","f.logoH":"يفضّل صورة مربّعة. بتنحفظ جوّا البرنامج بس.",
- "f.logoPick":"اختار صورة","f.logoClear":"شيل الشعار","f.logoBig":"الصورة كبيرة. استعمل وحدة أقل من 400 كيلوبايت.",
- "c.sage":"مريمي","c.bone":"عظمي","c.jade":"أخضر","c.seal":"طيني","c.brass":"ذهبي","c.ink":"أزرق",
- "print":"طباعة","today":"اليوم",
- "cli.month":"{v} / شهر","cli.pv":"{v} / فيديو","cli.inc":"{v} فيديو · {p} منشور","cli.left":"باقي {v}","cli.over":"تجاوز {v} — مسدّد","cli.exp":"{n} فيديو",
- "cli.ads":"منها {v} إعلانات","st.active":"فعّال","st.paused":"موقوف",
- "tm.t":"الفريق","tm.s":"ضيف أي حدا بأي طريقة دفع — شهري، بالفيديو، أو بالمهمة.","tm.add":"إضافة شخص","tm.edit":"تعديل شخص",
+ "b.packageL":"باقة شهرية ثابتة","b.per_videoL":"سعر لكل فيديو","b.prepaidL":"مدفوع مقدماً ويُخصم",
+ "cli.month":"{v} / شهر","cli.pv":"{v} / فيديو","cli.inc":"{v} فيديو · {p} منشور","cli.left":"متبقٍّ {v}","cli.over":"تجاوز {v}","cli.exp":"{n} فيديو",
+ "cli.ads":"منها {v} إعلانات","st.active":"نشط","st.paused":"موقوف","cli.total":"إجمالي المستحق",
+ "cd.open":"كشف الحساب","cd.back":"العملاء","cd.stmt":"كشف الحساب","cd.stmt.s":"المستحقات والدفعات بالترتيب.",
+ "cd.delivered":"المُسلَّم","cd.month":"هذا الشهر","cd.all":"منذ {m}",
+ "cd.owes":"مستحق عليه","cd.credit":"له رصيد","cd.settled":"الحساب مُسوّى","cd.nothing":"لا توجد حركات.",
+ "cd.pay":"تسجيل دفعة","cd.rename":"تعديل","cd.promised":"المتفق عليه شهرياً","cd.none":"—",
+ "pm.add":"تسجيل دفعة","pm.edit":"تعديل الدفعة","pm.none":"لا توجد دفعات.",
+ "line.open":"رصيد سابق","line.adv":"دفعة مقدمة","line.sub":"اشتراك {m}","line.pay":"دفعة",
+ "tm.t":"الفريق","tm.s":"أضف أي شخص بأي طريقة دفع.","tm.add":"إضافة شخص","tm.edit":"تعديل",
  "p.percent":"% من الربح","p.monthly":"شهري","p.per_video":"بالفيديو","p.per_task":"بالمهمة",
  "p.percentL":"حصة من الربح","p.monthlyL":"مبلغ شهري ثابت","p.per_videoL":"لكل فيديو","p.per_taskL":"لكل مهمة",
- "st.on":"على الملاك","st.off":"موقوف",
- "tm.note":"المدير هو الوحيد بالنسبة المئوية. بياخد {p}% من الربح بعد ما تتغطى كل مصاريف الشركة — هاد بديل الراتب، ولهيك الإيجار بيضل على صاحب الشركة.",
- "wk.t":"سجل الشغل — {m}","wk.s":"كل تسليم بتسجّله بيدفع للمونتير وبيفوتر الزبون بنفس الوقت.",
- "wk.add":"تسجيل تسليم","wk.edit":"تعديل التسليم","wk.none":"ما في شي مسجّل لـ{m} بعد.","wk.inpack":"ضمن الباقة",
+ "st.on":"نشط","st.off":"موقوف","tm.total":"إجمالي المستحق",
+ "tm.note":"الشركاء بنسبة يتقاسمون الربح بعد تغطية مصروفات الشركة، ولا يتقاضون رواتب. ويجب أن يكون مجموع نسبهم 100%.",
+ "ad.t":"السُّلف","ad.take":"تسجيل سلفة","ad.edit":"تعديل السلفة","ad.none":"لا توجد سلف.",
+ "ad.owes":"مستحق عليه","ad.clear":"لا يوجد",
+ "ad.note":"السلفة دفعة مبكرة لا مصروف جديد، فهي لا تغيّر ربح الشركة ولا نسب التقسيم. وما يزيد عن المستحق يُرحَّل للشهر التالي.",
+ "emp.back":"الفريق","emp.open":"كشف الحساب","emp.stmt":"شهرياً","emp.stmt.s":"المستحق ناقص السُّلف، مع ترحيل الفارق.",
+ "emp.hist":"السُّلف","emp.thismonth":"مستحق نهاية {m}",
+ "wk.t":"سجل الأعمال — {m}","wk.s":"كل تسليم يُحتسب للمونتير ويُفوتر على العميل.",
+ "wk.add":"تسجيل تسليم","wk.edit":"تعديل","wk.none":"لا توجد تسليمات في {m}.","wk.inpack":"ضمن الباقة",
  "d.video":"فيديو","d.post":"منشور","d.design":"تصميم","d.task":"مهمة",
- "cs.t":"مصاريف التشغيل — {m}","cs.s":"هاي بتنحسم قبل تقسيم الربح، يعني المدير بيتحمّل حصته منها.",
- "cs.add":"إضافة مصروف","cs.edit":"تعديل مصروف","cs.none":"ما في شي مسجّل هالشهر.","cs.tot":"المجموع",
- "cs.note":"الإيجار مش موجود بهاللائحة حالياً. السنة مدفوعة سلف قبل ما يجي المدير، فبينحسم من حصة صاحب الشركة.",
- "c.Transport":"مواصلات","c.Phone":"اتصالات","c.Internet":"إنترنت","c.Equipment":"معدات","c.Software":"برامج","c.Rent":"إيجار","c.Other":"غير ذلك",
- "cal.t":"تقويم التصوير","cal.s":"عندك تقريباً {h} ساعات فاضية باليوم بعد شغل الشركة التانية. اضغط على أي يوم لحجز تصوير.",
- "cal.add":"حجز تصوير","cal.edit":"تعديل التصوير","cal.booked":"المحجوز هالشهر","cal.none":"ما في شي محجوز. اضغط أي يوم فوق.","cal.off":"عطلة",
- "os.t":"خارج الشركة","os.s":"مصاري صاحب الشركة الخاصة. ما إلها علاقة بالتقسيم أبداً.","os.add":"إضافة دخل",
- "os.income":"دخل","os.cost":"مصروف","os.got":"حصتك المقبوضة بـ{m}:","os.pay":"تسجيل دفعة","os.deal":"تعديل الاتفاق","os.newproj":"إضافة مشروع",
- "sp.t":"الإعدادات","sp.s":"القواعد اللي البرنامج كله بيحسب عليها.",
+ "cs.t":"مصروفات التشغيل — {m}","cs.s":"تُخصم قبل تقسيم الربح.",
+ "cs.add":"إضافة مصروف","cs.edit":"تعديل","cs.none":"لا توجد مصروفات.","cs.tot":"الإجمالي",
+ "cs.note":"الإيجار غير مُدرج هنا لأنه يُخصم من حصة صاحب الشركة.",
+ "c.Transport":"مواصلات","c.Ads":"إعلانات","c.Phone":"اتصالات","c.Internet":"إنترنت","c.Equipment":"معدات","c.Software":"برمجيات","c.Rent":"إيجار","c.Other":"أخرى",
+ "cal.t":"تقويم التصوير","cal.s":"{h} ساعات متاحة يومياً.",
+ "cal.add":"حجز تصوير","cal.edit":"تعديل","cal.booked":"محجوز هذا الشهر","cal.none":"لا توجد حجوزات.","cal.off":"عطلة",
+ "os.t":"خارج الشركة","os.s":"دخل خاص لا يدخل في التقسيم.","os.add":"إضافة دخل",
+ "os.income":"دخل","os.cost":"مصروف","os.got":"المقبوض في {m}:","os.pay":"تسجيل دفعة","os.deal":"تعديل الاتفاق","os.newproj":"إضافة مشروع",
+ "sp.t":"الإعدادات","sp.s":"القواعد التي تُحتسب عليها الأرقام.",
  "sp.split":"التقسيم","sp.splitH":"المدير {a}% · صاحب الشركة {b}%",
- "sp.splitS":"بينحسب على الربح، بعد دفع الأجور والإعلانات ومصاريف التشغيل. إذا الشهر ما ربّح، ما بياخد شي وصاحب الشركة بيتحمّل.","sp.splitB":"تعديل التقسيم",
- "sp.rent":"الإيجار","sp.rentA":"{p}% من حصة صاحب الشركة، بتتجنّب","sp.rentB":"{v} بالشهر من الأول",
- "sp.rentAS":"الإيجار بينحسم من الـ70% تبع صاحب الشركة بس. السنة مدفوعة سلف قبل ما يجي المدير، فما بيشارك فيه.",
- "sp.rentBS":"الإيجار صار مصروف شركة — الشريكين بيتحمّلوه بالنسبة. استعمل هاد لما تنتقل للمكتب الجديد.","sp.rentBtn":"تعديل طريقة الإيجار",
- "sp.day":"يومك","sp.dayH":"{h} ساعات فاضية · عطلة {d}","sp.dayS":"التقويم بينبّهك إذا اليوم انحجز أكتر من هيك.","sp.change":"تعديل",
- "sp.co":"الشركة","sp.coS":"الاسم والعملة اللي بيظهروا بكل البرنامج.",
- "sp.pins":"رموز الدخول","sp.pinsH":"{n} من 3 أدوار مقفلة","sp.pinsS":"الرمز بيمنع حدا يفتح شاشة مش إلو على كمبيوتر مشترك. هو قفل على الباب مش خزنة — أي حدا معه الملف بيقدر يقرأه.","sp.pinsB":"ضبط الرموز",
- "sp.data":"بياناتك","sp.dataH":"كل شي محفوظ على هالجهاز","sp.dataS":"صدّر نسخة احتياطية للأمان أو لتعطي نسخة لشريكك.",
- "sp.exp":"تصدير نسخة","sp.imp":"استيراد نسخة","sp.reset":"البدء من جديد",
- "sp.inst":"التثبيت","sp.instH":"شغّله متل أي برنامج","sp.instB":"وريني كيف",
- "ins.t":"كيف تخليه برنامج ويندوز","ins.w":"كتطبيق على سطح المكتب","ins.h":"ارفعه على الإنترنت مجاناً",
- "ins.w1":"احفظ الملف بمكان ثابت، مثلاً C:\\StudioLedger\\index.html","ins.w2":"كبسة يمين على سطح المكتب ← جديد ← اختصار","ins.w3":"الصق هالسطر كموقع الاختصار وكمّل:","ins.w4":"افتح الاختصار. رح يشتغل بنافذة لحاله بدون شريط متصفح — بيبيّن ويتصرف متل أي برنامج عادي. كبسة يمين ← خصائص ← تغيير الأيقونة لتحط شعارك.",
- "ins.h1":"افتح app.netlify.com/drop","ins.h2":"غيّر اسم الملف لـ index.html واسحبه على الصفحة","ins.h3":"بتاخد رابط مجاني بعشر ثواني. أي حدا معه الرابط بيقدر يفتحه.",
- "ins.warn":"مهم: الأرقام محفوظة جوّا كل متصفح، مش على الإنترنت. إذا رفعته أونلاين، إنت وشريكك كل واحد بيصير عنده نسخة منفصلة من البيانات. استعمل التصدير والاستيراد لتمرّر نسخة. لتشوفوا الأرقام نفسها لحظة بلحظة، البرنامج بيحتاج قاعدة بيانات مشتركة — احكيلي وبضيفها.",
- "f.name":"الاسم","f.cliname":"اسم الزبون","f.howpay":"طريقة الدفع","f.fee":"الاشتراك الشهري","f.vids":"عدد الفيديوهات","f.posts":"عدد المنشورات",
- "f.ads":"مصاري الإعلانات ضمن الاشتراك","f.adsH":"مبلغ بيروح مباشرة لمنصة الإعلانات، مش ربح.",
- "f.rate":"سعر الفيديو","f.exp":"عدد الفيديوهات المتوقّعة بالشهر","f.credit":"المبلغ المدفوع مقدماً","f.note":"ملاحظة","f.activecli":"زبون فعّال",
- "f.role":"الدور","f.roleH":"مونتير، مصمم، مدير…","f.howpaid":"طريقة دفعه","f.rate2":"السعر","f.rateH":"إذا حصة من الربح، حط النسبة هون.","f.onbooks":"على الملاك حالياً",
- "f.date":"التاريخ","f.client":"الزبون","f.delivered":"شو انسلّم","f.howmany":"العدد","f.whodid":"مين نفّذه","f.nobody":"محدا / أنا",
- "f.override":"تعديل أجره لهالمرة","f.overrideH":"اتركه فاضي ليستعمل سعره العادي.",
- "f.whatis":"شو هو","f.cat":"التصنيف","f.amount":"المبلغ","f.repeats":"بيتكرر كل شهر من هالتاريخ",
- "f.time":"الوقت","f.shooting":"شو رح تصوّر","f.hours":"كم ساعة بدها","f.notes":"ملاحظات",
- "f.source":"المصدر","f.type":"النوع","f.permonth":"شهرياً","f.running":"لسا شغّال",
- "f.project":"المشروع","f.status":"الحالة","f.terms":"الشروط","f.person":"الشخص {n}","f.theirpct":"نسبته %","f.addperson":"إضافة شخص",
- "f.what4":"مقابل شو","f.total":"المبلغ الكلي المدفوع","f.yourcut":"حصتك","f.yourcutH":"حصتك {p}% من الكلي.",
- "f.mgrpct":"نسبة المدير %","f.whopays":"مين بيدفع الإيجار","f.rentmine":"صاحب الشركة بس — من حصته","f.rentco":"مصروف شركة — من الأول قبل التقسيم",
- "f.pctaside":"% من الحصة بتتجنّب","f.offtop":"المبلغ الشهري من الأول","f.yearly":"الإيجار السنوي","f.monthsleft":"الشهور للدفعة الجاية","f.saved":"المجموع المحفوظ",
- "f.freehours":"ساعات فاضية باليوم","f.freehoursH":"الساعات الباقية بعد شغل الشركة التانية.","f.dayoff":"يوم العطلة",
+ "sp.splitS":"يُحتسب على الربح بعد المصروفات. وإذا لم يتحقق ربح فلا حصة.","sp.splitB":"تعديل",
+ "sp.rent":"الإيجار","sp.rentA":"{p}% من حصة صاحب الشركة","sp.rentB":"{v} شهرياً من الإجمالي",
+ "sp.rentAS":"يُخصم من حصة صاحب الشركة وحدها.",
+ "sp.rentBS":"مصروف شركة يتحمّله الشريكان بالنسبة.","sp.rentBtn":"تعديل",
+ "sp.day":"يوم العمل","sp.dayH":"{h} ساعات · عطلة {d}","sp.dayS":"ينبّهك التقويم عند تجاوزها.","sp.change":"تعديل",
+ "sp.co":"الشركة","sp.coS":"الاسم والعملة.",
+ "sp.data":"البيانات","sp.dataH":"نسخة احتياطية","sp.dataS":"تصدير نسخة أو استيرادها.",
+ "sp.exp":"تصدير","sp.imp":"استيراد","sp.reset":"إعادة تعيين",
+ "sp.inst":"التثبيت","sp.instH":"على سطح المكتب","sp.instB":"الطريقة",
+ "ins.t":"التثبيت","ins.w":"على ويندوز","ins.h":"استضافة مجانية",
+ "ins.w1":"احفظ الملف في مسار ثابت","ins.w2":"أنشئ اختصاراً على سطح المكتب","ins.w3":"استخدم هذا المسار:","ins.w4":"سيعمل في نافذة مستقلة بلا شريط متصفح.",
+ "ins.h1":"افتح app.netlify.com/drop","ins.h2":"اسحب الملفات إلى الصفحة","ins.h3":"ستحصل على رابط خلال ثوانٍ.",
+ "ins.warn":"البيانات محفوظة على الخادم ويشترك فيها الجميع.",
+ "au.in":"تسجيل الدخول","au.up":"إنشاء حساب","au.email":"البريد الإلكتروني","au.pass":"كلمة المرور","au.name":"الاسم",
+ "au.toUp":"إنشاء حساب جديد","au.toIn":"لديك حساب؟ سجّل الدخول",
+ "au.out":"تسجيل الخروج","au.wait":"بانتظار الموافقة","au.waitS":"حسابك قيد المراجعة من {who}.",
+ "au.first":"أول حساب يُنشأ يصبح صاحب الشركة.","au.weak":"كلمة المرور 6 أحرف على الأقل.",
+ "au.check":"أكّد بريدك الإلكتروني ثم سجّل الدخول.",
+ "us.t":"المستخدمون","us.s":"فعّل الحساب وحدّد صلاحياته.",
+ "us.none":"لا يوجد مستخدمون آخرون.",
+ "us.owner":"صاحب الشركة","us.staff":"موظف","us.pending":"بالانتظار","us.active":"نشط","us.off":"موقوف",
+ "us.edit":"صلاحيات {n}","us.presets":"قالب جاهز","us.p.manager":"مدير","us.p.acct":"محاسب","us.p.view":"عرض فقط","us.p.none":"لا شيء",
+ "us.canSee":"يستطيع الاطّلاع","us.canEdit":"يستطيع التعديل","us.personal":"الاطّلاع على الدخل الخاص والإيجار",
+ "us.personalH":"قاعدة البيانات تمنع الوصول إليها عند إبقائها مغلقة.",
+ "us.on":"تفعيل الحساب","us.ownerLock":"صلاحية كاملة",
+ "sec.flow":"الملخّص","sec.ledger":"السجل","sec.clients":"العملاء","sec.team":"الفريق","sec.work":"سجل الأعمال","sec.costs":"المصروفات",
+ "sec.calendar":"التقويم","sec.outside":"خارج الشركة","sec.users":"المستخدمون","sec.setup":"الإعدادات",
+ "sec.payments":"دفعات العملاء","sec.advances":"السُّلف",
+ "cl.t2":"الحساب","cl.off":"غير متصل","cl.on":"{n} مستخدمون",
+ "cl.offS":"البيانات محفوظة على هذا الجهاز فقط.",
+ "cl.onS":"البيانات على الخادم ويطّلع عليها الجميع فوراً.",
+ "cl.connect":"ربط قاعدة بيانات","cl.manage":"إدارة","cl.disconnect":"فصل",
+ "cl.url":"رابط المشروع","cl.urlH":"من شريط عنوان لوحة التحكم قبل ‎.supabase.co",
+ "cl.key":"المفتاح العام","cl.keyH":"مفتاح Publishable أو anon. لا تستخدم مفتاحاً سرياً.",
+ "cl.bad":"تعذّر الوصول إلى المشروع.",
+ "cl.secret":"هذا مفتاح سري ولا يصلح للاستخدام هنا.",
+ "cl.upload":"رفع بيانات هذا الجهاز",
+ "cl.uploadH":"تُنفَّذ مرة واحدة وتستبدل ما على الخادم.",
+ "cl.pulling":"تحميل…","cl.syncing":"حفظ…","cl.synced":"محفوظ","cl.err":"لم يُحفظ",
+ "cl.lib":"تعذّر تحميل المكتبة. تحقّق من الاتصال.",
+ "pwa.t":"التثبيت على الهاتف","pwa.h":"إضافة إلى الشاشة الرئيسية","pwa.b":"الطريقة",
+ "pwa.and":"أندرويد","pwa.ios":"آيفون","pwa.now":"تثبيت الآن",
+ "pwa.a1":"افتح الرابط في كروم","pwa.a2":"اضغط النقاط الثلاث","pwa.a3":"اختر تثبيت التطبيق",
+ "pwa.i1":"افتح الرابط في سفاري","pwa.i2":"اضغط زر المشاركة","pwa.i3":"اختر إضافة إلى الشاشة الرئيسية",
+ "pwa.note":"يعمل بملء الشاشة مثل أي تطبيق.",
+ "f.name":"الاسم","f.cliname":"اسم العميل","f.howpay":"طريقة الدفع","f.fee":"الاشتراك الشهري","f.vids":"عدد الفيديوهات","f.posts":"عدد المنشورات",
+ "f.ads":"مبلغ الإعلانات ضمن الاشتراك","f.adsH":"يُحوَّل للمنصّة ولا يُحتسب ربحاً.",
+ "f.rate":"سعر الفيديو","f.exp":"العدد المتوقع شهرياً","f.credit":"مدفوع مقدماً","f.note":"ملاحظة","f.activecli":"عميل نشط",
+ "f.role":"الدور","f.roleH":"مونتير، مصمم، مدير…","f.howpaid":"طريقة الدفع","f.rate2":"السعر","f.rateH":"للحصة من الربح أدخل النسبة.","f.onbooks":"نشط",
+ "f.date":"التاريخ","f.client":"العميل","f.delivered":"البند","f.howmany":"العدد","f.whodid":"المنفّذ","f.nobody":"بدون",
+ "f.override":"تعديل الأجر","f.overrideH":"اتركه فارغاً لاستخدام السعر المعتاد.",
+ "f.whatis":"البيان","f.cat":"التصنيف","f.amount":"المبلغ","f.repeats":"يتكرر شهرياً",
+ "f.time":"الوقت","f.shooting":"موضوع التصوير","f.hours":"عدد الساعات","f.notes":"ملاحظات",
+ "f.source":"المصدر","f.type":"النوع","f.permonth":"شهرياً","f.running":"مستمر",
+ "f.project":"المشروع","f.status":"الحالة","f.terms":"الشروط","f.person":"الشريك {n}","f.theirpct":"النسبة %","f.addperson":"إضافة شريك",
+ "f.what4":"البيان","f.total":"المبلغ الكلي","f.yourcut":"حصتك","f.yourcutH":"حصتك {p}% من الإجمالي.",
+ "f.amountpaid":"المبلغ المقبوض","f.method":"طريقة الدفع","m.cash":"نقداً","m.bank":"تحويل بنكي","m.other":"أخرى",
+ "f.start":"عميل منذ","f.startH":"يبدأ احتساب الاشتراك من هذا الشهر.",
+ "f.end":"توقّف بعد","f.endH":"اتركه فارغاً إن كان مستمراً.",
+ "f.opening":"رصيد سابق","f.openingH":"مبلغ مستحق قبل بدء التسجيل.",
+ "f.advance":"مدفوع مقدماً","f.advanceH":"مبلغ دُفع قبل بدء العمل.",
+ "f.who":"الشخص","f.advamount":"مبلغ السلفة","f.advnote":"البيان",
+ "f.mgrpct":"نسبة المدير %","f.whopays":"من يتحمّل الإيجار","f.rentmine":"صاحب الشركة من حصته","f.rentco":"مصروف شركة قبل التقسيم",
+ "f.pctaside":"النسبة المُجنَّبة %","f.offtop":"المبلغ الشهري","f.yearly":"الإيجار السنوي","f.monthsleft":"الأشهر المتبقية","f.saved":"المحفوظ",
+ "f.freehours":"الساعات المتاحة يومياً","f.freehoursH":"بعد الالتزامات الأخرى.","f.dayoff":"يوم العطلة",
  "f.coname":"اسم الشركة","f.curr":"رمز العملة",
- "f.pinowner":"رمز صاحب الشركة","f.pinmgr":"رمز المدير","f.pinacc":"رمز المحاسب","f.pinH":"اتركه فاضي إذا ما بدك رمز.",
- "confirmDel":"حذف نهائي؟","confirmReset":"هاد بيمسح كل شي ويرجّع الإعداد الأصلي. أكيد؟",
- "badFile":"ما قدرت اقرأ الملف. اختار نسخة مصدّرة من هالبرنامج.",
- "readonly":"إنت بتشوف بس. صاحب الشركة لحاله بيقدر يعدّل.",
- "st.In discussion":"قيد التفاوض","st.Agreed":"متّفق عليه","st.Building":"قيد التنفيذ","st.Free support month":"شهر الدعم المجاني","st.Paid support":"دعم مدفوع","st.Closed":"مغلق",
+ "f.pinowner":"رمز صاحب الشركة","f.pinmgr":"رمز المدير","f.pinacc":"رمز المحاسب","f.pinH":"اتركه فارغاً لإلغائه.",
+ "sp.pins":"رموز الدخول","sp.pinsH":"{n} من 3","sp.pinsS":"قفل بسيط للأجهزة المشتركة.","sp.pinsB":"ضبط",
+ "sp.look":"المظهر","sp.lookH":"{t} · {c}","sp.lookB":"تعديل",
+ "th.light":"فاتح","th.dark":"داكن","th.auto":"حسب الجهاز",
+ "f.theme":"الخلفية","f.accent":"لون الهوية","f.accentH":"يُستخدم في الأزرار والتمييز.",
+ "f.custom":"أو أدخل كود اللون","f.logo":"الشعار","f.logoH":"يفضَّل صورة مربعة.",
+ "f.logoPick":"اختيار صورة","f.logoClear":"إزالة","f.logoBig":"الصورة كبيرة. استخدم أقل من 400 كيلوبايت.",
+ "c.sage":"مريمي","c.bone":"عظمي","c.jade":"أخضر","c.seal":"طيني","c.brass":"ذهبي","c.ink":"أزرق",
+ "print":"طباعة","today":"اليوم","retry":"إعادة المحاولة",
+ "confirmDel":"حذف نهائي؟","confirmReset":"سيُمسح كل شيء. هل تريد المتابعة؟",
+ "badFile":"تعذّرت قراءة الملف.",
+ "readonly":"عرض فقط.",
+ "st.In discussion":"قيد التفاوض","st.Agreed":"متفق عليه","st.Building":"قيد التنفيذ","st.Free support month":"شهر الدعم المجاني","st.Paid support":"دعم مدفوع","st.Closed":"مغلق",
  dows:["أحد","اثنين","ثلاثاء","أربعاء","خميس","جمعة","سبت"],
  daysFull:["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"],
  months:["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"]
@@ -568,18 +692,18 @@ function t(k,a){
 
 /* ═════════════ roles ═════════════ */
 var PERM={
-  owner:      {tabs:["flow","clients","team","work","costs","calendar","outside","setup"],edit:["clients","team","work","costs","calendar","outside","setup","payments","advances"],personal:true},
-  manager:    {tabs:["flow","clients","team","work","costs","calendar"],edit:["work","calendar"],personal:false},
-  accountant: {tabs:["flow","clients","team","work","costs","calendar"],edit:["clients","work","costs","payments"],personal:false}
+  owner:      {tabs:["flow","ledger","clients","team","costs","calendar","outside","setup"],edit:["clients","team","work","costs","calendar","outside","setup","payments","advances"],personal:true},
+  manager:    {tabs:["flow","ledger","clients","team","costs","calendar"],edit:["work","calendar"],personal:false},
+  accountant: {tabs:["flow","ledger","clients","team","costs","calendar"],edit:["clients","work","costs","payments"],personal:false}
 };
-var FULL={tabs:["flow","clients","team","work","costs","calendar","outside","users","setup"],
+var FULL={tabs:["flow","ledger","clients","team","work","costs","calendar","outside","users","setup"],
           edit:["clients","team","work","costs","calendar","payments","advances","outside","setup","users"],personal:true};
-var SEC_TABS=["flow","clients","team","work","costs","calendar","outside","users","setup"];
+var SEC_TABS=["flow","ledger","clients","team","costs","calendar","outside","users","setup"];
 var SEC_EDIT=["clients","team","work","costs","calendar","payments","advances","outside","setup","users"];
 var PRESETS={
-  manager:{tabs:["flow","clients","team","work","costs","calendar"],edit:["work","calendar"],personal:false},
-  acct:{tabs:["flow","clients","team","work","costs","calendar"],edit:["clients","work","costs","payments"],personal:false},
-  view:{tabs:["flow","clients","team","work","costs","calendar"],edit:[],personal:false},
+  manager:{tabs:["flow","ledger","clients","team","costs","calendar"],edit:["work","calendar"],personal:false},
+  acct:{tabs:["flow","ledger","clients","team","costs","calendar"],edit:["clients","work","costs","payments"],personal:false},
+  view:{tabs:["flow","ledger","clients","team","costs","calendar"],edit:[],personal:false},
   none:{tabs:[],edit:[],personal:false}
 };
 var MODE="local";      // "local" | "cloud"
@@ -609,15 +733,28 @@ function ls(s){try{window.localStorage.setItem(KEY,s);}catch(e){}}
 
 
 /* ═════════════ cloud ═════════════ */
+/*  ┌──────────────────────────────────────────────────────────────┐
+    │  رابط المشروع والمفتاح العام. هذا المفتاح مُصمَّم ليكون علنياً،  │
+    │  والحماية الحقيقية في قواعد قاعدة البيانات.                    │
+    └──────────────────────────────────────────────────────────────┘ */
+var SUPA_URL = "https://gvnpixjkcmbrdfefbamr.supabase.co";
+var SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2bnBpeGprY21icmRmZWZiYW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MDAyNDAsImV4cCI6MjEwMDQ3NjI0MH0.PPuHBLPRwFPvjMgoIWHCubDTX9at5gSgn4QKxcgsbQI";
+
 var SB=null, SYNC="", PULLED={}, RT=null, PUSHT=null;
 var TBL=[["customers","clients"],["employees","team"],["work","work"],["payments","payments"],
-         ["advances","advances"],["costs","costs"],["shoots","calendar"],["outside","outside"],["projects","outside"]];
-function cfg(){try{return{url:localStorage.getItem("sl_url")||"",key:localStorage.getItem("sl_key")||""};}catch(e){return{url:"",key:""};}}
+         ["advances","advances"],["payouts","advances"],["costs","costs"],["shoots","calendar"],
+         ["outside","outside"],["projects","outside"],["osadvances","outside"],
+         ["debts","outside"],["transfers","outside"]];
+function baked(){return SUPA_URL&&SUPA_KEY&&SUPA_KEY.indexOf("ضع_")<0;}
+function cfg(){
+  if(baked()) return {url:SUPA_URL,key:SUPA_KEY};
+  try{return{url:localStorage.getItem("sl_url")||"",key:localStorage.getItem("sl_key")||""};}catch(e){return{url:"",key:""};}
+}
 function setCfg(u,k){try{localStorage.setItem("sl_url",u);localStorage.setItem("sl_key",k);}catch(e){}}
 function clearCfg(){try{localStorage.removeItem("sl_url");localStorage.removeItem("sl_key");}catch(e){}}
 
 async function sbClient(url,key){
-  var m=await import("https://esm.sh/@supabase/supabase-js@2.45.4");
+  var m=await import("https://esm.sh/@supabase/supabase-js@2");
   return m.createClient(url,key,{auth:{persistSession:true,autoRefreshToken:true}});
 }
 function setSync(v){SYNC=v;var n=el("syncDot");if(n)n.textContent=v?t(v):"";}
@@ -627,13 +764,16 @@ async function pull(){
   setSync("cl.pulling");
   for(var i=0;i<TBL.length;i++){
     var key=TBL[i][0];
-    var r=await SB.from(key).select("id,data");
-    if(r.error) continue;           // no permission for this table — leave local copy alone
-    PULLED[key]=true;
-    S[key]=r.data.map(function(row){return Object.assign({id:row.id},row.data);});
+    try{
+      var r=await SB.from(key).select("id,data");
+      if(!r||r.error||!Array.isArray(r.data)) continue;  // no access, or nothing usable — keep what we have
+      PULLED[key]=true;
+      S[key]=r.data.map(function(row){return Object.assign({id:row.id},row.data);});
+    }catch(e){ /* one bad table must not stop the app from opening */ }
   }
-  var st=await SB.from("settings").select("data").eq("id",1).maybeSingle();
-  if(!st.error&&st.data&&st.data.data&&Object.keys(st.data.data).length){
+  var st=null;
+  try{ st=await SB.from("settings").select("data").eq("id",1).maybeSingle(); }catch(e){}
+  if(st&&!st.error&&st.data&&st.data.data&&Object.keys(st.data.data).length){
     var localOnly={theme:S.settings.theme,accent:S.settings.accent,lang:S.settings.lang};
     S.settings=Object.assign({},S.settings,st.data.data,localOnly);
     PULLED.settings=true;
@@ -679,7 +819,8 @@ async function pushEverything(){
 function watch(){
   if(RT) return;
   RT=SB.channel("sl");
-  ["customers","employees","work","payments","advances","costs","shoots","outside","projects","settings","profiles"]
+  ["customers","employees","work","payments","advances","payouts","costs","shoots","outside","projects",
+   "osadvances","debts","transfers","settings","profiles"]
     .forEach(function(tb){
       RT.on("postgres_changes",{event:"*",schema:"public",table:tb},function(){
         clearTimeout(RT._t); RT._t=setTimeout(async function(){await pull();render();},400);
@@ -700,7 +841,7 @@ async function bootCloud(){
   var c=cfg();
   if(!c.url||!c.key) return false;
   try{ SB=await sbClient(c.url,c.key); }
-  catch(e){ alert(t("cl.lib")); return false; }
+  catch(e){ if(baked()){renderOffline();return true;} alert(t("cl.lib")); return false; }
   MODE="cloud";
   var sess=(await SB.auth.getSession()).data.session;
   if(!sess){ renderAuth(); return true; }
@@ -728,7 +869,7 @@ function renderAuth(mode){
    +'</div>'
    +'<div class="langsw"><button data-lang="ar" aria-pressed="'+(LANG==="ar")+'">العربية</button>'
    +'<button data-lang="en" aria-pressed="'+(LANG==="en")+'">English</button></div>'
-   +'<div style="text-align:center;margin-top:14px"><button class="btn ghost sm" data-act="cloudoff">'+t("cl.disconnect")+'</button></div>'
+   +(baked()?'':'<div style="text-align:center;margin-top:14px"><button class="btn ghost sm" data-act="cloudoff">'+t("cl.disconnect")+'</button></div>')
    +'</div></div>';
   var err=function(m){var n=el("aErr");n.style.display="";n.textContent=m;};
   el("aSwap").onclick=function(){renderAuth(up?"in":"up");};
@@ -794,7 +935,7 @@ function n(v){return '<span class="num">'+v+'</span>';}
 /* ═════════════ seed ═════════════ */
 function seed(){return{
  settings:{company:"",currency:"$",managerPct:30,rentMode:"myshare",rentSharePct:20,
-   rentFlat:300,rentAnnual:3000,rentMonthsLeft:10,rentSetAside:0,dayCapacity:6,offDay:5,lang:"ar",theme:"dark",accent:"#9DA79F",logo:LOGO,
+   rentFlat:300,rentAnnual:3000,rentMonthsLeft:10,rentSetAside:0,openingCash:0,basis:"cash",dayCapacity:6,offDay:5,lang:"ar",theme:"dark",accent:"#9DA79F",logo:LOGO,
    pins:{owner:"",manager:"",accountant:""}},
  employees:[
   {id:uid(),name:"المدير (الشريك)",role:"Manager",payType:"percent",rate:30,active:true,note:"بدون راتب — بياخد 30% من الربح بعد كل مصاريف الشركة. ما بيشارك بالإيجار."},
@@ -811,6 +952,10 @@ function seed(){return{
  work:[],
  payments:[],
  advances:[],
+ payouts:[],
+ osadvances:[],
+ debts:[],
+ transfers:[],
  costs:[
   {id:uid(),date:todayISO(),category:"Transport",amount:0,note:"تكاسي رواح ورجعة للتصوير",recurring:true},
   {id:uid(),date:todayISO(),category:"Phone",amount:0,note:"اتصالات",recurring:true},
@@ -823,11 +968,33 @@ function seed(){return{
    entries:[]}]
 };}
 
-var S=seed(), TAB="flow", MONTH=ymNow(), SEL=null, SELE=null;
+var S=seed(), TAB="flow", MONTH=ymNow(), SEL=null, SELE=null, LGMONEY=false;
 function save(){clearCalc();Store.save(S);queuePush();}
 
 /* ═════════════ engine ═════════════ */
 function inMonth(d,m){return (d||"").slice(0,7)===m;}
+/* a retainer you joined mid-month only pays for the days you worked */
+function outsideAmt(o,m){
+  var full=+o.amount||0;
+  if(o.mode!=="daily") return full;
+  var base=+o.base||30;
+  var d=(o.daysByMonth&&o.daysByMonth[m]!=null)?+o.daysByMonth[m]:base;
+  if(base<=0) return full;
+  return full*Math.max(0,d)/base;
+}
+function outsideDays(o,m){
+  var base=+o.base||30;
+  return (o.daysByMonth&&o.daysByMonth[m]!=null)?+o.daysByMonth[m]:base;
+}
+/* what each person delivered — an unassigned job belongs to the owner */
+function workCounts(empId,m,isOwner){
+  var w=S.work.filter(function(x){
+    return inMonth(x.date,m)&&(x.editorId===empId||(isOwner&&!x.editorId));});
+  var o={};
+  ["video","post","design","task"].forEach(function(k){
+    o[k]=w.filter(function(x){return x.type===k;}).reduce(function(a,x){return a+(+x.qty||0);},0);});
+  return o;
+}
 var _cc={};
 function clearCalc(){_cc={};}
 function calc(m){
@@ -835,6 +1002,7 @@ function calc(m){
   return _cc[m]=_calc(m);
 }
 function _calc(m){
+  var cashBasis=(S.settings.basis||"cash")==="cash";
   var work=S.work.filter(function(w){return inMonth(w.date,m);});
   var clients=[],revenue=0,adSpend=0;
   S.customers.forEach(function(c){
@@ -845,6 +1013,12 @@ function _calc(m){
     var amt=0,basis="";
     if(c.billing==="package"){amt=+c.monthlyFee||0;adSpend+=+c.adSpend||0;basis=t("b.packageL");}
     else{amt=vids*(+c.rate||0);basis=vids+" × "+money(+c.rate||0);}
+    if(cashBasis){
+      // only money that actually arrived counts, and never the ad funding
+      amt=S.payments.filter(function(x){
+            return x.customerId===c.id&&x.kind!=="funding"&&inMonth(x.date,m);})
+          .reduce(function(a,x){return a+(+x.amount||0);},0);
+    }
     revenue+=amt;clients.push({c:c,vids:vids,posts:posts,amt:amt,basis:basis});
   });
   var payroll=0,people=[];
@@ -861,24 +1035,49 @@ function _calc(m){
     }
     payroll+=pay;people.push({e:e,pay:pay,basis:basis});
   });
-  var opex=0,costs=[];
+  var opex=0,costs=[],ownerPaid=0;
   S.costs.forEach(function(x){
     var hit=x.recurring?((x.date||"").slice(0,7)<=m):inMonth(x.date,m);
-    if(!hit)return; opex+=+x.amount||0; costs.push(x);
+    if(!hit)return;
+    opex+=+x.amount||0; costs.push(x);
+    if(x.payer&&x.payer!=="box") ownerPaid+=+x.amount||0;
   });
   var rentTop=S.settings.rentMode==="expense"?(+S.settings.rentFlat||0):0;
   opex+=rentTop;
   var totalOut=payroll+adSpend+opex, net=revenue-totalOut;
-  var mp=+S.settings.managerPct||0;
-  var mgr=net>0?net*mp/100:0, yours=net-mgr;
-  var rentSet=(S.settings.rentMode==="myshare"&&yours>0)?yours*(+S.settings.rentSharePct||0)/100:0;
-  var take=yours-rentSet;
+
+  /* every active person paid on a percentage is a partner in the profit */
+  var partners=[],pctSum=0;
+  S.employees.forEach(function(e){
+    if(!e.active||e.payType!=="percent")return;
+    var pct=+e.rate||0; pctSum+=pct;
+    partners.push({e:e,pct:pct,share:net>0?net*pct/100:0});
+  });
+  /* the rent comes out of one partner's share — whoever paid the lease */
+  var biggest=partners.slice().sort(function(a,b){return b.pct-a.pct;})[0];
+  var rentEmp=S.settings.rentFromEmpId||(biggest?biggest.e.id:"");
+  if(!partners.filter(function(pn){return pn.e.id===rentEmp;}).length)
+    rentEmp=biggest?biggest.e.id:"";
+  var rentSet=0;
+  partners.forEach(function(pn){
+    pn.rent=0;
+    if(S.settings.rentMode==="myshare"&&pn.e.id===rentEmp&&pn.share>0){
+      pn.rent=pn.share*(+S.settings.rentSharePct||0)/100;
+      rentSet=pn.rent;
+    }
+    pn.take=pn.share-pn.rent;
+  });
+  var mine=partners.filter(function(pn){return pn.e.id===rentEmp;})[0];
+  var yours=mine?mine.share:0, take=mine?mine.take:0;
+  var mp=mine?(100-mine.pct):(partners.length?partners[0].pct:0);
+  var mgr=net-yours;
   var outside=S.outside.filter(function(o){return o.active;})
-    .reduce(function(a,o){return a+(o.kind==="income"?(+o.amount||0):-(+o.amount||0));},0);
+    .reduce(function(a,o){return a+(o.kind==="income"?outsideAmt(o,m):-outsideAmt(o,m));},0);
   var projIn=0;
   S.projects.forEach(function(p){p.entries.forEach(function(e){if(inMonth(e.date,m))projIn+=+e.yours||0;});});
   return{clients:clients,revenue:revenue,people:people,payroll:payroll,adSpend:adSpend,costs:costs,
-    opex:opex,rentTop:rentTop,totalOut:totalOut,net:net,mgr:mgr,mp:mp,yours:yours,rentSet:rentSet,
+    opex:opex,ownerPaid:ownerPaid,cashBasis:cashBasis,rentTop:rentTop,totalOut:totalOut,net:net,partners:partners,pctSum:pctSum,
+    rentEmp:rentEmp,mgr:mgr,mp:mp,yours:yours,rentSet:rentSet,
     take:take,outside:outside,projIn:projIn,pocket:take+outside+projIn};
 }
 /* Full statement for one client, up to and including month `thru`.
@@ -928,7 +1127,10 @@ function deliveredChips(o){
 }
 /* What one person earned in a given month (manager = his share of profit). */
 function earnedIn(e,m){
-  if(e.payType==="percent") return calc(m).mgr;
+  if(e.payType==="percent"){
+    var pn=calc(m).partners.filter(function(x){return x.e.id===e.id;})[0];
+    return pn?pn.take:0;   // their share, after any rent they carry
+  }
   var hit=calc(m).people.filter(function(x){return x.e.id===e.id;})[0];
   return hit?hit.pay:0;
 }
@@ -948,6 +1150,9 @@ function empLedger(e,thru){
     var earned=earnedIn(e,m);
     var adv=S.advances.filter(function(a){return a.employeeId===e.id&&inMonth(a.date,m);})
       .reduce(function(s2,a){return s2+(+a.amount||0);},0);
+    /* money the partner put back in from his own pocket pays the draw down */
+    adv-=S.transfers.filter(function(x){return x.empId===e.id&&inMonth(x.date,m);})
+      .reduce(function(s2,x){return s2+(+x.amount||0);},0);
     var due=earned-adv-carry;
     var payout=due>0?due:0, out=due<0?-due:0;
     rows.push({month:m,earned:earned,adv:adv,carryIn:carry,payout:payout,carryOut:out});
@@ -963,51 +1168,43 @@ function totalDue(thru){
 }
 
 /* ═════════════ gate ═════════════ */
-function renderGate(err){
-  applyTheme();
-  document.body.dir=t("dir");
-  var roles=["owner","manager","accountant"];
+function renderOffline(){
+  applyTheme(); document.body.dir=t("dir");
   el("app").innerHTML='<div class="gate"><div class="gatebox"><div class="head">'
-   +stampHTML()
-   +(S.settings.company?'<h1>'+esc(S.settings.company)+'</h1>':'')
-   +'<p class="sub" style="margin:0">'+t("gate")+'</p></div>'
-   +(err?'<div class="note" style="margin-bottom:14px;border-inline-start-color:var(--seal);background:var(--seal-w);color:var(--seal)">'+t("gateWrong")+'</div>':'')
-   +'<div class="roles">'
-   +roles.map(function(r){
-     var locked=!!(S.settings.pins&&S.settings.pins[r]);
-     return '<button class="rolebtn" data-role="'+r+'"><span class="ic '+r+'">'+(locked?"●":"○")+'</span>'
-      +'<span><b>'+t("role."+r)+'</b><small>'+t("role."+r+".d")+'</small></span></button>';
-   }).join("")
-   +'</div><div class="langsw">'
-   +'<button data-lang="ar" aria-pressed="'+(LANG==="ar")+'">العربية</button>'
-   +'<button data-lang="en" aria-pressed="'+(LANG==="en")+'">English</button>'
-   +'</div></div></div>';
+   +stampHTML()+'<h1>'+esc(S.settings.company||"")+'</h1>'
+   +'<p class="sub" style="margin:0">'+t("cl.lib")+'</p></div>'
+   +'<div style="text-align:center"><button class="btn primary" onclick="location.reload()">'+t("retry")+'</button></div>'
+   +'</div></div>';
 }
-function tryEnter(r){
-  var pin=S.settings.pins&&S.settings.pins[r];
-  if(!pin){ROLE=r;TAB="flow";render();return;}
-  form(t("role."+r),[{k:"pin",label:t("gatePin"),type:"password"}],null,function(v){
-    if(String(v.pin)===String(pin)){ROLE=r;TAB="flow";render();}else renderGate(true);
-  },null,t("unlock"));
+function renderSetup(){
+  applyTheme(); document.body.dir=t("dir");
+  el("app").innerHTML='<div class="gate"><div class="gatebox"><div class="head">'
+   +stampHTML()+'<h1>'+esc(S.settings.company||"")+'</h1>'
+   +'<p class="sub" style="margin:0">'+t("cl.offS")+'</p></div>'
+   +'<div class="card"><button class="btn primary" data-act="cloudon" style="width:100%">'+t("cl.connect")+'</button></div>'
+   +'<div class="langsw"><button data-lang="ar" aria-pressed="'+(LANG==="ar")+'">العربية</button>'
+   +'<button data-lang="en" aria-pressed="'+(LANG==="en")+'">English</button></div>'
+   +'</div></div>';
 }
-
 /* ═════════════ shell ═════════════ */
-var TABS=[["flow","tab.flow"],["clients","tab.clients"],["team","tab.team"],["work","tab.work"],
+var TABS=[["flow","tab.flow"],["ledger","tab.ledger"],["clients","tab.clients"],["team","tab.team"],
           ["costs","tab.costs"],["calendar","tab.calendar"],["outside","tab.outside"],
           ["users","tab.users"],["setup","tab.setup"]];
 function render(){
   clearCalc();
   applyTheme();
-  if(!ROLE){renderGate();return;}
+  if(!ROLE&&!ME){ if(SB) renderAuth(); else renderSetup(); return; }
   document.body.dir=t("dir");
   var allowed=myTabs();
   if(!allowed.length){renderWait();return;}
   if(allowed.indexOf(TAB)<0) TAB=allowed[0];
-  var views={flow:vFlow,clients:vClients,team:vTeam,work:vWork,costs:vCosts,calendar:vCalendar,outside:vOutside,users:vUsers,setup:vSetup};
+  var views={flow:vFlow,ledger:vLedger,clients:vClients,team:vTeam,costs:vCosts,calendar:vCalendar,outside:vOutside,users:vUsers,setup:vSetup};
   el("app").innerHTML='<div class="wrap"><div class="mast">'
    +'<div class="brand">'+stampHTML()+'<div>'+(S.settings.company?'<h1>'+esc(S.settings.company)+'</h1>':'')+'<small>'+t("tagline")+'</small></div></div>'
    +'<div class="tools">'
-   +'<button class="chip" data-act="logout" title="'+t("switchRole")+'"><span class="dot '+ROLE+'"></span>'+t("role."+ROLE)+'</button>'
+   +'<button class="chip" data-act="logout" title="'+t("switchRole")+'"><span class="dot '+(amOwner()?"owner":"manager")+'"></span>'
+   +esc(MODE==="cloud"?((ME&&(ME.name||ME.email))||""):t("role."+ROLE))
+   +(MODE==="cloud"?' <span id="syncDot" class="mut" style="font-size:10.5px">'+(SYNC?t(SYNC):"")+'</span>':'')+'</button>'
    +'<button class="chip" data-act="theme" title="'+t("f.theme")+'">'+((S.settings.theme==="dark")?"\u25D1":"\u25D0")+'</button>'
    +'<button class="chip" data-act="lang">'+(LANG==="ar"?"EN":"ع")+'</button>'
    +'<div class="monthpick"><button data-act="mprev" title="'+t("prev")+'">'+(t("dir")==="rtl"?"›":"‹")+'</button>'
@@ -1022,14 +1219,27 @@ function render(){
 }
 
 /* ═════════════ FLOW ═════════════ */
+function greeting(){
+  if(MODE!=="cloud"||!ME) return "";
+  var hr=new Date().getHours();
+  var k = hr<12?"hi.morning":(hr<17?"hi.afternoon":"hi.evening");
+  var nm=(ME.name||ME.email||"").split("@")[0];
+  return '<div class="sec"><h2 style="font-size:21px;letter-spacing:-.02em">'+t(k)+'، '+esc(nm)+'</h2>'
+    +'<p class="sub" style="margin:2px 0 0">'+t("hi.sub",{m:monthName(MONTH)})+'</p></div>';
+}
 function vFlow(){
-  var r=calc(MONTH),h="";
+  var r=calc(MONTH),h=greeting();
   h+='<div class="sec"><div class="kpis">'
    +kpi("in",t("k.in"),money(r.revenue),t("k.in.n",{n:r.clients.length}))
    +kpi("out",t("k.out"),money(r.totalOut),t("k.out.n"))
    +kpi("net",t("k.net"),money(r.net),r.net>0?t("k.net.n",{p:r.mp}):t("k.net.none"))
-   +(sees()?kpi("you",t("k.pocket"),money(r.pocket),t("k.pocket.n")):"")
    +(function(){var d=totalDue(MONTH);return kpi("out",t("k.due"),money(d.sum),t("k.due.n",{n:d.count}));})()
+   +(function(){
+       var b=cashBox(MONTH), w=boxAroundWages(MONTH);
+       return kpi("net",t("box.t"),money(b.balance),t("box.n"))
+        +kpi("in",t("box.pre"),money(w.before),w.paid>0.005?t("box.pre.n",{v:money(w.paid)}):t("box.pre.none"))
+        +kpi("out",t("box.post"),money(w.after),
+             w.owed>0.005?t("box.post.n",{v:money(w.owed)}):t("box.post.clear"));})()
    +'</div></div>';
 
   var base=Math.max(r.revenue,1);
@@ -1042,17 +1252,27 @@ function vFlow(){
    +step(t("s.run"),r.rentTop?t("s.run.dr"):t("s.run.d"),-r.opex,base,"cut")
    +step(t("s.profit"),t("s.profit.d"),r.net,base,"keep",true)
    +'</div><div class="fork">'
-   +'<div class="slice"><span class="who">'+t("fork.mgr",{p:r.mp})+'</span>'
-     +'<span class="big acc">'+money(r.mgr)+'</span><span class="note">'+t("fork.mgr.n")+'</span></div>'
-   +'<div class="slice mine"><span class="who">'+t("fork.you",{p:100-r.mp})+'</span>'
-     +'<span class="big">'+money(r.yours)+'</span><span class="note">'+t("fork.you.n")+'</span>'
-     +(sees()
-       ? (S.settings.rentMode==="myshare"
-          ? '<div class="carve"><span>'+t("fork.setaside",{p:S.settings.rentSharePct})+'</span><span class="num neg">−'+money(r.rentSet)+'</span></div>'
-            +'<div class="carve" style="border:0;padding-top:6px"><span><b>'+t("fork.keep")+'</b></span><span class="num" style="font-weight:600">'+money(r.take)+'</span></div>'
-          : '<div class="carve"><span>'+t("fork.renttop")+'</span><span class="num">'+money(r.rentTop)+'</span></div>')
-       : "")
-   +'</div></div></div>';
+   +(r.partners.length
+      ? r.partners.map(function(pn){
+          var isRent=pn.e.id===r.rentEmp;
+          return '<div class="slice'+(isRent?" mine":"")+'">'
+           +'<span class="who">'+esc(pn.e.name)+' · '+pn.pct+'%</span>'
+           +'<span class="big '+(isRent?"":"acc")+'">'+money(pn.share)+'</span>'
+           +'<span class="note">'+esc(pn.e.role||"")+'</span>'
+           +((isRent&&sees()&&S.settings.rentMode==="myshare")
+              ? '<div class="carve"><span>'+t("fork.setaside",{p:S.settings.rentSharePct})+'</span>'
+                +'<span class="num neg">−'+money(pn.rent)+'</span></div>'
+                +'<div class="carve" style="border:0;padding-top:6px"><span><b>'+t("fork.keep")+'</b></span>'
+                +'<span class="num" style="font-weight:600">'+money(pn.take)+'</span></div>'
+              : '')
+           +'</div>';
+        }).join("")
+      : '<div class="slice"><span class="note">'+t("part.none")+'</span></div>')
+   +'</div>'
+   +(Math.abs(r.pctSum-100)>0.01&&r.partners.length
+      ? '<div style="padding:0 18px 18px"><div class="note" style="border-color:var(--coral);color:var(--coral)">'
+        +t("part.warn",{n:r.pctSum})+'</div></div>' : '')
+   +'</div>';
 
   if(sees()){
     var tg=+S.settings.rentAnnual||0,sv=+S.settings.rentSetAside||0,pc=tg?Math.min(100,sv/tg*100):0;
@@ -1062,14 +1282,7 @@ function vFlow(){
      +'<div class="track" style="height:10px"><div class="bar keep" style="width:'+pc.toFixed(1)+'%"></div></div>'
      +'<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">'
      +'<button class="btn sm" data-act="addrent" data-amt="'+r.rentSet.toFixed(2)+'">'+t("rent.add",{v:money(r.rentSet)})+'</button>'
-     +'<button class="btn sm ghost" data-act="editrent">'+t("rent.adj")+'</button></div></div>'
-     +'<div class="card"><span class="eyebrow">'+t("out.t")+'</span>'
-     +'<h2 style="margin-top:8px">'+money(r.outside+r.projIn)+'</h2>'
-     +'<p class="sub">'+t("out.s",{p:r.mp})+'</p><table><tbody>'
-     +S.outside.filter(function(o){return o.active;}).map(function(o){
-       return '<tr><td>'+esc(o.name)+'</td><td class="r"><span class="num '+(o.kind==="income"?"pos":"neg")+'">'+(o.kind==="income"?"+":"−")+money(o.amount)+'</span></td></tr>';}).join("")
-     +(r.projIn?'<tr><td>'+t("out.proj")+'</td><td class="r"><span class="num pos">+'+money(r.projIn)+'</span></td></tr>':"")
-     +'</tbody></table></div></div>';
+     +'<button class="btn sm ghost" data-act="editrent">'+t("rent.adj")+'</button></div></div></div>';
   }
 
   h+='<div class="sec card"><h2>'+t("cl.t")+'</h2><p class="sub">'+t("cl.s")+'</p><div class="tbl-wrap"><table><thead><tr>'
@@ -1144,6 +1357,145 @@ function vClients(){
   return h+'</tbody></table></div></div></div>';
 }
 
+/* ══════ the cash box ══════
+   Every real movement of money, in date order, with what is left after each one.
+   Accrued figures (profit, what a client owes) live elsewhere — this is only
+   money that actually changed hands. */
+function movements(upto){
+  var out=[];
+  /* deliveries — they shape the invoice, but no cash changes hands */
+  S.work.forEach(function(x){
+    var c=S.customers.filter(function(y){return y.id===x.customerId;})[0];
+    var e=S.employees.filter(function(y){return y.id===x.editorId;})[0];
+    out.push({date:x.date,kind:"work",who:c?c.name:"—",
+      note:x.qty+" "+t("d."+(x.type||"video"))+(e?" · "+e.name:"")+(x.note?" · "+x.note:""),
+      amt:0,dir:0,id:x.id,act:"editwork",sec:"work"});
+  });
+  /* client money — a plain payment, or funding earmarked for the ad platforms */
+  S.payments.forEach(function(x){
+    var c=S.customers.filter(function(y){return y.id===x.customerId;})[0];
+    out.push({date:x.date,kind:x.kind==="funding"?"fund":"pay",who:c?c.name:"—",note:x.note||"",
+      amt:+x.amount||0,dir:1,id:x.id,act:"editpay",sec:"payments"});
+  });
+  /* costs only leave the box when the box paid for them */
+  S.costs.forEach(function(x){
+    var payer=x.payer||"box";
+    var pe=payer==="box"?null:S.employees.filter(function(y){return y.id===payer;})[0];
+    var tag=payer==="box"?"":" · "+t("cost.owner",{n:pe?pe.name:"—"});
+    var push=function(d){
+      out.push({date:d,kind:"cost",who:t("c."+x.category),note:(x.note||"")+tag,
+        amt:+x.amount||0,dir:payer==="box"?-1:0,id:x.id,act:"editcost",sec:"costs"});
+    };
+    if(x.recurring){
+      var m=(x.date||"").slice(0,7),guard=0;
+      while(m<=upto&&guard++<120){ push(m+"-"+(x.date||"").slice(8,10)); m=addMonth(m,1); }
+    } else push(x.date);
+  });
+  S.advances.forEach(function(x){
+    var e=S.employees.filter(function(y){return y.id===x.employeeId;})[0];
+    var back=x.kind==="repay";
+    out.push({date:x.date,kind:back?"repay":"adv",who:e?e.name:"—",note:x.note||"",
+      amt:+x.amount||0,dir:back?1:-1,id:x.id,act:"editadv",sec:"advances"});
+  });
+  S.payouts.forEach(function(x){
+    var e=S.employees.filter(function(y){return y.id===x.employeeId;})[0];
+    out.push({date:x.date,kind:x.kind==="reimb"?"reim":"out",who:e?e.name:"—",note:x.note||"",
+      amt:+x.amount||0,dir:-1,id:x.id,act:"editpayout",sec:"advances"});
+  });
+  S.transfers.forEach(function(x){
+    var e=S.employees.filter(function(y){return y.id===x.empId;})[0];
+    out.push({date:x.date,kind:"trans",who:e?e.name:"—",note:x.note||"",
+      amt:+x.amount||0,dir:1,id:x.id,act:"edittransfer",sec:"outside"});
+  });
+  out=out.filter(function(x){return (x.date||"").slice(0,7)<=upto;});
+  out.sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:0);});
+  var run=+S.settings.openingCash||0;
+  out.forEach(function(x){ run+=x.dir*x.amt; x.run=run; });
+  return out;
+}
+/* ad funding sits in the box but belongs to the platforms */
+function funding(upto){
+  var got=S.payments.filter(function(x){return x.kind==="funding"&&(x.date||"").slice(0,7)<=upto;})
+    .reduce(function(a,x){return a+(+x.amount||0);},0);
+  var spent=S.costs.filter(function(x){return x.category==="Ads"&&(x.date||"").slice(0,7)<=upto;})
+    .reduce(function(a,x){return a+(+x.amount||0);},0);
+  return {got:got,spent:spent,left:got-spent};
+}
+/* costs someone paid out of their own pocket, less what they have been given back */
+/* everything the company still owes other people */
+function commitments(upto,exceptId){
+  var sum=0;
+  S.employees.forEach(function(e){
+    if(!e.active||e.id===exceptId) return;
+    var lg=empLedger(e,upto);
+    var owed=lg.rows.reduce(function(a,r){return a+r.payout;},0)-paidTo(e.id,upto);
+    if(owed>0) sum+=owed;
+  });
+  S.employees.forEach(function(e){
+    if(e.id===exceptId) return;
+    var ob=owedBack(e.id,upto);
+    if(ob.due>0) sum+=ob.due;
+  });
+  return sum;
+}
+/* cash that is genuinely free to take out */
+function available(upto,exceptId){
+  var box=cashBox(upto).balance;
+  var fu=Math.max(0,funding(upto).left);
+  var com=commitments(upto,exceptId);
+  return {box:box,funding:fu,committed:com,free:box-fu-com};
+}
+function owedBack(empId,upto){
+  var paid=S.costs.filter(function(x){
+      return x.payer===empId&&((x.date||"").slice(0,7)<=upto);})
+    .reduce(function(a,x){return a+(+x.amount||0);},0);
+  var back=S.payouts.filter(function(x){
+      return x.employeeId===empId&&x.kind==="reimb"&&(x.date||"").slice(0,7)<=upto;})
+    .reduce(function(a,x){return a+(+x.amount||0);},0);
+  return {paid:paid,back:back,due:paid-back};
+}
+/* the box before any wage left it, and after every wage still owed is paid.
+   Partners are left out: their money is the split itself, not a wage. */
+/* every component of the balance, so the figure can be checked by hand */
+function boxParts(m){
+  var mv=movements(m);
+  var sum=function(fn){return mv.filter(fn).reduce(function(a,x){return a+x.amt;},0);};
+  return {
+    open:+S.settings.openingCash||0,
+    inn:sum(function(x){return x.kind==="pay"||x.kind==="fund";}),
+    cost:sum(function(x){return x.kind==="cost"&&x.dir<0;}),
+    adv:sum(function(x){return x.kind==="adv";}),
+    wage:sum(function(x){return x.kind==="out";}),
+    reim:sum(function(x){return x.kind==="reim";}),
+    trf:sum(function(x){return x.kind==="trans";})
+  };
+}
+function boxAroundWages(m){
+  var box=cashBox(m).balance, paid=0, owed=0;
+  S.employees.forEach(function(e){
+    if(e.payType==="percent") return;
+    paid+=paidTo(e.id,m);
+    if(!e.active) return;
+    var lg=empLedger(e,m);
+    var due=lg.rows.reduce(function(a,r){return a+r.payout;},0)-paidTo(e.id,m);
+    if(due>0) owed+=due;
+  });
+  return {before:box+paid, after:box-owed, paid:paid, owed:owed};
+}
+function cashBox(upto){
+  var all=movements(upto);
+  var inn=0,outp=0;
+  all.forEach(function(x){ if(x.dir>0) inn+=x.amt; else if(x.dir<0) outp+=x.amt; });
+  return {rows:all,inn:inn,out:outp,
+          balance:(+S.settings.openingCash||0)+inn-outp,
+          month:all.filter(function(x){return inMonth(x.date,upto);})};
+}
+/* what a person has actually been handed, versus what they were owed */
+function paidTo(empId,upto){
+  return S.payouts.filter(function(x){return x.employeeId===empId&&x.kind!=="reimb"&&(x.date||"").slice(0,7)<=upto;})
+    .reduce(function(a,x){return a+(+x.amount||0);},0);
+}
+
 /* ══════ one client's full account ══════ */
 function vClient(){
   var c=S.customers.filter(function(x){return x.id===SEL;})[0];
@@ -1215,16 +1567,19 @@ function vTeam(){
    +(wa?'<button class="btn" data-act="newadv">'+t("ad.take")+'</button>':'')
    +(w?'<button class="btn primary" data-act="newemp">'+t("tm.add")+'</button>':'')+'</div></div>'
    +'<div class="card"><div class="tbl-wrap"><table><thead><tr><th>'+t("th.name")+'</th><th>'+t("th.paid")+'</th>'
-   +'<th class="r">'+t("th.rate")+'</th><th class="r">'+t("th.earned")+'</th><th class="r">'+t("th.adv")+'</th>'
+   +'<th class="r">'+t("th.rate")+'</th><th>'+t("th.deliv")+'</th>'
+   +'<th class="r">'+t("th.earned")+'</th><th class="r">'+t("th.adv")+'</th>'
    +'<th class="r">'+t("th.carry")+'</th><th class="r">'+t("th.net")+'</th><th></th></tr></thead><tbody>';
-  var tot=0;
+  var tot=0, ownerId=calc(MONTH).rentEmp;
   S.employees.forEach(function(e){
     var lg=empLedger(e,MONTH).cur; tot+=lg.payout;
+    var wc=workCounts(e.id,MONTH,e.id===ownerId);
     h+='<tr><td><a href="#" data-act="openemp" data-id="'+e.id+'" class="lnk"><b>'+esc(e.name)+'</b></a>'
      +(e.active?'':' <span class="pill">'+t("st.off")+'</span>')
      +(e.role?'<div class="mut" style="font-size:11.5px">'+esc(e.role)+'</div>':'')+'</td>'
      +'<td><span class="pill '+(e.payType==="percent"?"amb":"")+'">'+t("p."+e.payType)+'</span></td>'
      +'<td class="r"><span class="num">'+(e.payType==="percent"?e.rate+"%":money(e.rate))+'</span></td>'
+     +'<td>'+deliveredChips(wc)+'</td>'
      +'<td class="r"><span class="num">'+money(lg.earned)+'</span></td>'
      +'<td class="r">'+(lg.adv?'<span class="num neg">−'+money(lg.adv)+'</span>':'<span class="mut">—</span>')+'</td>'
      +'<td class="r">'+(lg.carryIn?'<span class="num neg">−'+money(lg.carryIn)+'</span>':'<span class="mut">—</span>')+'</td>'
@@ -1234,8 +1589,28 @@ function vTeam(){
   });
   h+='<tr class="sum"><td colspan="6" class="r mut">'+t("tm.total")+'</td>'
    +'<td class="r"><span class="num" style="font-weight:600">'+money(tot)+'</span></td><td></td></tr>';
-  h+='</tbody></table></div></div>'
-   +'<div class="note" style="margin-top:14px">'+t("ad.note",{p:S.settings.managerPct})+'</div></div>';
+  h+='</tbody></table></div></div>';
+
+  var pr=calc(MONTH).partners;
+  if(pr.length){
+    h+='<div class="sec card"><h2>'+t("draw.t")+'</h2><p class="sub">'+t("draw.n")+'</p>'
+     +'<div class="tbl-wrap"><table><thead><tr><th>'+t("th.who")+'</th>'
+     +'<th class="r">'+t("th.share")+'</th><th class="r">'+t("th.earned")+'</th>'
+     +'<th class="r">'+t("th.adv")+'</th><th class="r">'+t("th.net")+'</th></tr></thead><tbody>';
+    pr.forEach(function(pn){
+      var L=empLedger(pn.e,MONTH), cur=L.cur;
+      var owed=L.rows.reduce(function(a,x){return a+x.payout;},0)-paidTo(pn.e.id,MONTH);
+      h+='<tr><td><b>'+esc(pn.e.name)+'</b></td>'
+       +'<td class="r"><span class="num acc">'+pn.pct+'%</span></td>'
+       +'<td class="r"><span class="num">'+money(cur.earned)+'</span></td>'
+       +'<td class="r">'+(cur.adv?'<span class="num neg">−'+money(cur.adv)+'</span>':'<span class="mut">—</span>')+'</td>'
+       +'<td class="r">'+(cur.carryOut>0.005
+          ? '<span class="num neg">'+t("part.over")+' '+money(cur.carryOut)+'</span>'
+          : '<span class="num '+(owed>0.005?"acc":"mut")+'">'+t("part.owed")+' '+money(Math.max(0,owed))+'</span>')+'</td></tr>';
+    });
+    h+='</tbody></table></div></div>';
+  }
+  h+='<div class="note" style="margin-top:14px">'+t("part.expl")+'</div></div>';
   return h;
 }
 
@@ -1254,14 +1629,21 @@ function vEmployee(){
    +(e.payType==="percent"?e.rate+"%":money(e.rate))+'</p></div>'
    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
    +'<button class="btn" data-act="print">'+t("print")+'</button>'
-   +(wa?'<button class="btn primary" data-act="newadv" data-id="'+e.id+'">'+t("ad.take")+'</button>':'')
+   +(wa?'<button class="btn primary" data-act="newpayout" data-id="'+e.id+'">'+t("po.add")+'</button>':'')
+   +(wa?'<button class="btn" data-act="newadv" data-id="'+e.id+'">'+t("ad.take")+'</button>':'')
    +(w?'<button class="btn" data-act="editemp" data-id="'+e.id+'">'+t("edit")+'</button>':'')+'</div></div>';
 
-  h+='<div class="kpis">'
+  var owedAll=lg.rows.reduce(function(a,r){return a+r.payout;},0);
+  var paidAll=paidTo(e.id,MONTH);
+  var left=owedAll-paidAll;
+  var wcE=workCounts(e.id,MONTH,e.id===calc(MONTH).rentEmp);
+  h+='<div class="sec card"><span class="eyebrow">'+t("tm.work",{m:monthName(MONTH)})+'</span>'
+   +'<div style="margin-top:10px">'+deliveredChips(wcE)+'</div></div>';
+  h+='<div class="kpis" style="margin-top:22px">'
    +kpi("net",t("th.net"),money(cur.payout),t("emp.thismonth",{m:monthName(MONTH)}))
    +kpi("in",t("th.earned"),money(cur.earned),monthName(MONTH))
    +kpi("out",t("th.adv"),money(cur.adv),monthName(MONTH))
-   +kpi(cur.carryOut?"out":"",t("ad.owes"),money(cur.carryOut),cur.carryOut?"":t("ad.clear"))
+   +kpi(left>0.005?"out":"in",t("po.left"),money(left>0?left:0),t("po.paid")+" "+money(paidAll))
    +'</div>';
 
   h+='<div class="sec card"><h2>'+t("emp.stmt")+'</h2><p class="sub">'+t("emp.stmt.s")+'</p><div class="tbl-wrap"><table><thead><tr>'
@@ -1375,18 +1757,97 @@ function vCalendar(){
 
 /* ═════════════ OUTSIDE ═════════════ */
 function vOutside(){
-  var h='<div class="sec"><div class="rowhead"><div><h2>'+t("os.t")+'</h2>'
+  var r=calc(MONTH);
+  var h='<div class="sec"><div class="kpis">'
+   +kpi("you",t("os.net"),money(r.outside+r.projIn),t("os.net.n"))
+   +'</div></div>';
+  h+='<div class="sec"><div class="rowhead"><div><h2>'+t("os.t")+'</h2>'
    +'<p class="sub" style="margin:0">'+t("os.s")+'</p></div>'
    +'<button class="btn primary" data-act="newoutside">'+t("os.add")+'</button></div>'
    +'<div class="card"><div class="tbl-wrap"><table><thead><tr><th>'+t("th.src")+'</th><th>'+t("th.note")+'</th>'
-   +'<th>'+t("th.type")+'</th><th class="r">'+t("th.perm")+'</th><th></th></tr></thead><tbody>';
+   +'<th>'+t("th.type")+'</th><th class="r">'+t("th.perm")+'</th>'
+   +'<th class="r">'+t("os.days",{m:monthName(MONTH)})+'</th>'
+   +'<th class="r">'+monthName(MONTH)+'</th><th></th></tr></thead><tbody>';
+  var tot=0;
   S.outside.forEach(function(o){
-    h+='<tr><td><b>'+esc(o.name)+'</b></td><td class="mut">'+esc(o.note)+'</td>'
+    var amt=outsideAmt(o,MONTH);
+    if(o.active) tot+=(o.kind==="income"?amt:-amt);
+    h+='<tr><td><b>'+esc(o.name)+'</b>'+(o.active?'':' <span class="pill">'+t("st.paused")+'</span>')+'</td>'
+     +'<td class="mut">'+esc(o.note)+'</td>'
      +'<td><span class="pill '+(o.kind==="income"?"on":"")+'">'+(o.kind==="income"?t("os.income"):t("os.cost"))+'</span></td>'
-     +'<td class="r"><span class="num '+(o.kind==="income"?"pos":"neg")+'">'+(o.kind==="income"?"+":"−")+money(o.amount)+'</span></td>'
+     +'<td class="r"><span class="num mut">'+money(o.amount)+'</span></td>'
+     +'<td class="r">'+(o.mode==="daily"
+        ? '<span class="num">'+t("os.of",{d:outsideDays(o,MONTH),n:(+o.base||30)})+'</span>'
+        : '<span class="mut">'+t("os.full")+'</span>')+'</td>'
+     +'<td class="r"><span class="num '+(o.kind==="income"?"pos":"neg")+'">'+(o.kind==="income"?"+":"−")+money(amt)+'</span></td>'
      +'<td class="r"><button class="btn sm ghost" data-act="editoutside" data-id="'+o.id+'">'+t("edit")+'</button></td></tr>';
   });
+  h+='<tr class="sum"><td colspan="5" class="r mut">'+monthName(MONTH)+'</td>'
+   +'<td class="r"><span class="num" style="font-weight:600">'+money(tot)+'</span></td><td></td></tr>';
   h+='</tbody></table></div></div></div>';
+
+  h+='<div class="note" style="margin-top:6px">'+t("os.priv")+'</div>';
+
+  /* advances taken from an outside employer */
+  h+='<div class="sec card"><div class="rowhead"><div><h2>'+t("osa.t")+'</h2></div>'
+   +'<button class="btn" data-act="newosadv">'+t("osa.add")+'</button></div>'
+   +'<div class="tbl-wrap"><table><thead><tr><th>'+t("th.date")+'</th><th>'+t("osa.from")+'</th>'
+   +'<th>'+t("th.note")+'</th><th class="r">'+t("th.amt")+'</th><th></th></tr></thead><tbody>';
+  var osaTot=0;
+  S.osadvances.slice().sort(function(a,b){return a.date<b.date?1:-1;}).forEach(function(x){
+    osaTot+=+x.amount||0;
+    var src=S.outside.filter(function(o){return o.id===x.sourceId;})[0];
+    h+='<tr><td>'+n(esc(x.date))+'</td><td>'+esc(src?src.name:(x.source||"—"))+'</td>'
+     +'<td class="mut">'+esc(x.note||"")+'</td>'
+     +'<td class="r"><span class="num pos">+'+money(x.amount)+'</span></td>'
+     +'<td class="r"><button class="btn sm ghost" data-act="editosadv" data-id="'+x.id+'">'+t("edit")+'</button></td></tr>';
+  });
+  if(!S.osadvances.length) h+='<tr><td colspan="5" class="empty">'+t("osa.none")+'</td></tr>';
+  else h+='<tr class="sum"><td colspan="3" class="r mut">'+t("cs.tot")+'</td>'
+    +'<td class="r"><span class="num" style="font-weight:600">'+money(osaTot)+'</span></td><td></td></tr>';
+  h+='</tbody></table></div></div>';
+
+  /* who owes whom, outside the business */
+  var dMine=0,dTheirs=0;
+  S.debts.forEach(function(x){ if(x.settled)return;
+    if(x.dir==="mine") dMine+=+x.amount||0; else dTheirs+=+x.amount||0; });
+  h+='<div class="sec card"><div class="rowhead"><div><h2>'+t("dbt.t")+'</h2>'
+   +'<p class="sub" style="margin:0">'+t("dbt.mine")+' '+money(dMine)+' · '+t("dbt.theirs")+' '+money(dTheirs)
+   +' · <b>'+t("dbt.net")+' '+money(dMine-dTheirs)+'</b></p></div>'
+   +'<button class="btn" data-act="newdebt">'+t("dbt.add")+'</button></div>'
+   +'<div class="tbl-wrap"><table><thead><tr><th>'+t("th.date")+'</th><th>'+t("dbt.party")+'</th>'
+   +'<th>'+t("dbt.dir")+'</th><th class="r">'+t("th.amt")+'</th><th>'+t("th.status")+'</th><th></th></tr></thead><tbody>';
+  if(!S.debts.length) h+='<tr><td colspan="6" class="empty">'+t("dbt.none")+'</td></tr>';
+  S.debts.slice().sort(function(a,b){return a.date<b.date?1:-1;}).forEach(function(x){
+    h+='<tr><td>'+n(esc(x.date))+'</td><td><b>'+esc(x.party)+'</b>'
+     +(x.note?'<div class="mut" style="font-size:11.5px">'+esc(x.note)+'</div>':'')+'</td>'
+     +'<td><span class="pill '+(x.dir==="mine"?"on":"")+'">'+t(x.dir==="mine"?"dbt.mine":"dbt.theirs")+'</span></td>'
+     +'<td class="r"><span class="num '+(x.dir==="mine"?"pos":"neg")+'">'+money(x.amount)+'</span></td>'
+     +'<td>'+(x.settled?'<span class="pill on">'+t("dbt.settled")+'</span>':'<span class="pill">—</span>')+'</td>'
+     +'<td class="r"><button class="btn sm ghost" data-act="editdebt" data-id="'+x.id+'">'+t("edit")+'</button></td></tr>';
+  });
+  h+='</tbody></table></div></div>';
+
+  /* money moved from his own pocket into the business */
+  h+='<div class="sec card"><div class="rowhead"><div><h2>'+t("trf.t")+'</h2>'
+   +'<p class="sub" style="margin:0">'+t("trf.n")+'</p></div>'
+   +'<button class="btn primary" data-act="newtransfer">'+t("trf.add")+'</button></div>'
+   +'<div class="tbl-wrap"><table><thead><tr><th>'+t("th.date")+'</th><th>'+t("trf.settle")+'</th>'
+   +'<th>'+t("th.note")+'</th><th class="r">'+t("th.amt")+'</th><th></th></tr></thead><tbody>';
+  var trTot=0;
+  if(!S.transfers.length) h+='<tr><td colspan="5" class="empty">'+t("trf.none")+'</td></tr>';
+  S.transfers.slice().sort(function(a,b){return a.date<b.date?1:-1;}).forEach(function(x){
+    trTot+=+x.amount||0;
+    var e=S.employees.filter(function(y){return y.id===x.empId;})[0];
+    h+='<tr><td>'+n(esc(x.date))+'</td><td>'+esc(e?e.name:"—")+'</td>'
+     +'<td class="mut">'+esc(x.note||"")+'</td>'
+     +'<td class="r"><span class="num neg">−'+money(x.amount)+'</span></td>'
+     +'<td class="r"><button class="btn sm ghost" data-act="edittransfer" data-id="'+x.id+'">'+t("edit")+'</button></td></tr>';
+  });
+  if(S.transfers.length) h+='<tr class="sum"><td colspan="3" class="r mut">'+t("cs.tot")+'</td>'
+    +'<td class="r"><span class="num" style="font-weight:600">−'+money(trTot)+'</span></td><td></td></tr>';
+  h+='</tbody></table></div></div>';
+
   S.projects.forEach(function(p){
     var got=p.entries.filter(function(e){return inMonth(e.date,MONTH);}).reduce(function(a,e){return a+(+e.yours||0);},0);
     h+='<div class="sec card"><div class="rowhead"><div><h2>'+esc(p.name)+'</h2>'
@@ -1404,6 +1865,83 @@ function vOutside(){
   return h+'<div class="sec"><button class="btn ghost" data-act="newproj">'+t("os.newproj")+'</button></div>';
 }
 
+
+
+/* ═════════════ MOVEMENTS ═════════════ */
+function vLedger(){
+  var box=cashBox(MONTH), fu=funding(MONTH);
+  var rows=box.rows.filter(function(x){return inMonth(x.date,MONTH);});
+  if(LGMONEY) rows=rows.filter(function(x){return x.kind!=="work";});
+  var mIn=0,mOut=0;
+  rows.forEach(function(x){ if(x.dir>0) mIn+=x.amt; else if(x.dir<0) mOut+=x.amt; });
+  var r=calc(MONTH);
+  var rentEmp=S.employees.filter(function(e){return e.id===r.rentEmp;})[0];
+  var ob=rentEmp?owedBack(rentEmp.id,MONTH):{due:0};
+
+  var h='<div class="sec"><div class="kpis">'
+   +kpi("net",t("box.t"),money(box.balance),t("box.n"))
+   +kpi("in",t("box.in"),money(mIn),monthName(MONTH))
+   +kpi("out",t("box.out"),money(mOut),monthName(MONTH))
+   +(fu.left!==0?kpi("you",t("fund.left"),money(fu.left),t("fund.n")):"")
+   +(ob.due>0.005&&rentEmp?kpi("out",t("reim.t",{n:rentEmp.name}),money(ob.due),t("reim.n")):"")
+   +'</div></div>';
+
+  var wp=can("payments"), wa=can("advances"), wc=can("costs"), ww=can("work");
+  h+='<div class="sec card"><div class="rowhead"><div><h2>'+t("lg.t",{m:monthName(MONTH)})+'</h2>'
+   +'<p class="sub" style="margin:0">'+t("lg.s")+'</p></div>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+   +'<button class="btn sm ghost" data-act="lgfilter">'+t(LGMONEY?"lg.all":"lg.money")+'</button>'
+   +'<button class="btn" data-act="print">'+t("print")+'</button>'
+   +(ww?'<button class="btn" data-act="newwork">'+t("wk.add")+'</button>':'')
+   +(wp?'<button class="btn" data-act="newpay">'+t("cd.pay")+'</button>':'')
+   +(wp?'<button class="btn" data-act="newfund">'+t("fund.add")+'</button>':'')
+   +(wc?'<button class="btn" data-act="newcost">'+t("cs.add")+'</button>':'')
+   +(wa?'<button class="btn" data-act="newadv">'+t("ad.take")+'</button>':'')
+   +(wa?'<button class="btn" data-act="newpayout">'+t("po.add")+'</button>':'')
+   +(wa&&ob.due>0.005?'<button class="btn primary" data-act="newreimb" data-id="'+rentEmp.id+'">'+t("reim.add")+'</button>':'')
+   +'</div></div><div class="tbl-wrap"><table><thead><tr>'
+   +'<th>'+t("th.date")+'</th><th>'+t("th.action")+'</th><th>'+t("th.who")+'</th>'
+   +'<th class="r">'+t("box.in")+'</th><th class="r">'+t("box.out")+'</th>'
+   +'<th class="r">'+t("lg.run")+'</th><th></th></tr></thead><tbody>';
+  if(!rows.length) h+='<tr><td colspan="7" class="empty">'+t("lg.none")+'</td></tr>';
+  rows.forEach(function(x){
+    var lbl={pay:"lg.pay",cost:"lg.cost",adv:"lg.adv",out:"lg.out",work:"lg.work",fund:"lg.fund",reim:"lg.reim",trans:"lg.trans"}[x.kind]||"lg.pay";
+    var pill={pay:"on",cost:"",adv:"cy",out:"amb",work:"",fund:"cy",reim:"amb",trans:"on"}[x.kind]||"";
+    var can_=can(x.sec);
+    h+='<tr><td>'+n(esc(x.date))+'</td>'
+     +'<td><span class="pill '+pill+'">'+t(lbl)+'</span></td>'
+     +'<td>'+esc(x.who)+(x.note?'<div class="mut" style="font-size:11.5px">'+esc(x.note)+'</div>':'')+'</td>'
+     +'<td class="r">'+(x.dir>0?'<span class="num pos">+'+money(x.amt)+'</span>':'')+'</td>'
+     +'<td class="r">'+(x.dir<0?'<span class="num neg">−'+money(x.amt)+'</span>':(x.kind==="cost"?'<span class="mut" style="font-size:11.5px">'+money(x.amt)+'</span>':''))+'</td>'
+     +'<td class="r">'+(x.dir!==0?'<span class="num '+(x.run<0?"neg":"")+'">'+money(x.run)+'</span>':'')+'</td>'
+     +'<td class="r">'+(can_?'<button class="btn sm ghost" data-act="'+x.act+'" data-id="'+x.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
+  });
+  h+='<tr class="sum"><td colspan="3" class="r mut">'+t("box.t")+'</td>'
+   +'<td class="r"><span class="num pos">+'+money(mIn)+'</span></td>'
+   +'<td class="r"><span class="num neg">−'+money(mOut)+'</span></td>'
+   +'<td class="r"><span class="num" style="font-weight:600">'+money(box.balance)+'</span></td><td></td></tr>';
+  h+='</tbody></table></div>';
+  var bp=boxParts(MONTH);
+  var line=function(lbl,v,sign){
+    if(Math.abs(v)<0.005) return "";
+    return '<div class="carve" style="border:0;padding:5px 0;margin:0">'
+      +'<span>'+lbl+'</span><span class="num '+(sign>0?"pos":"neg")+'">'
+      +(sign>0?"+":"−")+money(Math.abs(v))+'</span></div>';};
+  h+='<div class="sec card"><span class="eyebrow">'+t("box.brk")+'</span><div style="margin-top:10px">'
+   +line(t("box.open2"),bp.open,bp.open<0?-1:1)
+   +line(t("box.in2"),bp.inn,1)
+   +line(t("box.trf2"),bp.trf,1)
+   +line(t("box.cost2"),bp.cost,-1)
+   +line(t("box.adv2"),bp.adv,-1)
+   +line(t("box.wage2"),bp.wage,-1)
+   +line(t("box.reim2"),bp.reim,-1)
+   +'<div class="carve" style="margin-top:8px"><span><b>'+t("box.eq")+'</b></span>'
+   +'<span class="num" style="font-weight:600">'+money(box.balance)+'</span></div>'
+   +'</div>';
+  if(can("setup")) h+='<div style="margin-top:14px"><button class="btn sm ghost" data-act="editbox">'+t("box.set")+'</button></div>';
+  h+='</div>';
+  return h+'</div>';
+}
 
 /* ═════════════ PEOPLE ═════════════ */
 var USERS=[];
@@ -1490,18 +2028,20 @@ function userForm(u){
 /* ═════════════ SETUP ═════════════ */
 function vSetup(){
   var s=S.settings;
-  var nLocked=["owner","manager","accountant"].filter(function(r){return s.pins&&s.pins[r];}).length;
   var h='<div class="sec"><h2>'+t("sp.t")+'</h2><p class="sub">'+t("sp.s")+'</p><div class="three">';
-  h+=box(t("sp.split"),t("sp.splitH",{a:s.managerPct,b:100-s.managerPct}),t("sp.splitS"),"editsplit",t("sp.splitB"));
+  var pr=calc(MONTH).partners;
+  h+=box(t("sp.split"),
+        pr.length?pr.map(function(x){return esc(x.e.name)+" "+x.pct+"%";}).join(" · "):t("part.none"),
+        t("sp.splitS"),"gotoTeam",t("sp.splitB"));
   h+=box(t("sp.rent"),s.rentMode==="myshare"?t("sp.rentA",{p:s.rentSharePct}):t("sp.rentB",{v:money(s.rentFlat)}),
         s.rentMode==="myshare"?t("sp.rentAS"):t("sp.rentBS"),"editrent",t("sp.rentBtn"));
+  h+=box(t("sp.basis"),t("basis."+(s.basis||"cash")),t("basis.s"),"editbasis",t("sp.change"));
   h+=box(t("sp.day"),t("sp.dayH",{h:s.dayCapacity,d:t("daysFull")[s.offDay]}),t("sp.dayS"),"editday",t("sp.change"));
   h+=box(t("sp.co"),s.company?esc(s.company):'<span class="mut">'+t("f.coname")+'</span>',t("sp.coS"),"editco",t("sp.change"));
-  h+=box(t("sp.pins"),t("sp.pinsH",{n:nLocked}),t("sp.pinsS"),"editpins",t("sp.pinsB"));
   var swName=(SWATCH.filter(function(x){return x[0].toLowerCase()===(s.accent||"").toLowerCase();})[0]||[null,"f.custom"])[1];
   h+=box(t("sp.look"),t("sp.lookH",{t:t("th."+(s.theme||"dark")),c:t(swName)}),t("f.accentH"),"editlook",t("sp.lookB"));
   h+=box(t("sp.inst"),t("sp.instH"),"","install",t("sp.instB"));
-  h+=box(t("cl.t2"), MODE==="cloud"?t("cl.on",{n:USERS.length||1}):t("cl.off"),
+  h+=box(t("cl.t2"), MODE==="cloud"?esc((ME&&(ME.name||ME.email))||""):t("cl.off"),
         MODE==="cloud"?t("cl.onS"):t("cl.offS"),
         MODE==="cloud"?"cloudmanage":"cloudon",
         MODE==="cloud"?t("cl.manage"):t("cl.connect"));
@@ -1538,11 +2078,12 @@ function installGuide(){
 function cloudForm(){
   var c=cfg();
   form(t("cl.connect"),[
-    {k:"url",label:t("cl.url"),def:c.url,hint:"https://xxxx.supabase.co"},
+    {k:"url",label:t("cl.url"),def:c.url,hint:"https://xxxx.supabase.co"+" \u2014 "+t("cl.urlH")},
     {k:"key",label:t("cl.key"),def:c.key,hint:t("cl.keyH")}
   ],null,async function(v){
     var u=(v.url||"").trim().replace(/\/+$/,""), k=(v.key||"").trim();
     if(!u||!k) return;
+    if(/^sb_secret_/i.test(k)||/service_role/i.test(k)){ alert(t("cl.secret")); return; }
     try{
       var test=await sbClient(u,k);
       var r=await test.from("profiles").select("id").limit(1);
@@ -1565,7 +2106,7 @@ function cloudManage(){
     el("cUp").disabled=true; await pushEverything(); el("modalHost").innerHTML="";
   };
   el("cOut").onclick=async function(){ if(SB) await SB.auth.signOut(); el("modalHost").innerHTML=""; ME=null; renderAuth(); };
-  el("cOff").onclick=function(){ clearCfg(); location.reload(); };
+  if(el("cOff")) el("cOff").onclick=function(){ clearCfg(); location.reload(); };
 }
 var DEFER=null;
 window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();DEFER=e;});
@@ -1619,7 +2160,7 @@ function form(title,fields,vals,onSave,extra,saveLabel){
     var out={};
     fields.forEach(function(f){var q=el("formBody").querySelector('[name="'+f.k+'"]');
       out[f.k]=f.type==="check"?q.checked:(f.type==="number"?(q.value===""?"":+q.value):q.value);});
-    close(); onSave(out); save(); if(ROLE) render();
+    close(); onSave(out); save(); if(ROLE||ME) render();
   };
   function close(){el("modalHost").innerHTML="";applyTheme();}
 }
@@ -1654,7 +2195,7 @@ function empForm(e){
   ],e,function(v){
     if(v===null){S.employees=S.employees.filter(function(x){return x.id!==e.id;});return;}
     if(e) Object.assign(e,v); else {v.id=uid();S.employees.push(v);}
-    if(v.payType==="percent") S.settings.managerPct=+v.rate||S.settings.managerPct;});
+});
 }
 function workForm(w){
   form(w?t("wk.edit"):t("wk.add"),[
@@ -1662,7 +2203,9 @@ function workForm(w){
     {k:"customerId",label:t("f.client"),type:"select",options:S.customers.map(function(c){return [c.id,c.name];})},
     {k:"type",label:t("f.delivered"),type:"select",options:[["video",t("d.video")],["post",t("d.post")],["design",t("d.design")],["task",t("d.task")]]},
     {k:"qty",label:t("f.howmany"),type:"number",def:1},
-    {k:"editorId",label:t("f.whodid"),type:"select",options:[["",t("f.nobody")]].concat(S.employees.filter(function(e){return e.payType!=="percent";}).map(function(e){return [e.id,e.name];}))},
+    {k:"editorId",label:t("f.whodid"),type:"select",options:[["",(function(){
+        var ow=S.employees.filter(function(x){return x.id===calc(MONTH).rentEmp;})[0];
+        return ow?t("wk.mineN",{n:ow.name}):t("wk.mine");})()]].concat(S.employees.filter(function(e){return e.payType!=="percent";}).map(function(e){return [e.id,e.name];}))},
     {k:"amount",label:t("f.override"),type:"number",step:"0.01",hint:t("f.overrideH")},
     {k:"note",label:t("f.note"),type:"textarea"}
   ],w,function(v){
@@ -1672,7 +2215,10 @@ function workForm(w){
 function costForm(x){
   form(x?t("cs.edit"):t("cs.add"),[
     {k:"note",label:t("f.whatis")},
-    {k:"category",label:t("f.cat"),type:"select",options:["Transport","Phone","Internet","Equipment","Software","Rent","Other"].map(function(c){return [c,t("c."+c)];})},
+    {k:"category",label:t("f.cat"),type:"select",options:["Transport","Phone","Internet","Ads","Equipment","Software","Rent","Other"].map(function(c){return [c,t("c."+c)];})},
+    {k:"payer",label:t("cost.payer"),type:"select",def:"box",
+     options:[["box",t("cost.box")]].concat(S.employees.filter(function(e){return e.payType==="percent";})
+       .map(function(e){return [e.id,t("cost.owner",{n:e.name})];}))},
     {k:"amount",label:t("f.amount"),type:"number",step:"0.01"},
     {k:"date",label:t("f.date"),type:"date",def:todayISO()},
     {k:"recurring",label:"",type:"check",checkLabel:t("f.repeats")}
@@ -1697,11 +2243,20 @@ function outsideForm(o){
     {k:"name",label:t("f.source")},
     {k:"kind",label:t("f.type"),type:"select",options:[["income",t("os.income")],["cost",t("os.cost")]]},
     {k:"amount",label:t("f.permonth"),type:"number",step:"0.01"},
+    {k:"mode",label:t("f.osmode"),type:"select",options:[["full",t("os.full")],["daily",t("os.daily")]],def:"full"},
+    {k:"base",label:t("f.osbase"),type:"number",def:30,showIf:{k:"mode",in:["daily"]}},
+    {k:"days",label:t("f.osdays"),type:"number",hint:t("f.osdaysH"),showIf:{k:"mode",in:["daily"]},
+     def:o?outsideDays(o,MONTH):30},
     {k:"note",label:t("f.note"),type:"textarea"},
     {k:"active",label:"",type:"check",checkLabel:t("f.running"),def:true}
   ],o,function(v){
     if(v===null){S.outside=S.outside.filter(function(x){return x.id!==o.id;});return;}
-    if(o) Object.assign(o,v); else {v.id=uid();S.outside.push(v);}});
+    var days=v.days; delete v.days;
+    var tgt=o;
+    if(o) Object.assign(o,v); else {v.id=uid();S.outside.push(v);tgt=v;}
+    if(!tgt.daysByMonth) tgt.daysByMonth={};
+    if(v.mode==="daily"&&days!=="") tgt.daysByMonth[MONTH]=+days;
+  });
 }
 function lookForm(){
   var cur=S.settings.accent||"#B2842E";
@@ -1751,6 +2306,16 @@ function lookForm(){
     var v=th.value==="auto"?((window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light"):th.value;
     document.documentElement.setAttribute("data-theme",v);});
 }
+function payoutForm(x,empId,suggest){
+  form(x?t("po.edit"):t("po.add"),[
+    {k:"date",label:t("f.date"),type:"date",def:todayISO()},
+    {k:"employeeId",label:t("f.who"),type:"select",options:S.employees.map(function(e){return [e.id,e.name];}),def:empId||""},
+    {k:"amount",label:t("f.payamount"),type:"number",step:"0.01",def:(suggest!=null&&suggest>0)?suggest.toFixed(2):""},
+    {k:"note",label:t("f.paynote"),type:"textarea"}
+  ],x,function(v){
+    if(v===null){S.payouts=S.payouts.filter(function(y){return y.id!==x.id;});return;}
+    if(x) Object.assign(x,v); else {v.id=uid();v.kind="wage";S.payouts.push(v);}});
+}
 function advForm(a,empId){
   form(a?t("ad.edit"):t("ad.take"),[
     {k:"date",label:t("f.date"),type:"date",def:todayISO()},
@@ -1765,12 +2330,51 @@ function payForm(pay,custId){
   form(pay?t("pm.edit"):t("pm.add"),[
     {k:"date",label:t("f.date"),type:"date",def:todayISO()},
     {k:"customerId",label:t("f.client"),type:"select",options:S.customers.map(function(c){return [c.id,c.name];}),def:custId||""},
+    {k:"kind",label:t("f.paykind"),type:"select",options:[["payment",t("k.payment")],["funding",t("k.funding")]],def:"payment"},
     {k:"amount",label:t("f.amountpaid"),type:"number",step:"0.01"},
     {k:"method",label:t("f.method"),type:"select",options:[["cash",t("m.cash")],["bank",t("m.bank")],["other",t("m.other")]]},
     {k:"note",label:t("f.note"),type:"textarea"}
   ],pay,function(v){
     if(v===null){S.payments=S.payments.filter(function(x){return x.id!==pay.id;});return;}
     if(pay) Object.assign(pay,v); else {v.id=uid();S.payments.push(v);}});
+}
+function osAdvForm(x){
+  form(x?t("edit"):t("osa.add"),[
+    {k:"date",label:t("f.date"),type:"date",def:todayISO()},
+    {k:"sourceId",label:t("osa.from"),type:"select",options:S.outside.map(function(o){return [o.id,o.name];})},
+    {k:"amount",label:t("th.amt"),type:"number",step:"0.01"},
+    {k:"note",label:t("f.note"),type:"textarea"}
+  ],x,function(v){
+    if(v===null){S.osadvances=S.osadvances.filter(function(y){return y.id!==x.id;});return;}
+    if(x) Object.assign(x,v); else {v.id=uid();S.osadvances.push(v);}});
+}
+function debtForm(x){
+  form(x?t("edit"):t("dbt.add"),[
+    {k:"date",label:t("f.date"),type:"date",def:todayISO()},
+    {k:"party",label:t("dbt.party")},
+    {k:"dir",label:t("dbt.dir"),type:"select",options:[["mine",t("dbt.mine")],["theirs",t("dbt.theirs")]],def:"mine"},
+    {k:"amount",label:t("th.amt"),type:"number",step:"0.01"},
+    {k:"note",label:t("f.note"),type:"textarea"},
+    {k:"settled",label:"",type:"check",checkLabel:t("dbt.settled")}
+  ],x,function(v){
+    if(v===null){S.debts=S.debts.filter(function(y){return y.id!==x.id;});return;}
+    if(x) Object.assign(x,v); else {v.id=uid();S.debts.push(v);}});
+}
+function transferForm(x){
+  var owner=calc(MONTH).rentEmp;
+  var over=0;
+  if(owner){var em=S.employees.filter(function(y){return y.id===owner;})[0];
+    if(em) over=empLedger(em,MONTH).cur.carryOut||0;}
+  form(x?t("edit"):t("trf.add"),[
+    {k:"date",label:t("f.date"),type:"date",def:todayISO()},
+    {k:"empId",label:t("trf.settle"),type:"select",
+     options:S.employees.filter(function(e){return e.payType==="percent";}).map(function(e){return [e.id,e.name];}),
+     def:owner||""},
+    {k:"amount",label:t("th.amt"),type:"number",step:"0.01",def:over>0?over.toFixed(2):"",hint:t("trf.n")},
+    {k:"note",label:t("f.note"),type:"textarea"}
+  ],x,function(v){
+    if(v===null){S.transfers=S.transfers.filter(function(y){return y.id!==x.id;});return;}
+    if(x) Object.assign(x,v); else {v.id=uid();S.transfers.push(v);}});
 }
 function projForm(p){
   var st=["In discussion","Agreed","Building","Free support month","Paid support","Closed"];
@@ -1802,12 +2406,10 @@ function projPay(p){
 
 /* ═════════════ events ═════════════ */
 document.addEventListener("click",function(ev){
-  var g=ev.target.closest("[data-role]");
-  if(g){tryEnter(g.dataset.role);return;}
   var lb=ev.target.closest("[data-lang]");
-  if(lb){LANG=lb.dataset.lang;S.settings.lang=LANG;save();if(ROLE)render();else renderGate();return;}
+  if(lb){LANG=lb.dataset.lang;S.settings.lang=LANG;save();if(ROLE||ME)render();else if(SB)renderAuth();else renderSetup();return;}
   var tb=ev.target.closest("[data-tab]");
-  if(tb){if(tb.dataset.tab!==TAB){SEL=null;SELE=null;}TAB=tb.dataset.tab;render();return;}
+  if(tb){SEL=null;SELE=null;TAB=tb.dataset.tab;render();return;}
   var a=ev.target.closest("[data-act]"); if(!a) return;
   var id=a.dataset.id, act=a.dataset.act;
   var f=function(arr){return arr.filter(function(x){return x.id===id;})[0];};
@@ -1815,14 +2417,40 @@ document.addEventListener("click",function(ev){
   if(act==="mprev"){MONTH=addMonth(MONTH,-1);render();}
   else if(act==="mnext"){MONTH=addMonth(MONTH,1);render();}
   else if(act==="lang"){LANG=LANG==="ar"?"en":"ar";S.settings.lang=LANG;save();render();}
-  else if(act==="logout"){ if(MODE==="cloud"){cloudManage();} else {ROLE=null;renderGate();} }
+  else if(act==="logout"){ cloudManage(); }
   else if(act==="opencli"){ev.preventDefault();SEL=id;TAB="clients";render();}
   else if(act==="closecli"){SEL=null;render();}
   else if(act==="openemp"){ev.preventDefault();SELE=id;TAB="team";render();}
   else if(act==="closeemp"){SELE=null;render();}
+  else if(act==="newpayout"){
+    var em=S.employees.filter(function(x){return x.id===id;})[0];
+    var due=null;
+    if(em){var L=empLedger(em,MONTH);due=L.rows.reduce(function(a,r){return a+r.payout;},0)-paidTo(em.id,MONTH);}
+    payoutForm(null,id,due);
+  }
+  else if(act==="editpayout") payoutForm(f(S.payouts));
+  else if(act==="editbasis") form(t("basis.t"),[
+      {k:"basis",label:t("basis.t"),type:"select",options:[["cash",t("basis.cash")],["billed",t("basis.billed")]],def:S.settings.basis||"cash"}
+    ],null,function(v){S.settings.basis=v.basis;});
+  else if(act==="editbox") form(t("box.set"),[
+      {k:"openingCash",label:t("box.open"),type:"number",step:"0.01",def:S.settings.openingCash||0}
+    ],null,function(v){S.settings.openingCash=+v.openingCash||0;});
   else if(act==="newadv") advForm(null,id);
   else if(act==="editadv") advForm(f(S.advances));
   else if(act==="newpay") payForm(null,id);
+  else if(act==="newfund"){ payForm(null,id); var kf=document.querySelector('#formBody [name="kind"]');
+    if(kf){kf.value="funding";kf.dispatchEvent(new Event("change",{bubbles:true}));} }
+  else if(act==="lgfilter"){ LGMONEY=!LGMONEY; render(); }
+  else if(act==="newreimb"){
+    var em2=S.employees.filter(function(x){return x.id===id;})[0];
+    var ob2=em2?owedBack(em2.id,MONTH):{due:0};
+    form(t("reim.add"),[
+      {k:"date",label:t("f.date"),type:"date",def:todayISO()},
+      {k:"employeeId",label:t("f.who"),type:"select",options:S.employees.map(function(e){return [e.id,e.name];}),def:id||""},
+      {k:"amount",label:t("f.payamount"),type:"number",step:"0.01",def:ob2.due>0?ob2.due.toFixed(2):""},
+      {k:"note",label:t("f.paynote"),type:"textarea",def:t("reim.line")}
+    ],null,function(v){ v.id=uid(); v.kind="reimb"; S.payouts.push(v); });
+  }
   else if(act==="editpay") payForm(f(S.payments));
   else if(act==="newclient") clientForm(null);
   else if(act==="editclient") clientForm(f(S.customers));
@@ -1835,6 +2463,12 @@ document.addEventListener("click",function(ev){
   else if(act==="newshoot") shootForm(null);
   else if(act==="editshoot") shootForm(f(S.shoots));
   else if(act==="dayclick") shootForm(null,a.dataset.date);
+  else if(act==="newosadv") osAdvForm(null);
+  else if(act==="editosadv") osAdvForm(f(S.osadvances));
+  else if(act==="newdebt") debtForm(null);
+  else if(act==="editdebt") debtForm(f(S.debts));
+  else if(act==="newtransfer") transferForm(null);
+  else if(act==="edittransfer") transferForm(f(S.transfers));
   else if(act==="newoutside") outsideForm(null);
   else if(act==="editoutside") outsideForm(f(S.outside));
   else if(act==="newproj") projForm(null);
@@ -1852,17 +2486,18 @@ document.addEventListener("click",function(ev){
   else if(act==="mtoday"){MONTH=ymNow();render();}
   else if(act==="print") window.print();
   else if(act==="addrent"){S.settings.rentSetAside=(+S.settings.rentSetAside||0)+(+a.dataset.amt||0);save();render();}
-  else if(act==="editsplit") form(t("sp.split"),[{k:"managerPct",label:t("f.mgrpct"),type:"number",step:"0.5",def:S.settings.managerPct}],
-    null,function(v){S.settings.managerPct=+v.managerPct||0;
-      var m=S.employees.filter(function(e){return e.payType==="percent";})[0]; if(m)m.rate=S.settings.managerPct;});
+  else if(act==="gotoTeam"){TAB="team";SELE=null;render();}
   else if(act==="editrent") form(t("sp.rentBtn"),[
     {k:"rentMode",label:t("f.whopays"),type:"select",options:[["myshare",t("f.rentmine")],["expense",t("f.rentco")]]},
     {k:"rentSharePct",label:t("f.pctaside"),type:"number",step:"0.5",showIf:{k:"rentMode",in:["myshare"]}},
+    {k:"rentFromEmpId",label:t("part.rent"),type:"select",showIf:{k:"rentMode",in:["myshare"]},
+     options:S.employees.filter(function(e){return e.payType==="percent";}).map(function(e){return [e.id,e.name];}),
+     def:S.settings.rentFromEmpId||""},
     {k:"rentFlat",label:t("f.offtop"),type:"number",step:"0.01",showIf:{k:"rentMode",in:["expense"]}},
     {k:"rentAnnual",label:t("f.yearly"),type:"number",step:"0.01"},
     {k:"rentMonthsLeft",label:t("f.monthsleft"),type:"number"},
     {k:"rentSetAside",label:t("f.saved"),type:"number",step:"0.01"}
-  ],S.settings,function(v){Object.assign(S.settings,{rentMode:v.rentMode,rentSharePct:+v.rentSharePct||0,
+  ],S.settings,function(v){Object.assign(S.settings,{rentMode:v.rentMode,rentSharePct:+v.rentSharePct||0,rentFromEmpId:v.rentFromEmpId,
     rentFlat:+v.rentFlat||0,rentAnnual:+v.rentAnnual||0,rentMonthsLeft:+v.rentMonthsLeft||0,rentSetAside:+v.rentSetAside||0});});
   else if(act==="editday") form(t("sp.day"),[
     {k:"dayCapacity",label:t("f.freehours"),type:"number",step:"0.5",def:S.settings.dayCapacity,hint:t("f.freehoursH")},
@@ -1899,6 +2534,16 @@ Store.load().then(async function(d){
     if(!S.settings.pins)S.settings.pins={owner:"",manager:"",accountant:""};
     if(!S.payments)S.payments=[];
     if(!S.advances)S.advances=[];
+    if(!S.payouts)S.payouts=[];
+    if(!S.osadvances)S.osadvances=[];
+    if(!S.debts)S.debts=[];
+    if(!S.transfers)S.transfers=[];
+    if(!S.settings.basis)S.settings.basis="cash";
+    S.payments.forEach(function(x){if(!x.kind)x.kind="payment";});
+    S.costs.forEach(function(x){if(!x.payer)x.payer="box";});
+    S.payouts.forEach(function(x){if(!x.kind)x.kind="wage";});
+    S.advances.forEach(function(x){if(!x.kind)x.kind="draw";});
+    S.outside.forEach(function(x){if(!x.kind)x.kind="income";});
     if(!S.settings.theme)S.settings.theme="dark";
     if(!S.settings.accent)S.settings.accent="#9DA79F";
     if(S.settings.logo==null)S.settings.logo=LOGO;
@@ -1911,7 +2556,7 @@ Store.load().then(async function(d){
   applyTheme();
   var went=false;
   try{ went=await bootCloud(); }catch(e){ went=false; }
-  if(!went){ MODE="local"; renderGate(); }
+  if(!went){ MODE="local"; renderSetup(); }
 });
 })();
 </script>
