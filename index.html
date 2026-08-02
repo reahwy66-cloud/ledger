@@ -788,26 +788,42 @@ function queuePush(){
   PUSHT=setTimeout(function(){push();},700);
 }
 async function push(){
-  try{
-    for(var i=0;i<TBL.length;i++){
-      var key=TBL[i][0], sec=TBL[i][1];
-      if(!PULLED[key]||!can(sec)) continue;   // never overwrite what we were not allowed to read
+  var ok=true;
+  /* each table is saved on its own — one failure must never stop the rest,
+     and any real error is printed so it can be seen, not swallowed */
+  for(var i=0;i<TBL.length;i++){
+    var key=TBL[i][0], sec=TBL[i][1];
+    if(!PULLED[key]||!can(sec)) continue;
+    try{
       var rows=(S[key]||[]).map(function(o){
         var d=Object.assign({},o); delete d.id;
         return {id:o.id,data:d,updated_at:new Date().toISOString()};
       });
-      if(rows.length) await SB.from(key).upsert(rows);
+      if(rows.length){
+        var up=await SB.from(key).upsert(rows);
+        if(up&&up.error) throw up.error;
+      }
+      /* remove rows that no longer exist locally.
+         IDs are passed to .in() as an array so the client quotes them safely —
+         building the filter string by hand mis-quoted them and deleted everything. */
       var ids=rows.map(function(r){return r.id;});
-      var del=SB.from(key).delete();
-      if(ids.length) del=del.not("id","in","("+ids.map(function(x){return '"'+x+'"';}).join(",")+")");
-      await del.neq("id","__none__");
+      if(ids.length){
+        var dr=await SB.from(key).delete().not("id","in","("+ids.join(",")+")");
+        if(dr&&dr.error) throw dr.error;
+      }
+    }catch(e){
+      ok=false;
+      try{ console.error("[sync] table \""+key+"\" failed:", (e&&e.message)||e); }catch(_){}
     }
-    if(can("setup")){
+  }
+  if(can("setup")){
+    try{
       var out=Object.assign({},S.settings); delete out.theme; delete out.accent; delete out.lang;
-      await SB.from("settings").upsert({id:1,data:out,updated_at:new Date().toISOString()});
-    }
-    setSync("cl.synced");
-  }catch(e){ setSync("cl.err"); }
+      var st=await SB.from("settings").upsert({id:1,data:out,updated_at:new Date().toISOString()});
+      if(st&&st.error) throw st.error;
+    }catch(e){ ok=false; try{ console.error("[sync] settings failed:",(e&&e.message)||e); }catch(_){} }
+  }
+  setSync(ok?"cl.synced":"cl.err");
 }
 
 /* one-time upload of whatever is on this device */
