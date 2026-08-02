@@ -288,7 +288,11 @@ en:{
  "b.packageL":"Fixed monthly package","b.per_videoL":"Per video","b.prepaidL":"Paid up front, drawing down",
  "th.billed2":"Billed","th.paid":"Paid","th.balance":"Balance","th.desc":"Detail","th.charge":"Charge","th.run":"Running",
  "k.due":"Owed by clients","k.due.n":"{n} clients with a balance",
- "cd.open":"Open statement","cd.back":"All clients","cd.stmt":"Statement","cd.stmt.s":"Every charge and every payment, oldest first.",
+ "cd.open":"Open statement","cd.back":"All clients","cd.invoice":"Invoice",
+ "inv.title":"INVOICE","inv.to":"Bill to","inv.date":"Date","inv.num":"Invoice #",
+ "inv.desc":"Description","inv.qty":"Qty","inv.rate":"Rate","inv.amount":"Amount",
+ "inv.subtotal":"Subtotal","inv.paid":"Paid","inv.due":"Balance due","inv.thanks":"Thank you for your business.",
+ "inv.period":"Period","inv.deliv":"Delivered this period","cd.stmt":"Statement","cd.stmt.s":"Every charge and every payment, oldest first.",
  "cd.delivered":"What we delivered","cd.month":"This month","cd.all":"Since {m}",
  "cd.owes":"Owes you","cd.credit":"In credit","cd.settled":"Settled up","cd.nothing":"Nothing recorded yet.",
  "cd.pay":"Record payment","cd.rename":"Rename","cd.promised":"Promised each month","cd.none":"—",
@@ -353,7 +357,9 @@ en:{
  "reim.t":"Owed back to {n}","reim.n":"Costs paid personally, not yet reimbursed",
  "reim.add":"Record a reimbursement","reim.none":"Nothing outstanding","reim.line":"Reimbursement",
  "lg.work":"Delivery","lg.fund":"Ad funding","lg.reim":"Reimbursement",
- "lg.all":"Every movement","lg.money":"Money only",
+ "lg.all":"Everything","lg.money":"Money only",
+ "flt.type":"Type","flt.who":"Person","flt.all":"All",
+ "flt.pay":"Payments","flt.adv":"Advances","flt.work":"Deliveries","flt.wage":"Wages","flt.cost":"Costs","flt.fund":"Funding","flt.clear":"Clear filters",
  "sp.basis":"Basis of the split",
  "box.brk":"What the box is made of","box.open2":"Opening balance","box.in2":"Client payments and funding",
  "box.cost2":"Costs paid by the box","box.adv2":"Draws and advances","box.wage2":"Wages paid",
@@ -522,7 +528,9 @@ ar:{
  "reim.t":"مستحق الاسترداد لـ{n}","reim.n":"مصروفات دفعها من جيبه ولم تُسترد",
  "reim.add":"تسجيل استرداد","reim.none":"لا يوجد","reim.line":"استرداد مصروفات",
  "lg.work":"تسليم","lg.fund":"تمويل إعلاني","lg.reim":"استرداد مصروفات",
- "lg.all":"كل الحركات","lg.money":"الحركات المالية فقط",
+ "lg.all":"الكل","lg.money":"الحركات المالية فقط",
+ "flt.type":"النوع","flt.who":"الشخص","flt.all":"الكل",
+ "flt.pay":"الدفعات","flt.adv":"السلف","flt.work":"التسليمات","flt.wage":"الرواتب","flt.cost":"المصروفات","flt.fund":"التمويل","flt.clear":"مسح الفلاتر",
  "sp.basis":"أساس التقسيم",
  "box.brk":"مِمّ يتكوّن الصندوق","box.open2":"الرصيد الافتتاحي","box.in2":"دفعات العملاء والتمويل",
  "box.cost2":"مصروفات دفعها الصندوق","box.adv2":"السلف والسحوبات","box.wage2":"أجور مدفوعة",
@@ -577,7 +585,11 @@ ar:{
  "b.packageL":"باقة شهرية ثابتة","b.per_videoL":"سعر لكل فيديو","b.prepaidL":"مدفوع مقدماً ويُخصم",
  "cli.month":"{v} / شهر","cli.pv":"{v} / فيديو","cli.inc":"{v} فيديو · {p} منشور","cli.left":"متبقٍّ {v}","cli.over":"تجاوز {v}","cli.exp":"{n} فيديو",
  "cli.ads":"منها {v} إعلانات","st.active":"نشط","st.paused":"موقوف","cli.total":"إجمالي المستحق",
- "cd.open":"كشف الحساب","cd.back":"العملاء","cd.stmt":"كشف الحساب","cd.stmt.s":"المستحقات والدفعات بالترتيب.",
+ "cd.open":"كشف الحساب","cd.back":"العملاء","cd.invoice":"فاتورة",
+ "inv.title":"فاتورة","inv.to":"إلى","inv.date":"التاريخ","inv.num":"رقم الفاتورة",
+ "inv.desc":"البيان","inv.qty":"العدد","inv.rate":"السعر","inv.amount":"المبلغ",
+ "inv.subtotal":"المجموع","inv.paid":"المدفوع","inv.due":"المطلوب","inv.thanks":"شكراً لتعاملكم معنا.",
+ "inv.period":"الفترة","inv.deliv":"المُسلَّم في الفترة","cd.stmt":"كشف الحساب","cd.stmt.s":"المستحقات والدفعات بالترتيب.",
  "cd.delivered":"المُسلَّم","cd.month":"هذا الشهر","cd.all":"منذ {m}",
  "cd.owes":"مستحق عليه","cd.credit":"له رصيد","cd.settled":"الحساب مُسوّى","cd.nothing":"لا توجد حركات.",
  "cd.pay":"تسجيل دفعة","cd.rename":"تعديل","cd.promised":"المتفق عليه شهرياً","cd.none":"—",
@@ -1004,7 +1016,7 @@ function seed(){return{
    entries:[]}]
 };}
 
-var S=seed(), TAB="flow", MONTH=ymNow(), SEL=null, SELE=null, LGMONEY=false;
+var S=seed(), TAB="flow", MONTH=ymNow(), SEL=null, SELE=null, LGTYPE="all", LGWHO="all";
 function save(){clearCalc();Store.save(S);queuePush();}
 
 /* ═════════════ engine ═════════════ */
@@ -1563,8 +1575,8 @@ function vClient(){
    +'<p class="sub" style="margin:0"><span class="pill '+(c.billing==="prepaid"?"cy":"amb")+'">'+t("b."+c.billing)+'</span> '
    +(c.billing==="package"?t("cli.month",{v:money(c.monthlyFee)}):t("cli.pv",{v:money(c.rate)}))+'</p></div>'
    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      +'<button class="btn" data-act="print">'+t("print")+'</button>'
-      +(wp?'<button class="btn primary" data-act="newpay" data-id="'+c.id+'">'+t("cd.pay")+'</button>':'')
+      +'<button class="btn primary" data-act="invoice" data-id="'+c.id+'">'+t("cd.invoice")+'</button>'
+      +(wp?'<button class="btn" data-act="newpay" data-id="'+c.id+'">'+t("cd.pay")+'</button>':'')
       +(w?'<button class="btn" data-act="editclient" data-id="'+c.id+'">'+t("cd.rename")+'</button>':'')+'</div>' 
    +'</div>';
 
@@ -1924,11 +1936,35 @@ function vOutside(){
 /* ═════════════ MOVEMENTS ═════════════ */
 function vLedger(){
   var box=cashBox(MONTH), fu=funding(MONTH);
+  var r=calc(MONTH);
   var rows=box.rows.filter(function(x){return inMonth(x.date,MONTH);});
-  if(LGMONEY) rows=rows.filter(function(x){return x.kind!=="work";});
+  if(LGTYPE!=="all"){
+    if(LGTYPE==="money") rows=rows.filter(function(x){return x.kind!=="work";});
+    else rows=rows.filter(function(x){
+      if(LGTYPE==="wage") return x.kind==="out"||x.kind==="reim";
+      return x.kind===LGTYPE;});
+  }
+  if(LGWHO!=="all"){
+    var cust=S.customers.filter(function(c){return c.id===LGWHO;})[0];
+    var emp=S.employees.filter(function(e){return e.id===LGWHO;})[0];
+    if(cust){
+      rows=rows.filter(function(x){return x.who===cust.name;});
+    } else if(emp){
+      var isOwner=(emp.id===r.rentEmp);
+      /* match rows that name the person, plus deliveries credited to them
+         (an unassigned delivery belongs to the owner) */
+      var workIds={};
+      S.work.forEach(function(wk){
+        if(wk.editorId===emp.id||(isOwner&&!wk.editorId)) workIds[wk.id]=1;
+      });
+      rows=rows.filter(function(x){
+        if(x.kind==="work") return !!workIds[x.id];
+        return x.who===emp.name;
+      });
+    }
+  }
   var mIn=0,mOut=0;
   rows.forEach(function(x){ if(x.dir>0) mIn+=x.amt; else if(x.dir<0) mOut+=x.amt; });
-  var r=calc(MONTH);
   var rentEmp=S.employees.filter(function(e){return e.id===r.rentEmp;})[0];
   var ob=rentEmp?owedBack(rentEmp.id,MONTH):{due:0};
 
@@ -1944,7 +1980,21 @@ function vLedger(){
   h+='<div class="sec card"><div class="rowhead"><div><h2>'+t("lg.t",{m:monthName(MONTH)})+'</h2>'
    +'<p class="sub" style="margin:0">'+t("lg.s")+'</p></div>'
    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
-   +'<button class="btn sm ghost" data-act="lgfilter">'+t(LGMONEY?"lg.all":"lg.money")+'</button>'
+   +'<select class="lgf" data-flt="type" style="width:auto;padding:8px 12px">'
+     +[["all","flt.all"],["money","lg.money"],["pay","flt.pay"],["work","flt.work"],
+       ["adv","flt.adv"],["wage","flt.wage"],["cost","flt.cost"],["fund","flt.fund"]]
+       .map(function(o){return '<option value="'+o[0]+'"'+(LGTYPE===o[0]?" selected":"")+'>'+t(o[1])+'</option>';}).join("")
+     +'</select>'
+   +'<select class="lgf" data-flt="who" style="width:auto;padding:8px 12px">'
+     +'<option value="all"'+(LGWHO==="all"?" selected":"")+'>'+t("flt.who")+': '+t("flt.all")+'</option>'
+     +(S.customers.length?'<optgroup label="'+t("sec.clients")+'">'
+        +S.customers.map(function(c){return '<option value="'+c.id+'"'+(LGWHO===c.id?" selected":"")+'>'+esc(c.name)+'</option>';}).join("")
+        +'</optgroup>':'')
+     +(S.employees.length?'<optgroup label="'+t("sec.team")+'">'
+        +S.employees.map(function(e){return '<option value="'+e.id+'"'+(LGWHO===e.id?" selected":"")+'>'+esc(e.name)+'</option>';}).join("")
+        +'</optgroup>':'')
+     +'</select>'
+   +((LGTYPE!=="all"||LGWHO!=="all")?'<button class="btn sm ghost" data-act="lgclear">'+t("flt.clear")+'</button>':'')
    +'<button class="btn" data-act="print">'+t("print")+'</button>'
    +(ww?'<button class="btn" data-act="newwork">'+t("wk.add")+'</button>':'')
    +(wp?'<button class="btn" data-act="newpay">'+t("cd.pay")+'</button>':'')
@@ -2219,6 +2269,86 @@ function form(title,fields,vals,onSave,extra,saveLabel){
   function close(){el("modalHost").innerHTML="";applyTheme();}
 }
 
+
+/* ══════ a proper one-page invoice, opened in its own clean window ══════ */
+function printInvoice(c){
+  if(!c) return;
+  var st=stmt(c,MONTH);
+  var co=S.settings.company||"";
+  var logo=S.settings.logo||"";
+  var rtl=(t("dir")==="rtl");
+  var today=todayISO();
+  var invNo=(c.name||"INV").slice(0,3).toUpperCase()+"-"+today.replace(/-/g,"").slice(2);
+
+  /* charges only (the lines that bill the client), most recent period grouped */
+  var charges=st.lines.filter(function(l){return (+l.charge||0)>0;});
+  var rows=charges.map(function(l){
+    return '<tr><td>'+esc(l.desc)+'</td><td class="r">'+money(l.charge)+'</td></tr>';
+  }).join("");
+  if(!rows) rows='<tr><td colspan="2" style="text-align:center;color:#888;padding:24px">—</td></tr>';
+
+  var money2=function(v){return (S.settings.currency||"$")+Number(v||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});};
+
+  var html=''
+   +'<!doctype html><html dir="'+(rtl?"rtl":"ltr")+'" lang="'+(rtl?"ar":"en")+'"><head><meta charset="utf-8">'
+   +'<title>'+t("inv.title")+' '+esc(co||c.name)+'</title>'
+   +'<style>'
+   +'@page{size:A4;margin:0}'
+   +'*{box-sizing:border-box;margin:0;padding:0}'
+   +'body{font-family:'+(rtl?'"Noto Sans Arabic",Tahoma':'-apple-system,Segoe UI,Roboto')+',sans-serif;'
+     +'color:#1a1a1a;background:#fff;padding:48px 52px;font-size:14px;line-height:1.6}'
+   +'.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #2F3A34;padding-bottom:24px;margin-bottom:32px}'
+   +'.co{display:flex;align-items:center;gap:14px}'
+   +'.co img{width:56px;height:56px;border-radius:12px;object-fit:cover}'
+   +'.co h1{font-size:22px;font-weight:700;color:#2F3A34;letter-spacing:-.01em}'
+   +'.inv-label{text-align:'+(rtl?"left":"right")+'}'
+   +'.inv-label .big{font-size:30px;font-weight:800;color:#2F3A34;letter-spacing:.02em}'
+   +'.inv-label .meta{color:#666;font-size:12.5px;margin-top:6px}'
+   +'.parties{display:flex;justify-content:space-between;margin-bottom:30px;gap:20px}'
+   +'.parties .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#999;margin-bottom:5px}'
+   +'.parties .val{font-size:15px;font-weight:600}'
+   +'table{width:100%;border-collapse:collapse;margin-bottom:28px}'
+   +'th{text-align:'+(rtl?"right":"left")+';font-size:11px;text-transform:uppercase;letter-spacing:.08em;'
+     +'color:#fff;background:#2F3A34;padding:12px 16px;font-weight:600}'
+   +'th.r,td.r{text-align:'+(rtl?"left":"right")+'}'
+   +'td{padding:13px 16px;border-bottom:1px solid #eee;font-size:14px}'
+   +'tbody tr:nth-child(even){background:#faf9f6}'
+   +'.totals{margin-'+(rtl?"left":"right")+':0;margin-'+(rtl?"right":"left")+':auto;width:280px}'
+   +'.totals .row{display:flex;justify-content:space-between;padding:9px 16px;font-size:14px}'
+   +'.totals .row.grand{background:#2F3A34;color:#fff;font-size:17px;font-weight:700;border-radius:8px;margin-top:6px}'
+   +'.num{font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,monospace}'
+   +'.foot{margin-top:44px;padding-top:20px;border-top:1px solid #eee;color:#888;font-size:12.5px;text-align:center}'
+   +'.deliv{margin-bottom:26px;font-size:12.5px;color:#555}'
+   +'.deliv .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#999;margin-bottom:6px}'
+   +'@media print{body{padding:32px 40px}.noprint{display:none}}'
+   +'.bar{position:fixed;top:0;'+(rtl?"left":"right")+':0;padding:12px 16px}'
+   +'.bar button{background:#2F3A34;color:#fff;border:0;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit}'
+   +'</style></head><body>'
+   +'<div class="bar noprint"><button onclick="window.print()">'+t("print")+'</button></div>'
+   +'<div class="head"><div class="co">'
+     +(logo?'<img src="'+logo+'">':'')
+     +'<h1>'+esc(co||c.name)+'</h1></div>'
+     +'<div class="inv-label"><div class="big">'+t("inv.title")+'</div>'
+     +'<div class="meta">'+t("inv.num")+': '+esc(invNo)+'<br>'+t("inv.date")+': '+today+'</div></div></div>'
+   +'<div class="parties"><div><div class="lbl">'+t("inv.to")+'</div><div class="val">'+esc(c.name)+'</div></div>'
+     +'<div style="text-align:'+(rtl?"left":"right")+'"><div class="lbl">'+t("inv.period")+'</div>'
+     +'<div class="val">'+monthName(MONTH)+'</div></div></div>'
+   +'<table><thead><tr><th>'+t("inv.desc")+'</th><th class="r">'+t("inv.amount")+'</th></tr></thead>'
+     +'<tbody>'+rows+'</tbody></table>'
+   +'<div class="totals">'
+     +'<div class="row"><span>'+t("inv.subtotal")+'</span><span class="num">'+money2(st.billed)+'</span></div>'
+     +'<div class="row"><span>'+t("inv.paid")+'</span><span class="num">'+money2(st.paid)+'</span></div>'
+     +'<div class="row grand"><span>'+t("inv.due")+'</span><span class="num">'+money2(st.balance)+'</span></div>'
+   +'</div>'
+   +'<div class="foot">'+t("inv.thanks")+(co?' — '+esc(co):'')+'</div>'
+   +'<script>window.onload=function(){setTimeout(function(){window.print();},350);}<\/script>'
+   +'</body></html>';
+
+  var w=window.open("","_blank");
+  if(!w){ alert(t("inv.title")); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+}
+
 function clientForm(c){
   form(c?t("cli.edit"):t("cli.add"),[
     {k:"name",label:t("f.cliname")},
@@ -2460,6 +2590,10 @@ function projPay(p){
 }
 
 /* ═════════════ events ═════════════ */
+document.addEventListener("change",function(ev){
+  var fl=ev.target.closest&&ev.target.closest(".lgf");
+  if(fl){ if(fl.dataset.flt==="type") LGTYPE=fl.value; else LGWHO=fl.value; render(); }
+});
 document.addEventListener("click",function(ev){
   var lb=ev.target.closest("[data-lang]");
   if(lb){LANG=lb.dataset.lang;S.settings.lang=LANG;save();if(ROLE||ME)render();else if(SB)renderAuth();else renderSetup();return;}
@@ -2495,7 +2629,7 @@ document.addEventListener("click",function(ev){
   else if(act==="newpay") payForm(null,id);
   else if(act==="newfund"){ payForm(null,id); var kf=document.querySelector('#formBody [name="kind"]');
     if(kf){kf.value="funding";kf.dispatchEvent(new Event("change",{bubbles:true}));} }
-  else if(act==="lgfilter"){ LGMONEY=!LGMONEY; render(); }
+  else if(act==="lgclear"){ LGTYPE="all"; LGWHO="all"; render(); }
   else if(act==="newreimb"){
     var em2=S.employees.filter(function(x){return x.id===id;})[0];
     var ob2=em2?owedBack(em2.id,MONTH):{due:0};
@@ -2509,6 +2643,7 @@ document.addEventListener("click",function(ev){
   else if(act==="editpay") payForm(f(S.payments));
   else if(act==="newclient") clientForm(null);
   else if(act==="editclient") clientForm(f(S.customers));
+  else if(act==="invoice") printInvoice(f(S.customers));
   else if(act==="newemp") empForm(null);
   else if(act==="editemp") empForm(f(S.employees));
   else if(act==="newwork") workForm(null);
