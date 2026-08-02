@@ -289,10 +289,12 @@ en:{
  "th.billed2":"Billed","th.paid":"Paid","th.balance":"Balance","th.desc":"Detail","th.charge":"Charge","th.run":"Running",
  "k.due":"Owed by clients","k.due.n":"{n} clients with a balance",
  "cd.open":"Open statement","cd.back":"All clients","cd.invoice":"Invoice",
- "inv.title":"INVOICE","inv.to":"Bill to","inv.date":"Date","inv.num":"Invoice #",
+ "inv.title":"INVOICE","inv.to":"BILL TO","inv.date":"Issued","inv.num":"Invoice",
  "inv.desc":"Description","inv.qty":"Qty","inv.rate":"Rate","inv.amount":"Amount",
- "inv.subtotal":"Subtotal","inv.paid":"Paid","inv.due":"Balance due","inv.thanks":"Thank you for your business.",
- "inv.period":"Period","inv.deliv":"Delivered this period","cd.stmt":"Statement","cd.stmt.s":"Every charge and every payment, oldest first.",
+ "inv.subtotal":"Subtotal","inv.paid":"Paid to date","inv.due":"Amount due","inv.thanks":"Thank you for your business",
+ "inv.period":"Billing period","inv.deliv":"Delivered this period","inv.count":"items",
+ "inv.status.paid":"PAID IN FULL","inv.status.part":"PARTIALLY PAID","inv.status.due":"AWAITING PAYMENT",
+ "inv.charges":"Charges","inv.paymentsRecv":"Payments received","inv.summary":"Summary","inv.from":"FROM","cd.stmt":"Statement","cd.stmt.s":"Every charge and every payment, oldest first.",
  "cd.delivered":"What we delivered","cd.month":"This month","cd.all":"Since {m}",
  "cd.owes":"Owes you","cd.credit":"In credit","cd.settled":"Settled up","cd.nothing":"Nothing recorded yet.",
  "cd.pay":"Record payment","cd.rename":"Rename","cd.promised":"Promised each month","cd.none":"—",
@@ -586,10 +588,12 @@ ar:{
  "cli.month":"{v} / شهر","cli.pv":"{v} / فيديو","cli.inc":"{v} فيديو · {p} منشور","cli.left":"متبقٍّ {v}","cli.over":"تجاوز {v}","cli.exp":"{n} فيديو",
  "cli.ads":"منها {v} إعلانات","st.active":"نشط","st.paused":"موقوف","cli.total":"إجمالي المستحق",
  "cd.open":"كشف الحساب","cd.back":"العملاء","cd.invoice":"فاتورة",
- "inv.title":"فاتورة","inv.to":"إلى","inv.date":"التاريخ","inv.num":"رقم الفاتورة",
+ "inv.title":"فاتورة","inv.to":"فاتورة إلى","inv.date":"تاريخ الإصدار","inv.num":"رقم الفاتورة",
  "inv.desc":"البيان","inv.qty":"العدد","inv.rate":"السعر","inv.amount":"المبلغ",
- "inv.subtotal":"المجموع","inv.paid":"المدفوع","inv.due":"المطلوب","inv.thanks":"شكراً لتعاملكم معنا.",
- "inv.period":"الفترة","inv.deliv":"المُسلَّم في الفترة","cd.stmt":"كشف الحساب","cd.stmt.s":"المستحقات والدفعات بالترتيب.",
+ "inv.subtotal":"المجموع الفرعي","inv.paid":"المدفوع حتى الآن","inv.due":"المبلغ المستحق","inv.thanks":"شكراً لتعاملكم معنا",
+ "inv.period":"فترة الفوترة","inv.deliv":"المُسلَّم في الفترة","inv.count":"بند",
+ "inv.status.paid":"مدفوعة بالكامل","inv.status.part":"مدفوعة جزئياً","inv.status.due":"بانتظار الدفع",
+ "inv.charges":"البنود","inv.paymentsRecv":"الدفعات المستلمة","inv.summary":"الملخّص","inv.from":"من","cd.stmt":"كشف الحساب","cd.stmt.s":"المستحقات والدفعات بالترتيب.",
  "cd.delivered":"المُسلَّم","cd.month":"هذا الشهر","cd.all":"منذ {m}",
  "cd.owes":"مستحق عليه","cd.credit":"له رصيد","cd.settled":"الحساب مُسوّى","cd.nothing":"لا توجد حركات.",
  "cd.pay":"تسجيل دفعة","cd.rename":"تعديل","cd.promised":"المتفق عليه شهرياً","cd.none":"—",
@@ -2274,74 +2278,129 @@ function form(title,fields,vals,onSave,extra,saveLabel){
 function printInvoice(c){
   if(!c) return;
   var st=stmt(c,MONTH);
-  var co=S.settings.company||"";
+  var co=S.settings.company||"Studio";
   var logo=S.settings.logo||"";
   var rtl=(t("dir")==="rtl");
   var today=todayISO();
-  var invNo=(c.name||"INV").slice(0,3).toUpperCase()+"-"+today.replace(/-/g,"").slice(2);
+  var invNo=(c.name||"INV").replace(/[^A-Za-z0-9]/g,"").slice(0,4).toUpperCase()+"-"+today.replace(/-/g,"").slice(2);
+  var cur=S.settings.currency||"$";
+  var m2=function(v){return cur+Number(v||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});};
 
-  /* charges only (the lines that bill the client), most recent period grouped */
   var charges=st.lines.filter(function(l){return (+l.charge||0)>0;});
-  var rows=charges.map(function(l){
-    return '<tr><td>'+esc(l.desc)+'</td><td class="r">'+money(l.charge)+'</td></tr>';
-  }).join("");
-  if(!rows) rows='<tr><td colspan="2" style="text-align:center;color:#888;padding:24px">—</td></tr>';
+  var pays=st.lines.filter(function(l){return (+l.paid||0)>0;});
+  var da=delivered(c,null);
+  var chips=["video","design","post","task"].filter(function(k){return da[k]>0;})
+    .map(function(k){return da[k]+" "+t("d."+k);}).join(" · ");
 
-  var money2=function(v){return (S.settings.currency||"$")+Number(v||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var status = st.balance<0.005 ? {txt:t("inv.status.paid"),c:"#3f7a5c",bg:"#e8f2ec"}
+             : (st.paid>0.005 ? {txt:t("inv.status.part"),c:"#b7791f",bg:"#fdf3e2"}
+             : {txt:t("inv.status.due"),c:"#a04d3a",bg:"#fbeae4"});
+
+  var chargeRows=charges.map(function(l,i){
+    return '<tr'+(i%2?' class="alt"':'')+'><td class="d">'+esc(l.desc)+'</td>'
+      +'<td class="dt">'+esc((l.date||"").slice(0,10))+'</td>'
+      +'<td class="a">'+m2(l.charge)+'</td></tr>';
+  }).join("");
+  if(!chargeRows) chargeRows='<tr><td colspan="3" class="empty">—</td></tr>';
+
+  var payRows=pays.map(function(l){
+    return '<div class="prow"><span>'+esc((l.date||"").slice(0,10))+'</span>'
+      +'<span class="pa">− '+m2(l.paid)+'</span></div>';
+  }).join("");
+
+  var GREEN="#2F3A34", SAGE="#9DA79F", BONE="#F5F2EA", INK="#1c2420";
 
   var html=''
    +'<!doctype html><html dir="'+(rtl?"rtl":"ltr")+'" lang="'+(rtl?"ar":"en")+'"><head><meta charset="utf-8">'
-   +'<title>'+t("inv.title")+' '+esc(co||c.name)+'</title>'
+   +'<meta name="viewport" content="width=device-width,initial-scale=1">'
+   +'<title>'+t("inv.title")+' '+esc(co)+' '+esc(invNo)+'</title>'
+   +'<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+   +'<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">'
    +'<style>'
    +'@page{size:A4;margin:0}'
-   +'*{box-sizing:border-box;margin:0;padding:0}'
-   +'body{font-family:'+(rtl?'"Noto Sans Arabic",Tahoma':'-apple-system,Segoe UI,Roboto')+',sans-serif;'
-     +'color:#1a1a1a;background:#fff;padding:48px 52px;font-size:14px;line-height:1.6}'
-   +'.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #2F3A34;padding-bottom:24px;margin-bottom:32px}'
-   +'.co{display:flex;align-items:center;gap:14px}'
-   +'.co img{width:56px;height:56px;border-radius:12px;object-fit:cover}'
-   +'.co h1{font-size:22px;font-weight:700;color:#2F3A34;letter-spacing:-.01em}'
-   +'.inv-label{text-align:'+(rtl?"left":"right")+'}'
-   +'.inv-label .big{font-size:30px;font-weight:800;color:#2F3A34;letter-spacing:.02em}'
-   +'.inv-label .meta{color:#666;font-size:12.5px;margin-top:6px}'
-   +'.parties{display:flex;justify-content:space-between;margin-bottom:30px;gap:20px}'
-   +'.parties .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#999;margin-bottom:5px}'
-   +'.parties .val{font-size:15px;font-weight:600}'
-   +'table{width:100%;border-collapse:collapse;margin-bottom:28px}'
-   +'th{text-align:'+(rtl?"right":"left")+';font-size:11px;text-transform:uppercase;letter-spacing:.08em;'
-     +'color:#fff;background:#2F3A34;padding:12px 16px;font-weight:600}'
-   +'th.r,td.r{text-align:'+(rtl?"left":"right")+'}'
-   +'td{padding:13px 16px;border-bottom:1px solid #eee;font-size:14px}'
-   +'tbody tr:nth-child(even){background:#faf9f6}'
-   +'.totals{margin-'+(rtl?"left":"right")+':0;margin-'+(rtl?"right":"left")+':auto;width:280px}'
-   +'.totals .row{display:flex;justify-content:space-between;padding:9px 16px;font-size:14px}'
-   +'.totals .row.grand{background:#2F3A34;color:#fff;font-size:17px;font-weight:700;border-radius:8px;margin-top:6px}'
-   +'.num{font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,monospace}'
-   +'.foot{margin-top:44px;padding-top:20px;border-top:1px solid #eee;color:#888;font-size:12.5px;text-align:center}'
-   +'.deliv{margin-bottom:26px;font-size:12.5px;color:#555}'
-   +'.deliv .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#999;margin-bottom:6px}'
-   +'@media print{body{padding:32px 40px}.noprint{display:none}}'
-   +'.bar{position:fixed;top:0;'+(rtl?"left":"right")+':0;padding:12px 16px}'
-   +'.bar button{background:#2F3A34;color:#fff;border:0;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit}'
+   +'*{margin:0;padding:0;box-sizing:border-box}'
+   +'body{font-family:'+(rtl?'"IBM Plex Sans Arabic"':'"IBM Plex Sans"')+',system-ui,sans-serif;color:'+INK+';background:#e9e7e0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+   +'.page{width:210mm;min-height:297mm;margin:0 auto;background:#fff;position:relative;display:flex;flex-direction:column}'
+   +'.mono{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}'
+   /* header band */
+   +'.top{background:'+GREEN+';color:'+BONE+';padding:34px 44px 30px;display:flex;justify-content:space-between;align-items:flex-start;position:relative;overflow:hidden}'
+   +'.top:after{content:"";position:absolute;'+(rtl?"left":"right")+':-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:rgba(157,167,159,.14)}'
+   +'.brand{display:flex;align-items:center;gap:15px;z-index:1}'
+   +'.brand img{width:60px;height:60px;border-radius:14px;object-fit:cover;background:#fff}'
+   +'.brand .nm{font-size:25px;font-weight:700;letter-spacing:-.01em;line-height:1.1}'
+   +'.brand .tg{font-size:11px;color:'+SAGE+';margin-top:3px;letter-spacing:.14em;text-transform:uppercase}'
+   +'.invbox{text-align:'+(rtl?"left":"right")+';z-index:1}'
+   +'.invbox .lbl{font-size:34px;font-weight:700;letter-spacing:.12em;color:#fff;line-height:1}'
+   +'.invbox .no{font-family:"IBM Plex Mono",monospace;font-size:13px;color:'+SAGE+';margin-top:8px;letter-spacing:.05em}'
+   /* meta strip */
+   +'.meta{display:flex;justify-content:space-between;gap:20px;padding:26px 44px;border-bottom:1px solid #eee;flex-wrap:wrap}'
+   +'.meta .blk .k{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:'+SAGE+';margin-bottom:6px;font-weight:600}'
+   +'.meta .blk .v{font-size:15px;font-weight:600;color:'+INK+'}'
+   +'.meta .blk .v.sm{font-size:13px;font-weight:500}'
+   +'.badge{display:inline-block;padding:8px 16px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:.06em}'
+   /* body */
+   +'.body{padding:30px 44px;flex:1}'
+   +'.sect{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:'+SAGE+';font-weight:700;margin-bottom:12px}'
+   +'.deliv{background:'+BONE+';border-radius:12px;padding:14px 18px;margin-bottom:26px;font-size:13.5px;color:'+GREEN+';font-weight:500;display:flex;align-items:center;gap:10px}'
+   +'.deliv b{font-weight:700}'
+   +'table{width:100%;border-collapse:collapse}'
+   +'thead th{text-align:'+(rtl?"right":"left")+';font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:'+SAGE+';font-weight:600;padding:0 14px 12px;border-bottom:2px solid '+GREEN+'}'
+   +'thead th.a{text-align:'+(rtl?"left":"right")+'}'
+   +'tbody td{padding:14px;font-size:14px;border-bottom:1px solid #f0efe9}'
+   +'tbody tr.alt{background:#faf9f5}'
+   +'td.d{font-weight:500}'
+   +'td.dt{color:#999;font-family:"IBM Plex Mono",monospace;font-size:12px;white-space:nowrap;width:1%}'
+   +'td.a{text-align:'+(rtl?"left":"right")+';font-family:"IBM Plex Mono",monospace;font-weight:600;white-space:nowrap;width:1%}'
+   +'td.empty{text-align:center;color:#bbb;padding:26px}'
+   /* footer split */
+   +'.split{display:flex;gap:30px;margin-top:30px;align-items:flex-start}'
+   +'.pays{flex:1}'
+   +'.prow{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px dashed #eee}'
+   +'.prow .pa{font-family:"IBM Plex Mono",monospace;color:#3f7a5c;font-weight:600}'
+   +'.totals{width:270px;flex:none;background:'+BONE+';border-radius:14px;padding:20px 22px}'
+   +'.trow{display:flex;justify-content:space-between;padding:8px 0;font-size:14px}'
+   +'.trow .mono{font-weight:600}'
+   +'.trow.sep{border-top:1px solid #ded9cc;margin-top:6px;padding-top:14px}'
+   +'.grand{background:'+GREEN+';color:#fff;border-radius:12px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-top:14px}'
+   +'.grand .gl{font-size:13px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:'+SAGE+'}'
+   +'.grand .gv{font-family:"IBM Plex Mono",monospace;font-size:24px;font-weight:700}'
+   /* foot */
+   +'.foot{background:'+GREEN+';color:'+SAGE+';padding:20px 44px;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;margin-top:34px}'
+   +'.foot b{color:'+BONE+';font-weight:600}'
+   +'.bar{position:fixed;top:14px;'+(rtl?"left":"right")+':14px;z-index:99}'
+   +'.bar button{background:'+GREEN+';color:#fff;border:0;padding:12px 26px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;box-shadow:0 6px 20px -6px rgba(0,0,0,.4)}'
+   +'@media print{.bar{display:none}body{background:#fff}.page{margin:0;box-shadow:none}}'
+   +'@media screen{.page{margin:24px auto;box-shadow:0 20px 60px -20px rgba(0,0,0,.3)}}'
    +'</style></head><body>'
-   +'<div class="bar noprint"><button onclick="window.print()">'+t("print")+'</button></div>'
-   +'<div class="head"><div class="co">'
+   +'<div class="bar"><button onclick="window.print()">'+t("print")+' ⎙</button></div>'
+   +'<div class="page">'
+   +'<div class="top"><div class="brand">'
      +(logo?'<img src="'+logo+'">':'')
-     +'<h1>'+esc(co||c.name)+'</h1></div>'
-     +'<div class="inv-label"><div class="big">'+t("inv.title")+'</div>'
-     +'<div class="meta">'+t("inv.num")+': '+esc(invNo)+'<br>'+t("inv.date")+': '+today+'</div></div></div>'
-   +'<div class="parties"><div><div class="lbl">'+t("inv.to")+'</div><div class="val">'+esc(c.name)+'</div></div>'
-     +'<div style="text-align:'+(rtl?"left":"right")+'"><div class="lbl">'+t("inv.period")+'</div>'
-     +'<div class="val">'+monthName(MONTH)+'</div></div></div>'
-   +'<table><thead><tr><th>'+t("inv.desc")+'</th><th class="r">'+t("inv.amount")+'</th></tr></thead>'
-     +'<tbody>'+rows+'</tbody></table>'
-   +'<div class="totals">'
-     +'<div class="row"><span>'+t("inv.subtotal")+'</span><span class="num">'+money2(st.billed)+'</span></div>'
-     +'<div class="row"><span>'+t("inv.paid")+'</span><span class="num">'+money2(st.paid)+'</span></div>'
-     +'<div class="row grand"><span>'+t("inv.due")+'</span><span class="num">'+money2(st.balance)+'</span></div>'
+     +'<div><div class="nm">'+esc(co)+'</div><div class="tg">'+t("inv.title")+'</div></div></div>'
+     +'<div class="invbox"><div class="lbl">'+t("inv.title")+'</div><div class="no">'+esc(invNo)+'</div></div></div>'
+   +'<div class="meta">'
+     +'<div class="blk"><div class="k">'+t("inv.to")+'</div><div class="v">'+esc(c.name)+'</div></div>'
+     +'<div class="blk"><div class="k">'+t("inv.date")+'</div><div class="v sm mono">'+today+'</div></div>'
+     +'<div class="blk"><div class="k">'+t("inv.period")+'</div><div class="v sm">'+monthName(MONTH)+'</div></div>'
+     +'<div class="blk"><span class="badge" style="background:'+status.bg+';color:'+status.c+'">'+status.txt+'</span></div>'
    +'</div>'
-   +'<div class="foot">'+t("inv.thanks")+(co?' — '+esc(co):'')+'</div>'
-   +'<script>window.onload=function(){setTimeout(function(){window.print();},350);}<\/script>'
+   +'<div class="body">'
+     +(chips?'<div class="deliv">📦 <span><b>'+t("inv.deliv")+':</b> '+esc(chips)+'</span></div>':'')
+     +'<div class="sect">'+t("inv.charges")+'</div>'
+     +'<table><thead><tr><th>'+t("inv.desc")+'</th><th>'+t("inv.date")+'</th><th class="a">'+t("inv.amount")+'</th></tr></thead>'
+     +'<tbody>'+chargeRows+'</tbody></table>'
+     +'<div class="split">'
+       +'<div class="pays">'+(payRows?'<div class="sect">'+t("inv.paymentsRecv")+'</div>'+payRows:'')+'</div>'
+       +'<div class="totals">'
+         +'<div class="trow"><span>'+t("inv.subtotal")+'</span><span class="mono">'+m2(st.billed)+'</span></div>'
+         +'<div class="trow sep"><span>'+t("inv.paid")+'</span><span class="mono" style="color:#3f7a5c">− '+m2(st.paid)+'</span></div>'
+         +'<div class="grand"><span class="gl">'+t("inv.due")+'</span><span class="gv">'+m2(st.balance)+'</span></div>'
+       +'</div>'
+     +'</div>'
+   +'</div>'
+   +'<div class="foot"><span><b>'+esc(co)+'</b></span><span>'+t("inv.thanks")+'</span></div>'
+   +'</div>'
+   +'<script>window.onload=function(){setTimeout(function(){try{window.print();}catch(e){}},450);}<\/script>'
    +'</body></html>';
 
   var w=window.open("","_blank");
