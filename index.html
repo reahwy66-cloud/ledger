@@ -740,7 +740,7 @@ function ls(s){try{window.localStorage.setItem(KEY,s);}catch(e){}}
 var SUPA_URL = "https://gvnpixjkcmbrdfefbamr.supabase.co";
 var SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2bnBpeGprY21icmRmZWZiYW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MDAyNDAsImV4cCI6MjEwMDQ3NjI0MH0.PPuHBLPRwFPvjMgoIWHCubDTX9at5gSgn4QKxcgsbQI";
 
-var SB=null, SYNC="", PULLED={}, RT=null, PUSHT=null;
+var SB=null, SYNC="", PULLED={}, RT=null, PUSHT=null, DIRTY=false, PUSHING=false, PUSHAGAIN=false;
 var TBL=[["customers","clients"],["employees","team"],["work","work"],["payments","payments"],
          ["advances","advances"],["payouts","advances"],["costs","costs"],["shoots","calendar"],
          ["outside","outside"],["projects","outside"],["osadvances","outside"],
@@ -760,6 +760,7 @@ async function sbClient(url,key){
 function setSync(v){SYNC=v;var n=el("syncDot");if(n)n.textContent=v?t(v):"";}
 
 async function pull(){
+  if(DIRTY||PUSHING){ return; }              // never overwrite local edits that are still being saved
   PULLED={};
   setSync("cl.pulling");
   for(var i=0;i<TBL.length;i++){
@@ -783,11 +784,15 @@ async function pull(){
 
 function queuePush(){
   if(MODE!=="cloud"||!SB) return;
+  DIRTY=true;
   clearTimeout(PUSHT);
   setSync("cl.syncing");
-  PUSHT=setTimeout(function(){push();},700);
+  PUSHT=setTimeout(function(){push();},400);
 }
 async function push(){
+  if(PUSHING){ PUSHAGAIN=true; return; }   // a push is already running; run once more after it
+  PUSHING=true;
+  DIRTY=false;                              // capture: edits after this point re-dirty the state
   var ok=true;
   /* each table is saved on its own — one failure must never stop the rest,
      and any real error is printed so it can be seen, not swallowed */
@@ -823,7 +828,10 @@ async function push(){
       if(st&&st.error) throw st.error;
     }catch(e){ ok=false; try{ console.error("[sync] settings failed:",(e&&e.message)||e); }catch(_){} }
   }
+  PUSHING=false;
+  if(!ok) DIRTY=true;                        // failed — keep the flag so we retry, don't lose edits
   setSync(ok?"cl.synced":"cl.err");
+  if(PUSHAGAIN||DIRTY){ PUSHAGAIN=false; queuePush(); }
 }
 
 /* one-time upload of whatever is on this device */
@@ -839,7 +847,10 @@ function watch(){
    "osadvances","debts","transfers","settings","profiles"]
     .forEach(function(tb){
       RT.on("postgres_changes",{event:"*",schema:"public",table:tb},function(){
-        clearTimeout(RT._t); RT._t=setTimeout(async function(){await pull();render();},400);
+        clearTimeout(RT._t); RT._t=setTimeout(async function(){
+          if(DIRTY||PUSHING) return;        // our own write is echoing back — ignore it
+          await pull(); render();
+        },600);
       });
     });
   RT.subscribe();
