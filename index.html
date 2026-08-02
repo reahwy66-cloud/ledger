@@ -281,7 +281,10 @@ en:{
  "th.src":"Source","th.note":"Note","th.type":"Type","th.perm":"Per month","th.who":"Who","th.share":"Share","th.on":"On {v}",
  "pay.t":"What you owe the team","pay.s":"Due at the end of {m}.","pay.mgr":"Manager","pay.mgrb":"{p}% of {v} profit","pay.tot":"Total leaving for wages",
  "cli.t":"Clients","cli.s":"Rename these to your real client names whenever you like.","cli.add":"Add client","cli.edit":"Edit client","cli.none":"No clients yet.",
- "b.package":"Package","b.per_video":"Per video","b.prepaid":"Prepaid credit",
+ "b.package":"Package","b.per_video":"Per video","b.per_design":"Per design","b.prepaid":"Prepaid credit",
+ "b.per_designL":"A price for each design",
+ "f.drate":"Design price","f.drateH":"Charged per design delivered. Leave empty if you don't bill designs.",
+ "cli.pd":"{v} / design","cd.designs":"{v} designs",
  "b.packageL":"Fixed monthly package","b.per_videoL":"Per video","b.prepaidL":"Paid up front, drawing down",
  "th.billed2":"Billed","th.paid":"Paid","th.balance":"Balance","th.desc":"Detail","th.charge":"Charge","th.run":"Running",
  "k.due":"Owed by clients","k.due.n":"{n} clients with a balance",
@@ -567,7 +570,10 @@ ar:{
  "th.earned":"المستحق","th.adv":"سُلف","th.carry":"مُرحَّل","th.net":"الصافي","th.month2":"الشهر","th.payout":"المصروف",
  "pay.t":"مستحقات الفريق","pay.s":"نهاية {m}.","pay.mgr":"المدير","pay.mgrb":"{p}% من ربح {v}","pay.tot":"الإجمالي",
  "cli.t":"العملاء","cli.s":"أضف عملاءك وحدّد طريقة الفوترة.","cli.add":"إضافة عميل","cli.edit":"تعديل عميل","cli.none":"لا يوجد عملاء بعد.",
- "b.package":"باقة","b.per_video":"بالفيديو","b.prepaid":"رصيد مدفوع",
+ "b.package":"باقة","b.per_video":"بالفيديو","b.per_design":"بالتصميم","b.prepaid":"رصيد مدفوع",
+ "b.per_designL":"سعر لكل تصميم",
+ "f.drate":"سعر التصميم","f.drateH":"يُحتسب لكل تصميم مُسلَّم. اتركه فارغاً إن كنت لا تفوتر التصاميم.",
+ "cli.pd":"{v} / تصميم","cd.designs":"{v} تصاميم",
  "b.packageL":"باقة شهرية ثابتة","b.per_videoL":"سعر لكل فيديو","b.prepaidL":"مدفوع مقدماً ويُخصم",
  "cli.month":"{v} / شهر","cli.pv":"{v} / فيديو","cli.inc":"{v} فيديو · {p} منشور","cli.left":"متبقٍّ {v}","cli.over":"تجاوز {v}","cli.exp":"{n} فيديو",
  "cli.ads":"منها {v} إعلانات","st.active":"نشط","st.paused":"موقوف","cli.total":"إجمالي المستحق",
@@ -809,13 +815,16 @@ async function push(){
         if(up&&up.error) throw up.error;
       }
       /* remove rows that no longer exist locally.
-         IDs are passed to .in() as an array so the client quotes them safely —
-         building the filter string by hand mis-quoted them and deleted everything. */
+         when the table is now empty we must still clear whatever is on the server,
+         otherwise the last deleted row survives and reappears on the next read. */
       var ids=rows.map(function(r){return r.id;});
+      var dr;
       if(ids.length){
-        var dr=await SB.from(key).delete().not("id","in","("+ids.join(",")+")");
-        if(dr&&dr.error) throw dr.error;
+        dr=await SB.from(key).delete().not("id","in","("+ids.join(",")+")");
+      }else{
+        dr=await SB.from(key).delete().neq("id","__none__");   // empty locally → wipe the table server-side
       }
+      if(dr&&dr.error) throw dr.error;
     }catch(e){
       ok=false;
       try{ console.error("[sync] table \""+key+"\" failed:", (e&&e.message)||e); }catch(_){}
@@ -1038,8 +1047,14 @@ function _calc(m){
     var vids=mine.filter(function(w){return w.type==="video";}).reduce(function(a,w){return a+(+w.qty||0);},0);
     var posts=mine.filter(function(w){return w.type==="post";}).reduce(function(a,w){return a+(+w.qty||0);},0);
     var amt=0,basis="";
+    var designs=mine.filter(function(w){return w.type==="design";}).reduce(function(a,w){return a+(+w.qty||0);},0);
     if(c.billing==="package"){amt=+c.monthlyFee||0;adSpend+=+c.adSpend||0;basis=t("b.packageL");}
-    else{amt=vids*(+c.rate||0);basis=vids+" × "+money(+c.rate||0);}
+    else if(c.billing==="per_design"){amt=designs*(+c.drate||+c.rate||0);basis=designs+" × "+money(+c.drate||+c.rate||0);}
+    else{
+      // per-video client: videos at the video rate, plus any designs at the design rate
+      amt=vids*(+c.rate||0)+designs*(+c.drate||0);
+      basis=vids+" × "+money(+c.rate||0)+(designs&&(+c.drate)?(" + "+designs+" × "+money(+c.drate||0)):"");
+    }
     if(cashBasis){
       // only money that actually arrived counts, and never the ad funding
       amt=S.payments.filter(function(x){
@@ -1123,10 +1138,17 @@ function stmt(c,thru){
       m=addMonth(m,1);
     }
   }else{
-    S.work.filter(function(w){return w.customerId===c.id&&w.type==="video"&&(w.date||"").slice(0,7)<=thru;})
+    var vRate=+c.rate||0, dRate=+c.drate||0;
+    if(c.billing==="per_design") dRate=+c.drate||+c.rate||0;
+    S.work.filter(function(w){return w.customerId===c.id&&(w.date||"").slice(0,7)<=thru;})
       .forEach(function(w){
-        var amt=(+w.qty||0)*(+c.rate||0);
-        lines.push({date:w.date,desc:w.qty+" × "+t("d.video")+(w.note?" — "+w.note:""),charge:amt,paid:0});
+        var isV=w.type==="video", isD=w.type==="design";
+        if(c.billing==="per_design"){ if(!isD) return; }
+        else { if(!isV&&!isD) return; if(isD&&!dRate) return; }
+        var rate=isV?vRate:dRate;
+        var amt=(+w.qty||0)*rate;
+        if(!amt&&!(isD&&c.billing==="per_design")) { if(!amt) return; }
+        lines.push({date:w.date,desc:w.qty+" × "+t(isV?"d.video":"d.design")+(w.note?" — "+w.note:""),charge:amt,paid:0});
         billed+=amt;});
   }
   S.payments.filter(function(x){return x.customerId===c.id&&(x.date||"").slice(0,7)<=thru;})
@@ -1365,7 +1387,8 @@ function vClients(){
   var tot=0;
   S.customers.forEach(function(c){
     var st=stmt(c,MONTH); tot+=st.balance;
-    var rate=c.billing==="package"?t("cli.month",{v:money(c.monthlyFee)}):t("cli.pv",{v:money(c.rate)});
+    var rate=c.billing==="package"?t("cli.month",{v:money(c.monthlyFee)})
+             :(c.billing==="per_design"?t("cli.pd",{v:money(c.drate||c.rate)}):t("cli.pv",{v:money(c.rate)}));
     var bal=Math.abs(st.balance)<0.005
       ? '<span class="mut">'+money(0)+'</span>'
       : '<span class="num '+(st.balance>0?"neg":"pos")+'">'+(st.balance>0?"":"−")+money(Math.abs(st.balance))+'</span>';
@@ -1712,7 +1735,11 @@ function vWork(){
     var c=S.customers.filter(function(y){return y.id===x.customerId;})[0];
     var e=S.employees.filter(function(y){return y.id===x.editorId;})[0];
     var pay=e?((x.amount!==""&&x.amount!=null)?+x.amount:(+x.qty||0)*(+e.rate||0)):0;
-    var bill=c?(c.billing==="package"?0:(x.type==="video"?(+x.qty||0)*(+c.rate||0):0)):0;
+    var bill=0;
+    if(c&&c.billing!=="package"){
+      if(x.type==="video"&&c.billing!=="per_design") bill=(+x.qty||0)*(+c.rate||0);
+      else if(x.type==="design") bill=(+x.qty||0)*(+c.drate||(c.billing==="per_design"?+c.rate:0)||0);
+    }
     h+='<tr><td>'+n(esc(x.date))+'</td><td>'+esc(c?c.name:"—")+'</td>'
      +'<td><span class="pill">'+t("d."+x.type)+'</span>'+(x.note?' <span class="mut" style="font-size:11.5px">'+esc(x.note)+'</span>':'')+'</td>'
      +'<td class="r">'+n(x.qty)+'</td><td class="mut">'+esc(e?e.name:"—")+'</td>'
@@ -2195,12 +2222,13 @@ function form(title,fields,vals,onSave,extra,saveLabel){
 function clientForm(c){
   form(c?t("cli.edit"):t("cli.add"),[
     {k:"name",label:t("f.cliname")},
-    {k:"billing",label:t("f.howpay"),type:"select",options:[["package",t("b.packageL")],["per_video",t("b.per_videoL")],["prepaid",t("b.prepaidL")]]},
+    {k:"billing",label:t("f.howpay"),type:"select",options:[["package",t("b.packageL")],["per_video",t("b.per_videoL")],["per_design",t("b.per_designL")],["prepaid",t("b.prepaidL")]]},
     {k:"monthlyFee",label:t("f.fee"),type:"number",step:"0.01",showIf:{k:"billing",in:["package"]}},
     {k:"videos",label:t("f.vids"),type:"number",showIf:{k:"billing",in:["package"]}},
     {k:"posts",label:t("f.posts"),type:"number",showIf:{k:"billing",in:["package"]}},
     {k:"adSpend",label:t("f.ads"),type:"number",step:"0.01",hint:t("f.adsH"),showIf:{k:"billing",in:["package"]}},
     {k:"rate",label:t("f.rate"),type:"number",step:"0.01",showIf:{k:"billing",in:["per_video","prepaid"]}},
+    {k:"drate",label:t("f.drate"),type:"number",step:"0.01",hint:t("f.drateH"),showIf:{k:"billing",in:["per_video","per_design"]}},
     {k:"expected",label:t("f.exp"),type:"number",showIf:{k:"billing",in:["per_video"]}},
     {k:"credit",label:t("f.advance"),type:"number",step:"0.01",hint:t("f.advanceH")},
     {k:"openingDue",label:t("f.opening"),type:"number",step:"0.01",hint:t("f.openingH")},
