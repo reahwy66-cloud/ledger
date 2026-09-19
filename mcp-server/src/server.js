@@ -22,6 +22,7 @@ const TABLES = Object.freeze({
   work: 'work',
   client_payments: 'payments',
   invoices: 'invoices',
+  ad_funding: 'fundings',
   advances: 'advances',
   wage_payments: 'payouts',
   costs: 'costs',
@@ -120,8 +121,8 @@ function buildServer() {
     inputSchema: { month: z.string().regex(/^\d{4}-\d{2}$/).optional() },
     annotations: { readOnlyHint: true, openWorldHint: false }
   }, async ({ month = today().slice(0, 7) }) => {
-    const [clients, team, invoices, payments, costs, appointments] = await Promise.all([
-      rows('clients'), rows('team'), rows('invoices'), rows('client_payments'), rows('costs'), rows('appointments')
+    const [clients, team, invoices, payments, fundings, costs, appointments] = await Promise.all([
+      rows('clients'), rows('team'), rows('invoices'), rows('client_payments'), rows('ad_funding'), rows('costs'), rows('appointments')
     ]);
     const inMonth = item => String(item.date || '').slice(0, 7) === month;
     return text({
@@ -131,6 +132,7 @@ function buildServer() {
       invoices: invoices.filter(inMonth).length,
       invoiced: invoices.filter(inMonth).reduce((sum, inv) => sum + (inv.items || []).reduce((s, x) => s + Number(x.amount || 0), 0), 0),
       clientPayments: payments.filter(inMonth).reduce((sum, x) => sum + Number(x.amount || 0), 0),
+      adFunding: fundings.filter(inMonth).reduce((sum, x) => sum + Number(x.budget || 0) + (x.feeMode === 'percent' ? Number(x.budget || 0) * Number(x.feeValue || 0) / 100 : Number(x.feeValue || 0)), 0),
       costs: costs.filter(inMonth).reduce((sum, x) => sum + Number(x.amount || 0), 0),
       appointments: appointments.filter(inMonth).length
     });
@@ -183,7 +185,7 @@ function buildServer() {
       billing: z.enum(['package', 'per_video', 'per_design', 'prepaid']).default('package'),
       monthlyFee: z.number().nonnegative().default(0), videoRate: z.number().nonnegative().default(0),
       designRate: z.number().nonnegative().default(0), adSpend: z.number().nonnegative().default(0),
-      videosIncluded: z.number().nonnegative().default(0), postsIncluded: z.number().nonnegative().default(0),
+      videosIncluded: z.number().nonnegative().default(0), designsIncluded: z.number().nonnegative().default(0), postsIncluded: z.number().nonnegative().default(0),
       email: z.string().email().optional(), phone: z.string().optional(), notes: z.string().optional(), active: z.boolean().default(true)
     },
     annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false }
@@ -192,7 +194,7 @@ function buildServer() {
     const data = {
       ...(existing || {}), name: args.name, billing: args.billing, monthlyFee: args.monthlyFee,
       rate: args.videoRate, drate: args.designRate, adSpend: args.adSpend, videos: args.videosIncluded,
-      posts: args.postsIncluded, email: args.email || '', phone: args.phone || '', note: args.notes || '',
+      designs: args.designsIncluded, posts: args.postsIncluded, email: args.email || '', phone: args.phone || '', note: args.notes || '',
       active: args.active, startMonth: existing?.startMonth || today().slice(0, 7), endMonth: existing?.endMonth || '',
       credit: existing?.credit || 0, openingDue: existing?.openingDue || 0
     };
@@ -208,13 +210,19 @@ function buildServer() {
       name: z.string(), role: z.string(),
       payType: z.enum(['monthly', 'per_video', 'per_task', 'percent']),
       rate: z.number().nonnegative(), email: z.string().email().optional(), phone: z.string().optional(),
+      startDate: z.string().optional(), endDate: z.string().optional(),
+      sharedCustomer: z.string().optional(), sharedPercent: z.number().min(0).max(100).default(0),
       notes: z.string().optional(), active: z.boolean().default(true)
     },
     annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false }
   }, async args => {
     const existing = args.lookup ? await resolveByName('team', args.lookup) : null;
+    const sharedCustomer = args.sharedCustomer ? await resolveByName('clients', args.sharedCustomer) : null;
+    if (args.sharedCustomer && !sharedCustomer) throw new Error(`Client not found: ${args.sharedCustomer}`);
     const data = {
       ...(existing || {}), name: args.name, role: args.role, payType: args.payType, rate: args.rate,
+      startDate: args.startDate || existing?.startDate || '', endDate: args.endDate || '',
+      sharedCustomerId: sharedCustomer?.id || '', sharedPct: args.sharedPercent,
       email: args.email || '', phone: args.phone || '', note: args.notes || '', active: args.active
     };
     delete data.id; delete data.updatedAt;
@@ -252,6 +260,31 @@ function buildServer() {
     return text({ invoice, total: args.items.reduce((sum, item) => sum + item.amount, 0) });
   });
 
+  server.registerTool('create_ad_funding', {
+    title: 'Create ad funding',
+    description: 'Record a client ad-funding charge with a media budget and either a fixed fee or percentage fee. This records the ledger only and does not buy ads.',
+    inputSchema: {
+      customer: z.string(), date: z.string().default(today()), platform: z.string().default('Meta'),
+      budget: z.number().positive(), feeMode: z.enum(['fixed', 'percent']), feeValue: z.number().nonnegative(),
+      spentAmount: z.number().nonnegative().default(0), paidByEmployee: z.string().optional(),
+      note: z.string().optional(), confirmed: z.boolean()
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false }
+  }, async args => {
+    if (!args.confirmed) return text({ needsConfirmation: true, message: 'Confirm client, media budget, fee method, fee value and payer before recording.' });
+    const customer = await resolveByName('clients', args.customer);
+    if (!customer) throw new Error(`Client not found: ${args.customer}`);
+    const payer = args.paidByEmployee ? await resolveByName('team', args.paidByEmployee) : null;
+    if (args.paidByEmployee && !payer) throw new Error(`Team member not found: ${args.paidByEmployee}`);
+    const fee = args.feeMode === 'percent' ? args.budget * args.feeValue / 100 : args.feeValue;
+    const funding = await upsert('ad_funding', null, {
+      customerId: customer.id, date: args.date, platform: args.platform, budget: args.budget,
+      feeMode: args.feeMode, feeValue: args.feeValue, spentAmount: args.spentAmount,
+      payer: payer?.id || 'box', note: args.note || '', status: 'active'
+    }, 'create_ad_funding');
+    return text({ funding, mediaBudget: args.budget, fee, clientTotal: args.budget + fee });
+  });
+
   server.registerTool('record_client_payment', {
     title: 'Record a client payment',
     description: 'Record money received from a client. This records a payment; it does not move money at a bank.',
@@ -261,6 +294,7 @@ function buildServer() {
       date: z.string().default(today()),
       method: z.enum(['cash', 'bank', 'other']).default('bank'),
       invoice: z.string().optional().describe('Invoice id or invoice number'),
+      funding: z.string().optional().describe('Ad-funding record id'),
       note: z.string().optional(),
       confirmed: z.boolean().describe('Must be true only after the user explicitly confirms the payment details')
     },
@@ -269,12 +303,16 @@ function buildServer() {
     if (!args.confirmed) return text({ needsConfirmation: true, message: 'Confirm client, amount, date and method before recording.' });
     const customer = await resolveByName('clients', args.customer);
     if (!customer) throw new Error(`Client not found: ${args.customer}`);
+    if (args.invoice && args.funding) throw new Error('Link the payment to an invoice or ad funding, not both');
     const invoice = args.invoice ? (await rows('invoices')).find(x => x.id === args.invoice || x.number === args.invoice) : null;
+    const funding = args.funding ? (await rows('ad_funding')).find(x => x.id === args.funding) : null;
     if (args.invoice && !invoice) throw new Error(`Invoice not found: ${args.invoice}`);
+    if (args.funding && !funding) throw new Error(`Ad funding not found: ${args.funding}`);
     if (invoice && invoice.customerId !== customer.id) throw new Error('The invoice belongs to a different client');
+    if (funding && funding.customerId !== customer.id) throw new Error('The ad funding belongs to a different client');
     const payment = await upsert('client_payments', null, {
       customerId: customer.id, amount: args.amount, date: args.date, method: args.method,
-      invoiceId: invoice?.id || '', note: args.note || '', kind: 'payment'
+      invoiceId: invoice?.id || '', fundingId: funding?.id || '', note: args.note || '', kind: funding ? 'funding' : 'payment'
     }, 'record_payment');
     if (invoice) {
       const paid = (await rows('client_payments')).filter(p => p.invoiceId === invoice.id && p.kind !== 'funding').reduce((sum, p) => sum + Number(p.amount || 0), 0);
