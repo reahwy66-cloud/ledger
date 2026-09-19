@@ -134,6 +134,92 @@ async function createScheduledPush({ title = 'رِواء ستوديو', body, du
   return { id: record.id, ...record.data };
 }
 
+function appointmentMoment(appointment) {
+  const date = String(appointment.date || '').trim();
+  const time = String(appointment.time || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{1,2}:\d{2}$/.test(time)) {
+    throw new Error('Appointment date/time must use YYYY-MM-DD and HH:MM');
+  }
+  const hhmm = time.length === 4 ? '0' + time : time;
+  const offset = String(process.env.STUDIO_TIMEZONE_OFFSET || '+03:00');
+  const moment = new Date(`${date}T${hhmm}:00${offset}`);
+  if (!Number.isFinite(moment.getTime())) throw new Error('Invalid appointment date/time');
+  return moment;
+}
+
+async function cancelAppointmentReminders(appointmentId, reason = 'rescheduled') {
+  const { data, error } = await db.from('notifications').select('id,data');
+  if (error) throw error;
+  const pending = (data || []).filter(row =>
+    row.data?.type === 'scheduled_push' &&
+    row.data?.source === 'appointment_reminder' &&
+    row.data?.appointmentId === appointmentId &&
+    row.data?.status === 'pending'
+  );
+  for (const row of pending) {
+    const next = {
+      ...row.data,
+      status: 'cancelled',
+      cancelReason: reason,
+      cancelledAt: new Date().toISOString()
+    };
+    await db.from('notifications').upsert({ id: row.id, data: next, updated_at: new Date().toISOString() });
+  }
+  return pending.length;
+}
+
+async function scheduleAppointmentReminders(appointment) {
+  await cancelAppointmentReminders(appointment.id, 'rescheduled');
+  if (appointment.status === 'done' || appointment.status === 'cancelled') return [];
+
+  const at = appointmentMoment(appointment).getTime();
+  const safeId = String(appointment.id).replace(/[^a-zA-Z0-9_-]/g, '_');
+  const title = appointment.title || 'موعد';
+  const stages = [
+    { key: '3h', delta: -180 * 60 * 1000, body: `${title} — باقي 3 ساعات على الموعد` },
+    { key: '2h', delta: -120 * 60 * 1000, body: `${title} — باقي ساعتين على الموعد` },
+    { key: '1h', delta: -60 * 60 * 1000, body: `${title} — باقي ساعة على الموعد` },
+    { key: '30m', delta: -30 * 60 * 1000, body: `${title} — باقي نص ساعة على الموعد` },
+    {
+      key: 'confirm30',
+      delta: 30 * 60 * 1000,
+      body: `مرّ نصف ساعة على موعد ${title}. الرجاء التأكيد إذا تم الإجراء.`,
+      url: `./?confirmAppointment=${encodeURIComponent(appointment.id)}`,
+      confirmation: true
+    }
+  ];
+
+  const created = [];
+  for (const stage of stages) {
+    const dueAt = new Date(at + stage.delta);
+    if (dueAt.getTime() <= Date.now()) continue;
+    const record = {
+      id: `appt_${safeId}_${stage.key}`,
+      data: {
+        type: 'scheduled_push',
+        source: 'appointment_reminder',
+        status: 'pending',
+        appointmentId: appointment.id,
+        appointmentTitle: title,
+        reminderStage: stage.key,
+        confirmation: !!stage.confirmation,
+        title: 'رِواء ستوديو',
+        body: stage.body,
+        dueAt: dueAt.toISOString(),
+        url: stage.url || './',
+        tag: `appointment-${safeId}-${stage.key}`,
+        userId: null,
+        createdAt: new Date().toISOString()
+      },
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await db.from('notifications').upsert(record);
+    if (error) throw error;
+    created.push({ id: record.id, dueAt: record.data.dueAt, stage: stage.key });
+  }
+  return created;
+}
+
 async function ensureOneOffManualPush() {
   const manualId = 'manual_bana_mahmoud_20260919_2225';
   const { data: existing, error: readError } = await db
@@ -182,6 +268,14 @@ export async function runDueNotifications(now = new Date()) {
   for (const row of due) {
     const d = row.data || {};
     try {
+      if (d.appointmentId) {
+        const { data: apptRow } = await db.from('shoots').select('data').eq('id', d.appointmentId).maybeSingle();
+        if (apptRow?.data?.status === 'done' || apptRow?.data?.status === 'cancelled') {
+          const skipped = { ...d, status: 'cancelled', cancelReason: 'appointment_closed', cancelledAt: new Date().toISOString() };
+          await db.from('notifications').upsert({ id: row.id, data: skipped, updated_at: new Date().toISOString() });
+          continue;
+        }
+      }
       const result = await sendPush({
         title: d.title || 'رِواء ستوديو',
         body: d.body || '',
@@ -572,9 +666,10 @@ function buildServer() {
       customerId: customer?.id || '', employeeId: employee?.id || '', contact: args.contact || '',
       hours: args.hours, notes: args.notes || ''
     }, args.id ? 'update_appointment' : 'create_appointment');
+    const reminders = await scheduleAppointmentReminders(appointment);
     let notification = 'not_requested';
     if (args.sendNotification) notification = await queueNotification(appointment, customer);
-    return text({ appointment, notification });
+    return text({ appointment, notification, reminders });
   });
 
   server.registerTool('schedule_push_notification', {
@@ -770,6 +865,44 @@ app.post('/push/test', async (req, res) => {
     }
   } catch (_error) {
     return res.status(500).json({ error: 'Could not send test push' });
+  }
+});
+
+app.options('/appointments/complete', (_req, res) => {
+  res.set({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  }).status(204).end();
+});
+
+app.post('/appointments/complete', async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const { data: authData, error: authError } = await db.auth.getUser(token);
+    if (authError || !authData?.user) return res.status(401).json({ error: 'Invalid token' });
+
+    const appointmentId = String(req.body?.id || '');
+    if (!appointmentId) return res.status(400).json({ error: 'Appointment id is required' });
+
+    const { data: row, error } = await db.from('shoots').select('id,data').eq('id', appointmentId).maybeSingle();
+    if (error) throw error;
+    if (!row) return res.status(404).json({ error: 'Appointment not found' });
+
+    const next = {
+      ...row.data,
+      status: 'done',
+      completedAt: new Date().toISOString(),
+      completedBy: authData.user.id
+    };
+    const { error: writeError } = await db.from('shoots').upsert({ id: row.id, data: next, updated_at: new Date().toISOString() });
+    if (writeError) throw writeError;
+    await cancelAppointmentReminders(appointmentId, 'appointment_completed');
+    return res.json({ ok: true, appointment: { id: row.id, ...next } });
+  } catch (error) {
+    return res.status(500).json({ error: String(error?.message || 'Could not complete appointment') });
   }
 });
 
