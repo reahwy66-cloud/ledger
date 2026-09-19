@@ -176,6 +176,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-o
 
 /* ── calendar ── */
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal-scroll{overflow-x:auto;padding-bottom:2px}
 .cal .dow{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);text-align:center;padding-bottom:6px}
 body[dir="rtl"] .cal .dow{font-family:var(--ar);letter-spacing:0;text-transform:none;font-size:11.5px}
 .day{background:var(--ground);border:1px solid var(--line);border-radius:9px;min-height:84px;padding:6px;cursor:pointer;position:relative}
@@ -186,6 +187,8 @@ body[dir="rtl"] .cal .dow{font-family:var(--ar);letter-spacing:0;text-transform:
 .day .dn{font-family:var(--mono);font-size:11px;color:var(--mute)}
 .day .ev{background:var(--brand-w);border-inline-start:2px solid var(--brand);border-radius:3px;font-size:10.5px;
   padding:2px 5px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.day .ev.done{border-inline-start-color:var(--green);opacity:.78}
+.day .ev.cancelled{border-inline-start-color:var(--coral);opacity:.52;text-decoration:line-through}
 .day .load{position:absolute;inset-inline-end:6px;top:6px;font-family:var(--mono);font-size:9px;color:var(--brand)}
 .day .load.over{color:var(--coral)}
 
@@ -223,6 +226,7 @@ code{background:var(--ground);border:1px solid var(--line);border-radius:5px;pad
   .wrap{padding:0 13px 70px}
   .kpis{grid-template-columns:1fr 1fr}
   .day{min-height:64px}
+  .cal{min-width:680px}
   .fall,.fork,.ledger-head{padding-inline:14px}
 }
 @media(max-width:420px){.kpis{grid-template-columns:1fr}.brand small{display:none}}
@@ -254,7 +258,7 @@ en:{
  gate:"Who is using the app?", gatePin:"Enter the code", gateWrong:"That code is not right.",
  unlock:"Unlock", cancel:"Cancel", save:"Save", del:"Delete", edit:"Edit", add:"Add",
  "tab.flow":"Summary","tab.clients":"Clients","tab.team":"Team","tab.work":"Work log",
- "tab.costs":"Costs","tab.calendar":"Calendar","tab.outside":"Outside","tab.setup":"Setup",
+ "tab.costs":"Costs","tab.calendar":"Appointments","tab.invoices":"Invoices","tab.outside":"Outside","tab.setup":"Setup",
  "k.in":"Money in","k.in.n":"{n} active clients",
  "k.out":"Money out","k.out.n":"Wages, ads and running costs",
  "k.net":"Profit to split","k.net.n":"Before the {p}% goes out","k.net.none":"No profit to split this month",
@@ -288,13 +292,17 @@ en:{
  "b.packageL":"Fixed monthly package","b.per_videoL":"Per video","b.prepaidL":"Paid up front, drawing down",
  "th.billed2":"Billed","th.paid":"Paid","th.balance":"Balance","th.desc":"Detail","th.charge":"Charge","th.run":"Running",
  "k.due":"Owed by clients","k.due.n":"{n} clients with a balance",
- "cd.open":"Open statement","cd.back":"All clients","cd.invoice":"Invoice",
+ "cd.open":"Open statement","cd.back":"All clients","cd.invoice":"Create invoice","cd.preview":"Account invoice",
  "inv.title":"INVOICE","inv.to":"BILL TO","inv.date":"Issued","inv.num":"Invoice",
  "inv.desc":"Description","inv.qty":"Qty","inv.rate":"Rate","inv.amount":"Amount",
  "inv.subtotal":"Subtotal","inv.paid":"Paid to date","inv.due":"Amount due","inv.thanks":"Thank you for your business",
  "inv.period":"Billing period","inv.deliv":"Delivered this period","inv.count":"items",
  "inv.status.paid":"PAID IN FULL","inv.status.part":"PARTIALLY PAID","inv.status.due":"AWAITING PAYMENT",
  "inv.charges":"Charges","inv.paymentsRecv":"Payments received","inv.summary":"Summary","inv.from":"FROM","cd.stmt":"Statement","cd.stmt.s":"Every charge and every payment, oldest first.",
+ "inv.list":"Invoices","inv.listS":"Draft, issue and print invoices before a client pays.","inv.new":"New invoice","inv.edit":"Edit invoice","inv.empty":"No invoices yet.",
+ "inv.number":"Invoice number","inv.customer":"Client","inv.issue":"Issue date","inv.dueDate":"Due date","inv.period2":"Billing month","inv.total":"Total","inv.open":"Open / print",
+ "inv.draft":"Draft","inv.sent":"Issued","inv.paid2":"Paid","inv.cancelled":"Cancelled","inv.mark":"Invoice status",
+ "inv.service":"Service / package","inv.ads":"Funded ads","inv.videoQty":"Videos","inv.videoRate":"Price per video","inv.designQty":"Designs","inv.designRate":"Price per design","inv.extra":"Other item","inv.extraAmount":"Other amount","inv.notes":"Invoice notes",
  "cd.delivered":"What we delivered","cd.month":"This month","cd.all":"Since {m}",
  "cd.owes":"Owes you","cd.credit":"In credit","cd.settled":"Settled up","cd.nothing":"Nothing recorded yet.",
  "cd.pay":"Record payment","cd.rename":"Rename","cd.promised":"Promised each month","cd.none":"—",
@@ -396,6 +404,7 @@ en:{
  "au.out":"Sign out","au.wait":"Waiting for approval","au.waitS":"Your account is created. {who} needs to switch it on and choose what you can see.",
  "au.first":"The first account created becomes the owner.","au.weak":"Password must be at least 6 characters.",
  "au.check":"Check your email to confirm the address, then sign in.",
+ "oauth.t":"Connect Studio Ledger","oauth.s":"ChatGPT is requesting permission to use your ledger tools.","oauth.client":"Application","oauth.scopes":"Requested access","oauth.allow":"Allow access","oauth.deny":"Deny","oauth.bad":"This authorization request is invalid or expired.",
  "us.t":"People","us.s":"Switch someone on and pick exactly what they can reach.",
  "us.none":"Nobody else has signed up yet. Send them the link and they will appear here.",
  "us.owner":"Owner","us.staff":"Staff","us.pending":"Waiting","us.active":"Active","us.off":"Switched off",
@@ -404,7 +413,7 @@ en:{
  "us.personalH":"The database itself blocks access while this is off.",
  "us.on":"Account switched on","us.ownerLock":"The owner always has everything.",
  "sec.flow":"Summary","sec.ledger":"Ledger","sec.clients":"Clients","sec.team":"Team","sec.work":"Work log","sec.costs":"Costs",
- "sec.calendar":"Calendar","sec.outside":"Outside the company","sec.users":"People","sec.setup":"Setup",
+ "sec.calendar":"Appointments","sec.invoices":"Invoices","sec.outside":"Outside the company","sec.users":"People","sec.setup":"Setup",
  "sec.payments":"Client payments","sec.advances":"Advances",
  "pwa.t":"Install on your phone","pwa.h":"Add it to your home screen","pwa.b":"How",
  "pwa.and":"Android","pwa.ios":"iPhone","pwa.now":"Install now",
@@ -432,8 +441,11 @@ en:{
  "cs.add":"Add cost","cs.edit":"Edit cost","cs.none":"Nothing recorded for this month.","cs.tot":"Total",
  "cs.note":"Rent is not listed here; it comes out of the owner's share.",
  "c.Transport":"Transport","c.Ads":"Ads","c.Phone":"Phone","c.Internet":"Internet","c.Equipment":"Equipment","c.Software":"Software","c.Rent":"Rent","c.Other":"Other",
- "cal.t":"Shoot calendar","cal.s":"About {h} free hours a day after the retainer job. Tap a day to book a shoot.",
- "cal.add":"Book a shoot","cal.edit":"Edit shoot","cal.booked":"Booked this month","cal.none":"Nothing booked. Tap any day above to add a shoot.","cal.off":"off",
+ "cal.t":"Appointments","cal.s":"About {h} free hours a day. Tap a day to add an appointment.",
+ "cal.add":"Add appointment","cal.edit":"Edit appointment","cal.booked":"Appointments this month","cal.none":"No appointments. Tap any day above to add one.","cal.off":"off",
+ "cal.kind":"Type","cal.status":"Status","cal.assignee":"Assigned to","cal.contact":"Contact",
+ "cal.k.meeting":"Meeting","cal.k.shoot":"Shoot","cal.k.call":"Call","cal.k.delivery":"Delivery","cal.k.other":"Other",
+ "cal.st.planned":"Planned","cal.st.confirmed":"Confirmed","cal.st.done":"Done","cal.st.cancelled":"Cancelled",
  "os.t":"Outside the company","os.s":"The owner's own money. None of it is touched by the split.","os.add":"Add income",
  "os.income":"Income","os.cost":"Cost","os.got":"Your cut received in {m}:","os.pay":"Record a payment","os.deal":"Edit deal","os.newproj":"Add another project",
  "sp.t":"Setup","sp.s":"The rules the whole app calculates from.",
@@ -452,14 +464,14 @@ en:{
  "ins.w1":"Save this file somewhere permanent, for example C:\\StudioLedger\\index.html","ins.w2":"Right-click the desktop → New → Shortcut","ins.w3":"Paste this as the location, then finish:","ins.w4":"Open the shortcut. It runs in its own window with no browser bars — it looks and behaves like a normal program. Right-click it → Properties → Change Icon to give it your own logo.",
  "ins.h1":"Go to app.netlify.com/drop","ins.h2":"Rename this file to index.html and drag it onto the page","ins.h3":"You get a free web address in about ten seconds. Anyone with the link can open it.",
  "ins.warn":"Data is on the server and shared by everyone.",
- "f.name":"Name","f.cliname":"Client name","f.howpay":"How they pay","f.fee":"Monthly fee","f.vids":"Videos included","f.posts":"Posts included",
+ "f.name":"Name","f.cliname":"Client name","f.email":"Email","f.phone":"Phone / WhatsApp","f.howpay":"How they pay","f.fee":"Monthly fee","f.vids":"Videos included","f.posts":"Posts included",
  "f.ads":"Ad money inside the fee","f.adsH":"Money that passes straight to the ad platform, not profit.",
  "f.rate":"Rate per video","f.exp":"Videos expected each month","f.credit":"Amount paid up front","f.note":"Note","f.activecli":"Active client",
  "f.role":"Role","f.roleH":"Editor, designer, manager…","f.howpaid":"How they are paid","f.rate2":"Rate","f.rateH":"For a profit share, put the percentage here.","f.onbooks":"Currently on the books",
  "f.date":"Date","f.client":"Client","f.delivered":"What was delivered","f.howmany":"How many","f.whodid":"Who did it","f.nobody":"Nobody / me",
  "f.override":"Override their pay","f.overrideH":"Leave empty to use their normal rate.",
  "f.whatis":"What is it","f.cat":"Category","f.amount":"Amount","f.repeats":"Repeats every month from this date",
- "f.time":"Time","f.shooting":"What are you shooting","f.hours":"Hours it will take","f.notes":"Notes",
+ "f.time":"Time","f.shooting":"Appointment title","f.hours":"Hours it will take","f.notes":"Notes",
  "f.source":"Source","f.type":"Type","f.permonth":"Per month","f.running":"Still running",
  "f.project":"Project","f.status":"Status","f.terms":"Terms","f.person":"Person {n}","f.theirpct":"Their %","f.addperson":"Add another person",
  "f.what4":"What for","f.total":"Total the client paid","f.yourcut":"Your cut","f.yourcutH":"Your share is {p}% of the total.",
@@ -484,7 +496,7 @@ ar:{
  gate:"من يستخدم البرنامج؟", gatePin:"أدخل الرمز", gateWrong:"الرمز غير صحيح.",
  unlock:"دخول", cancel:"إلغاء", save:"حفظ", del:"حذف", edit:"تعديل", add:"إضافة",
  "tab.flow":"الملخّص","tab.clients":"العملاء","tab.team":"الفريق","tab.work":"سجل الأعمال",
- "tab.costs":"المصروفات","tab.calendar":"التقويم","tab.outside":"خارج الشركة","tab.setup":"الإعدادات",
+ "tab.costs":"المصروفات","tab.calendar":"المواعيد","tab.invoices":"الفواتير","tab.outside":"خارج الشركة","tab.setup":"الإعدادات",
  "tab.users":"المستخدمون","tab.ledger":"السجل",
  "part.none":"لا يوجد شركاء بنسب بعد. أضف شريكاً من تبويب الفريق واختر «حصة من الربح».",
  "part.warn":"مجموع نسب الشركاء {n}% وليس 100%. الأرقام ستبقى خاطئة حتى تُصحَّح.",
@@ -587,7 +599,7 @@ ar:{
  "b.packageL":"باقة شهرية ثابتة","b.per_videoL":"سعر لكل فيديو","b.prepaidL":"مدفوع مقدماً ويُخصم",
  "cli.month":"{v} / شهر","cli.pv":"{v} / فيديو","cli.inc":"{v} فيديو · {p} منشور","cli.left":"متبقٍّ {v}","cli.over":"تجاوز {v}","cli.exp":"{n} فيديو",
  "cli.ads":"منها {v} إعلانات","st.active":"نشط","st.paused":"موقوف","cli.total":"إجمالي المستحق",
- "cd.open":"كشف الحساب","cd.back":"العملاء","cd.invoice":"فاتورة",
+ "cd.open":"كشف الحساب","cd.back":"العملاء","cd.invoice":"إنشاء فاتورة","cd.preview":"فاتورة كشف الحساب",
  "inv.title":"فاتورة","inv.to":"فاتورة إلى","inv.date":"تاريخ الإصدار","inv.num":"رقم الفاتورة",
  "inv.desc":"البيان","inv.qty":"العدد","inv.rate":"السعر","inv.amount":"المبلغ",
  "inv.subtotal":"المجموع الفرعي","inv.paid":"المدفوع حتى الآن","inv.due":"المبلغ المستحق","inv.thanks":"شكراً لتعاملكم معنا",
@@ -616,8 +628,15 @@ ar:{
  "cs.add":"إضافة مصروف","cs.edit":"تعديل","cs.none":"لا توجد مصروفات.","cs.tot":"الإجمالي",
  "cs.note":"الإيجار غير مُدرج هنا لأنه يُخصم من حصة صاحب الشركة.",
  "c.Transport":"مواصلات","c.Ads":"إعلانات","c.Phone":"اتصالات","c.Internet":"إنترنت","c.Equipment":"معدات","c.Software":"برمجيات","c.Rent":"إيجار","c.Other":"أخرى",
- "cal.t":"تقويم التصوير","cal.s":"{h} ساعات متاحة يومياً.",
- "cal.add":"حجز تصوير","cal.edit":"تعديل","cal.booked":"محجوز هذا الشهر","cal.none":"لا توجد حجوزات.","cal.off":"عطلة",
+ "cal.t":"المواعيد","cal.s":"{h} ساعات متاحة يومياً. اضغط على يوم لإضافة موعد.",
+ "cal.add":"إضافة موعد","cal.edit":"تعديل الموعد","cal.booked":"مواعيد هذا الشهر","cal.none":"لا توجد مواعيد.","cal.off":"عطلة",
+ "cal.kind":"نوع الموعد","cal.status":"الحالة","cal.assignee":"المسؤول","cal.contact":"جهة الاتصال",
+ "cal.k.meeting":"اجتماع","cal.k.shoot":"تصوير","cal.k.call":"مكالمة","cal.k.delivery":"تسليم","cal.k.other":"أخرى",
+ "cal.st.planned":"مخطط","cal.st.confirmed":"مؤكد","cal.st.done":"منجز","cal.st.cancelled":"ملغى",
+ "inv.list":"الفواتير","inv.listS":"أنشئ الفاتورة وراجعها واطبعها قبل أن يدفع العميل.","inv.new":"فاتورة جديدة","inv.edit":"تعديل الفاتورة","inv.empty":"لا توجد فواتير بعد.",
+ "inv.number":"رقم الفاتورة","inv.customer":"العميل","inv.issue":"تاريخ الإصدار","inv.dueDate":"تاريخ الاستحقاق","inv.period2":"شهر الفاتورة","inv.total":"الإجمالي","inv.open":"فتح / طباعة",
+ "inv.draft":"مسودة","inv.sent":"صادرة","inv.paid2":"مدفوعة","inv.cancelled":"ملغاة","inv.mark":"حالة الفاتورة",
+ "inv.service":"الخدمة / الباقة","inv.ads":"إعلانات ممولة","inv.videoQty":"عدد الفيديوهات","inv.videoRate":"سعر الفيديو","inv.designQty":"عدد التصاميم","inv.designRate":"سعر التصميم","inv.extra":"بند إضافي","inv.extraAmount":"قيمة البند الإضافي","inv.notes":"ملاحظات الفاتورة",
  "os.t":"خارج الشركة","os.s":"دخل خاص لا يدخل في التقسيم.","os.add":"إضافة دخل",
  "os.income":"دخل","os.cost":"مصروف","os.got":"المقبوض في {m}:","os.pay":"تسجيل دفعة","os.deal":"تعديل الاتفاق","os.newproj":"إضافة مشروع",
  "sp.t":"الإعدادات","sp.s":"القواعد التي تُحتسب عليها الأرقام.",
@@ -640,6 +659,7 @@ ar:{
  "au.out":"تسجيل الخروج","au.wait":"بانتظار الموافقة","au.waitS":"حسابك قيد المراجعة من {who}.",
  "au.first":"أول حساب يُنشأ يصبح صاحب الشركة.","au.weak":"كلمة المرور 6 أحرف على الأقل.",
  "au.check":"أكّد بريدك الإلكتروني ثم سجّل الدخول.",
+ "oauth.t":"ربط Studio Ledger","oauth.s":"يطلب ChatGPT إذنك لاستخدام أدوات إدارة الشركة.","oauth.client":"التطبيق","oauth.scopes":"الصلاحيات المطلوبة","oauth.allow":"السماح بالوصول","oauth.deny":"رفض","oauth.bad":"طلب الربط غير صالح أو انتهت صلاحيته.",
  "us.t":"المستخدمون","us.s":"فعّل الحساب وحدّد صلاحياته.",
  "us.none":"لا يوجد مستخدمون آخرون.",
  "us.owner":"صاحب الشركة","us.staff":"موظف","us.pending":"بالانتظار","us.active":"نشط","us.off":"موقوف",
@@ -648,7 +668,7 @@ ar:{
  "us.personalH":"قاعدة البيانات تمنع الوصول إليها عند إبقائها مغلقة.",
  "us.on":"تفعيل الحساب","us.ownerLock":"صلاحية كاملة",
  "sec.flow":"الملخّص","sec.ledger":"السجل","sec.clients":"العملاء","sec.team":"الفريق","sec.work":"سجل الأعمال","sec.costs":"المصروفات",
- "sec.calendar":"التقويم","sec.outside":"خارج الشركة","sec.users":"المستخدمون","sec.setup":"الإعدادات",
+ "sec.calendar":"المواعيد","sec.invoices":"الفواتير","sec.outside":"خارج الشركة","sec.users":"المستخدمون","sec.setup":"الإعدادات",
  "sec.payments":"دفعات العملاء","sec.advances":"السُّلف",
  "cl.t2":"الحساب","cl.off":"غير متصل","cl.on":"{n} مستخدمون",
  "cl.offS":"البيانات محفوظة على هذا الجهاز فقط.",
@@ -667,14 +687,14 @@ ar:{
  "pwa.a1":"افتح الرابط في كروم","pwa.a2":"اضغط النقاط الثلاث","pwa.a3":"اختر تثبيت التطبيق",
  "pwa.i1":"افتح الرابط في سفاري","pwa.i2":"اضغط زر المشاركة","pwa.i3":"اختر إضافة إلى الشاشة الرئيسية",
  "pwa.note":"يعمل بملء الشاشة مثل أي تطبيق.",
- "f.name":"الاسم","f.cliname":"اسم العميل","f.howpay":"طريقة الدفع","f.fee":"الاشتراك الشهري","f.vids":"عدد الفيديوهات","f.posts":"عدد المنشورات",
+ "f.name":"الاسم","f.cliname":"اسم العميل","f.email":"البريد الإلكتروني","f.phone":"الهاتف / واتساب","f.howpay":"طريقة الدفع","f.fee":"الاشتراك الشهري","f.vids":"عدد الفيديوهات","f.posts":"عدد المنشورات",
  "f.ads":"مبلغ الإعلانات ضمن الاشتراك","f.adsH":"يُحوَّل للمنصّة ولا يُحتسب ربحاً.",
  "f.rate":"سعر الفيديو","f.exp":"العدد المتوقع شهرياً","f.credit":"مدفوع مقدماً","f.note":"ملاحظة","f.activecli":"عميل نشط",
  "f.role":"الدور","f.roleH":"مونتير، مصمم، مدير…","f.howpaid":"طريقة الدفع","f.rate2":"السعر","f.rateH":"للحصة من الربح أدخل النسبة.","f.onbooks":"نشط",
  "f.date":"التاريخ","f.client":"العميل","f.delivered":"البند","f.howmany":"العدد","f.whodid":"المنفّذ","f.nobody":"بدون",
  "f.override":"تعديل الأجر","f.overrideH":"اتركه فارغاً لاستخدام السعر المعتاد.",
  "f.whatis":"البيان","f.cat":"التصنيف","f.amount":"المبلغ","f.repeats":"يتكرر شهرياً",
- "f.time":"الوقت","f.shooting":"موضوع التصوير","f.hours":"عدد الساعات","f.notes":"ملاحظات",
+ "f.time":"الوقت","f.shooting":"عنوان الموعد","f.hours":"عدد الساعات","f.notes":"ملاحظات",
  "f.source":"المصدر","f.type":"النوع","f.permonth":"شهرياً","f.running":"مستمر",
  "f.project":"المشروع","f.status":"الحالة","f.terms":"الشروط","f.person":"الشريك {n}","f.theirpct":"النسبة %","f.addperson":"إضافة شريك",
  "f.what4":"البيان","f.total":"المبلغ الكلي","f.yourcut":"حصتك","f.yourcutH":"حصتك {p}% من الإجمالي.",
@@ -714,18 +734,18 @@ function t(k,a){
 
 /* ═════════════ roles ═════════════ */
 var PERM={
-  owner:      {tabs:["flow","ledger","clients","team","costs","calendar","outside","setup"],edit:["clients","team","work","costs","calendar","outside","setup","payments","advances"],personal:true},
-  manager:    {tabs:["flow","ledger","clients","team","costs","calendar"],edit:["work","calendar"],personal:false},
-  accountant: {tabs:["flow","ledger","clients","team","costs","calendar"],edit:["clients","work","costs","payments"],personal:false}
+  owner:      {tabs:["flow","ledger","clients","invoices","team","costs","calendar","outside","setup"],edit:["clients","invoices","team","work","costs","calendar","outside","setup","payments","advances"],personal:true},
+  manager:    {tabs:["flow","ledger","clients","invoices","team","costs","calendar"],edit:["work","calendar"],personal:false},
+  accountant: {tabs:["flow","ledger","clients","invoices","team","costs","calendar"],edit:["clients","invoices","work","costs","payments"],personal:false}
 };
-var FULL={tabs:["flow","ledger","clients","team","work","costs","calendar","outside","users","setup"],
-          edit:["clients","team","work","costs","calendar","payments","advances","outside","setup","users"],personal:true};
-var SEC_TABS=["flow","ledger","clients","team","costs","calendar","outside","users","setup"];
-var SEC_EDIT=["clients","team","work","costs","calendar","payments","advances","outside","setup","users"];
+var FULL={tabs:["flow","ledger","clients","invoices","team","work","costs","calendar","outside","users","setup"],
+          edit:["clients","invoices","team","work","costs","calendar","payments","advances","outside","setup","users"],personal:true};
+var SEC_TABS=["flow","ledger","clients","invoices","team","costs","calendar","outside","users","setup"];
+var SEC_EDIT=["clients","invoices","team","work","costs","calendar","payments","advances","outside","setup","users"];
 var PRESETS={
-  manager:{tabs:["flow","ledger","clients","team","costs","calendar"],edit:["work","calendar"],personal:false},
-  acct:{tabs:["flow","ledger","clients","team","costs","calendar"],edit:["clients","work","costs","payments"],personal:false},
-  view:{tabs:["flow","ledger","clients","team","costs","calendar"],edit:[],personal:false},
+  manager:{tabs:["flow","ledger","clients","invoices","team","costs","calendar"],edit:["work","calendar"],personal:false},
+  acct:{tabs:["flow","ledger","clients","invoices","team","costs","calendar"],edit:["clients","invoices","work","costs","payments"],personal:false},
+  view:{tabs:["flow","ledger","clients","invoices","team","costs","calendar"],edit:[],personal:false},
   none:{tabs:[],edit:[],personal:false}
 };
 var MODE="local";      // "local" | "cloud"
@@ -763,7 +783,7 @@ var SUPA_URL = "https://gvnpixjkcmbrdfefbamr.supabase.co";
 var SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2bnBpeGprY21icmRmZWZiYW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MDAyNDAsImV4cCI6MjEwMDQ3NjI0MH0.PPuHBLPRwFPvjMgoIWHCubDTX9at5gSgn4QKxcgsbQI";
 
 var SB=null, SYNC="", PULLED={}, RT=null, PUSHT=null, DIRTY=false, PUSHING=false, PUSHAGAIN=false;
-var TBL=[["customers","clients"],["employees","team"],["work","work"],["payments","payments"],
+var TBL=[["customers","clients"],["employees","team"],["work","work"],["payments","payments"],["invoices","invoices"],
          ["advances","advances"],["payouts","advances"],["costs","costs"],["shoots","calendar"],
          ["outside","outside"],["projects","outside"],["osadvances","outside"],
          ["debts","outside"],["transfers","outside"]];
@@ -868,7 +888,7 @@ async function pushEverything(){
 function watch(){
   if(RT) return;
   RT=SB.channel("sl");
-  ["customers","employees","work","payments","advances","payouts","costs","shoots","outside","projects",
+  ["customers","employees","work","payments","invoices","advances","payouts","costs","shoots","outside","projects",
    "osadvances","debts","transfers","settings","profiles"]
     .forEach(function(tb){
       RT.on("postgres_changes",{event:"*",schema:"public",table:tb},function(){
@@ -899,6 +919,7 @@ async function bootCloud(){
   if(!sess){ renderAuth(); return true; }
   ME=await loadProfile();
   if(!ME||!ME.active){ renderWait(); return true; }
+  if(oauthAuthorizationId()){ await renderOAuthConsent(); return true; }
   await pull(); watch(); render();
   return true;
 }
@@ -941,12 +962,38 @@ function renderAuth(mode){
       }
       ME=await loadProfile();
       if(!ME||!ME.active){ renderWait(); return; }
+      if(oauthAuthorizationId()){ await renderOAuthConsent(); return; }
       await pull(); watch(); render();
     }catch(e){ el("aGo").disabled=false; err(e.message||String(e)); }
   };
   ["aMail","aPass","aName"].forEach(function(id){
     var n=el(id); if(n) n.addEventListener("keydown",function(e){if(e.key==="Enter")el("aGo").click();});
   });
+}
+function oauthAuthorizationId(){
+  try{return new URLSearchParams(location.search).get("authorization_id")||"";}catch(e){return "";}
+}
+async function renderOAuthConsent(){
+  applyTheme();document.body.dir=t("dir");
+  var authorizationId=oauthAuthorizationId();
+  if(!authorizationId){render();return;}
+  var r=await SB.auth.oauth.getAuthorizationDetails(authorizationId);
+  if(r.error||!r.data){
+    el("app").innerHTML='<div class="gate"><div class="gatebox"><div class="note">'+t("oauth.bad")+'</div></div></div>';return;
+  }
+  if(!r.data.authorization_id&&r.data.redirect_url){location.href=r.data.redirect_url;return;}
+  var details=r.data, scopes=String(details.scope||"").split(" ").filter(Boolean);
+  el("app").innerHTML='<div class="gate"><div class="gatebox"><div class="head">'+stampHTML()+'<h1>'+t("oauth.t")+'</h1><p class="sub">'+t("oauth.s")+'</p></div>'
+   +'<div class="card"><div class="carve"><span>'+t("oauth.client")+'</span><b>'+esc((details.client&&details.client.name)||"ChatGPT")+'</b></div>'
+   +'<div style="margin-top:16px"><span class="eyebrow">'+t("oauth.scopes")+'</span><div style="margin-top:10px">'+(scopes.length?scopes.map(function(s){return '<span class="pill cy" style="margin:3px">'+esc(s)+'</span>';}).join(""):'<span class="mut">—</span>')+'</div></div>'
+   +'<div id="oauthErr" class="note" style="display:none;margin-top:14px"></div><div class="acts"><button class="btn ghost" id="oauthDeny">'+t("oauth.deny")+'</button><button class="btn primary" id="oauthAllow">'+t("oauth.allow")+'</button></div></div></div></div>';
+  async function decide(allow){
+    el("oauthAllow").disabled=true;el("oauthDeny").disabled=true;
+    var out=allow?await SB.auth.oauth.approveAuthorization(authorizationId):await SB.auth.oauth.denyAuthorization(authorizationId);
+    if(out.error||!out.data||!out.data.redirect_url){var n=el("oauthErr");n.style.display="";n.textContent=(out.error&&out.error.message)||t("oauth.bad");el("oauthAllow").disabled=false;el("oauthDeny").disabled=false;return;}
+    location.href=out.data.redirect_url;
+  }
+  el("oauthAllow").onclick=function(){decide(true);};el("oauthDeny").onclick=function(){decide(false);};
 }
 function renderWait(){
   applyTheme(); document.body.dir=t("dir");
@@ -1002,7 +1049,8 @@ function seed(){return{
   {id:uid(),name:"زبون 5 (قريب)",billing:"prepaid",monthlyFee:0,videos:0,posts:0,adSpend:0,rate:12,expected:0,credit:79,openingDue:0,startMonth:ymNow(),endMonth:"",active:true,note:"دفع 79$ سلف — بيتسلّم فيديوهات بـ12$ لحد ما يخلص الرصيد"},
   {id:uid(),name:"زبون 6",billing:"per_video",monthlyFee:0,videos:0,posts:0,adSpend:0,rate:15,expected:10,credit:0,openingDue:0,startMonth:ymNow(),endMonth:"",active:true,note:""}],
  work:[],
- payments:[],
+  payments:[],
+ invoices:[],
  advances:[],
  payouts:[],
  osadvances:[],
@@ -1064,7 +1112,17 @@ function _calc(m){
     var posts=mine.filter(function(w){return w.type==="post";}).reduce(function(a,w){return a+(+w.qty||0);},0);
     var amt=0,basis="";
     var designs=mine.filter(function(w){return w.type==="design";}).reduce(function(a,w){return a+(+w.qty||0);},0);
-    if(c.billing==="package"){amt=+c.monthlyFee||0;adSpend+=+c.adSpend||0;basis=t("b.packageL");}
+    var monthInvoices=(S.invoices||[]).filter(function(inv){return inv.customerId===c.id&&inv.period===m&&(inv.status==="sent"||inv.status==="paid");});
+    if(monthInvoices.length){
+      amt=monthInvoices.reduce(function(total,inv){return total+(inv.items||[]).filter(function(i){return i.kind!=="ads";}).reduce(function(a,i){return a+(+i.amount||0);},0);},0);
+      adSpend+=monthInvoices.reduce(function(total,inv){return total+(inv.items||[]).filter(function(i){return i.kind==="ads";}).reduce(function(a,i){return a+(+i.amount||0);},0);},0);
+      basis=monthInvoices.map(function(inv){return inv.number||t("inv.title");}).join(", ");
+    }
+    else if(c.billing==="package"){
+      amt=(+c.monthlyFee||0)+designs*(+c.drate||0);
+      adSpend+=+c.adSpend||0;
+      basis=t("b.packageL")+(designs&&(+c.drate)?(" + "+designs+" × "+money(+c.drate||0)):"");
+    }
     else if(c.billing==="per_design"){amt=designs*(+c.drate||+c.rate||0);basis=designs+" × "+money(+c.drate||+c.rate||0);}
     else{
       // per-video client: videos at the video rate, plus any designs at the design rate
@@ -1142,6 +1200,8 @@ function _calc(m){
    balance > 0 = they owe us.  balance < 0 = they are in credit. */
 function stmt(c,thru){
   var lines=[],billed=0,paid=0;
+  var explicit=(S.invoices||[]).filter(function(inv){return inv.customerId===c.id&&(inv.status==="sent"||inv.status==="paid")&&(inv.period||inv.date||"").slice(0,7)<=thru;});
+  function invoicedMonth(m){return explicit.some(function(inv){return (inv.period||inv.date||"").slice(0,7)===m;});}
   var open=+c.openingDue||0, adv=+c.credit||0;
   if(open) {lines.push({date:(c.startMonth||thru)+"-01",desc:t("line.open"),charge:open,paid:0}); billed+=open;}
   if(adv)  {lines.push({date:(c.startMonth||thru)+"-01",desc:t("line.adv"),charge:0,paid:adv}); paid+=adv;}
@@ -1150,13 +1210,18 @@ function stmt(c,thru){
     var m=c.startMonth||thru, guard=0, stop=c.endMonth&&c.endMonth<thru?c.endMonth:thru;
     while(m<=stop && guard++<180){
       var fee=+c.monthlyFee||0;
-      if(fee){lines.push({date:m+"-01",desc:t("line.sub",{m:monthName(m)}),charge:fee,paid:0}); billed+=fee;}
+      if(fee&&!invoicedMonth(m)){
+        var ad=+c.adSpend||0;
+        var desc=t("line.sub",{m:monthName(m)})+(ad?" · "+t("inv.ads")+" "+money(ad):"");
+        lines.push({date:m+"-01",desc:desc,charge:fee,paid:0}); billed+=fee;
+      }
       m=addMonth(m,1);
     }
-  }else{
-    var vRate=+c.rate||0, dRate=+c.drate||0;
+  }
+  var vRate=+c.rate||0, dRate=+c.drate||0;
+  if(c.billing!=="package"){
     if(c.billing==="per_design") dRate=+c.drate||+c.rate||0;
-    S.work.filter(function(w){return w.customerId===c.id&&(w.date||"").slice(0,7)<=thru;})
+    S.work.filter(function(w){return w.customerId===c.id&&(w.date||"").slice(0,7)<=thru&&!invoicedMonth((w.date||"").slice(0,7));})
       .forEach(function(w){
         var isV=w.type==="video", isD=w.type==="design";
         if(c.billing==="per_design"){ if(!isD) return; }
@@ -1167,6 +1232,22 @@ function stmt(c,thru){
         lines.push({date:w.date,desc:w.qty+" × "+t(isV?"d.video":"d.design")+(w.note?" — "+w.note:""),charge:amt,paid:0});
         billed+=amt;});
   }
+  if(c.billing==="package"&&dRate){
+    S.work.filter(function(w){return w.customerId===c.id&&w.type==="design"&&(w.date||"").slice(0,7)<=thru&&!invoicedMonth((w.date||"").slice(0,7));})
+      .forEach(function(w){
+        var amt=(+w.qty||0)*dRate;
+        if(!amt)return;
+        lines.push({date:w.date,desc:w.qty+" × "+t("d.design")+(w.note?" — "+w.note:""),charge:amt,paid:0});
+        billed+=amt;
+      });
+  }
+  explicit.forEach(function(inv){
+    (inv.items||[]).forEach(function(item){
+      var amt=+item.amount||0;if(!amt)return;
+      lines.push({date:inv.date||((inv.period||thru)+"-01"),desc:(inv.number?inv.number+" · ":"")+(item.description||t("inv.extra")),charge:amt,paid:0,invoiceId:inv.id});
+      billed+=amt;
+    });
+  });
   S.payments.filter(function(x){return x.customerId===c.id&&(x.date||"").slice(0,7)<=thru;})
     .forEach(function(x){
       lines.push({date:x.date,desc:t("line.pay")+(x.note?" — "+x.note:"")+(x.method?" ("+t("m."+x.method)+")":""),charge:0,paid:+x.amount||0,pid:x.id});
@@ -1252,7 +1333,7 @@ function renderSetup(){
    +'</div></div>';
 }
 /* ═════════════ shell ═════════════ */
-var TABS=[["flow","tab.flow"],["ledger","tab.ledger"],["clients","tab.clients"],["team","tab.team"],
+var TABS=[["flow","tab.flow"],["ledger","tab.ledger"],["clients","tab.clients"],["invoices","tab.invoices"],["team","tab.team"],
           ["costs","tab.costs"],["calendar","tab.calendar"],["outside","tab.outside"],
           ["users","tab.users"],["setup","tab.setup"]];
 function render(){
@@ -1263,7 +1344,7 @@ function render(){
   var allowed=myTabs();
   if(!allowed.length){renderWait();return;}
   if(allowed.indexOf(TAB)<0) TAB=allowed[0];
-  var views={flow:vFlow,ledger:vLedger,clients:vClients,team:vTeam,costs:vCosts,calendar:vCalendar,outside:vOutside,users:vUsers,setup:vSetup};
+  var views={flow:vFlow,ledger:vLedger,clients:vClients,invoices:vInvoices,team:vTeam,costs:vCosts,calendar:vCalendar,outside:vOutside,users:vUsers,setup:vSetup};
   el("app").innerHTML='<div class="wrap"><div class="mast">'
    +'<div class="brand">'+stampHTML()+'<div>'+(S.settings.company?'<h1>'+esc(S.settings.company)+'</h1>':'')+'<small>'+t("tagline")+'</small></div></div>'
    +'<div class="tools">'
@@ -1387,6 +1468,75 @@ function step(a,b,amt,base,k,total){
   return '<div class="step'+(total?" total":"")+'"><div class="lab"><b>'+a+'</b><span>'+b+'</span></div>'
    +'<div class="track"><div class="bar '+k+'" data-w="'+w.toFixed(1)+'"></div></div>'
    +'<div class="amt '+(amt<0?"neg":(k==="keep"?"acc":""))+'">'+(amt<0?"−":"")+money(Math.abs(amt))+'</div></div>';
+}
+
+/* ═════════════ INVOICES ═════════════ */
+function invoiceTotal(inv){return (inv&&inv.items||[]).reduce(function(a,x){return a+(+x.amount||0);},0);}
+function invoicePaid(inv){return S.payments.filter(function(p){return p.invoiceId===inv.id&&p.kind!=="funding";})
+  .reduce(function(a,p){return a+(+p.amount||0);},0);}
+function invoiceState(inv){
+  if(inv.status==="cancelled")return "cancelled";
+  if(inv.status==="paid")return "paid2";
+  var total=invoiceTotal(inv), paid=invoicePaid(inv);
+  if(total>0&&paid>=total-0.005)return "paid2";
+  return inv.status||"draft";
+}
+function nextInvoiceNumber(){
+  var y=new Date().getFullYear(), max=0;
+  (S.invoices||[]).forEach(function(x){var m=String(x.number||"").match(new RegExp("^INV-"+y+"-(\\d+)$"));if(m)max=Math.max(max,+m[1]);});
+  return "INV-"+y+"-"+String(max+1).padStart(3,"0");
+}
+function invoiceForm(inv,custId){
+  var c=S.customers.filter(function(x){return x.id===(inv?inv.customerId:custId);})[0]||S.customers[0];
+  var dm=c?delivered(c,MONTH):{video:0,design:0};
+  var defaults=inv||{
+    number:nextInvoiceNumber(),customerId:c?c.id:"",date:todayISO(),dueDate:(function(){var d=new Date();d.setDate(d.getDate()+14);return d.toISOString().slice(0,10);})(),
+    period:MONTH,status:"draft",serviceAmount:c&&c.billing==="package"?Math.max(0,(+c.monthlyFee||0)-(+c.adSpend||0)):0,
+    adAmount:c?(+c.adSpend||0):0,videoQty:c&&c.billing!=="package"?(+dm.video||0):0,videoRate:c?(+c.rate||0):0,
+    designQty:c&&(+c.drate||0)?(+dm.design||0):0,designRate:c?(+c.drate||0):0,extraDesc:"",extraAmount:0,notes:""
+  };
+  form(inv?t("inv.edit"):t("inv.new"),[
+    {k:"number",label:t("inv.number"),def:defaults.number},
+    {k:"customerId",label:t("inv.customer"),type:"select",def:defaults.customerId,options:S.customers.map(function(x){return [x.id,x.name];})},
+    {k:"date",label:t("inv.issue"),type:"date",def:defaults.date},
+    {k:"dueDate",label:t("inv.dueDate"),type:"date",def:defaults.dueDate},
+    {k:"period",label:t("inv.period2"),type:"month",def:defaults.period||MONTH},
+    {k:"status",label:t("inv.mark"),type:"select",def:defaults.status||"draft",options:[["draft",t("inv.draft")],["sent",t("inv.sent")],["paid",t("inv.paid2")],["cancelled",t("inv.cancelled")]]},
+    {k:"serviceAmount",label:t("inv.service"),type:"number",step:"0.01",def:defaults.serviceAmount||0},
+    {k:"adAmount",label:t("inv.ads"),type:"number",step:"0.01",def:defaults.adAmount||0},
+    {k:"videoQty",label:t("inv.videoQty"),type:"number",step:"1",def:defaults.videoQty||0},
+    {k:"videoRate",label:t("inv.videoRate"),type:"number",step:"0.01",def:defaults.videoRate||0},
+    {k:"designQty",label:t("inv.designQty"),type:"number",step:"1",def:defaults.designQty||0},
+    {k:"designRate",label:t("inv.designRate"),type:"number",step:"0.01",def:defaults.designRate||0},
+    {k:"extraDesc",label:t("inv.extra"),def:defaults.extraDesc||""},
+    {k:"extraAmount",label:t("inv.extraAmount"),type:"number",step:"0.01",def:defaults.extraAmount||0},
+    {k:"notes",label:t("inv.notes"),type:"textarea",def:defaults.notes||""}
+  ],inv?defaults:null,function(v){
+    if(v===null){S.invoices=S.invoices.filter(function(x){return x.id!==inv.id;});return;}
+    var items=[];
+    if(+v.serviceAmount)items.push({kind:"service",description:t("inv.service"),amount:+v.serviceAmount});
+    if(+v.adAmount)items.push({kind:"ads",description:t("inv.ads"),amount:+v.adAmount});
+    if((+v.videoQty||0)*(+v.videoRate||0))items.push({kind:"video",description:v.videoQty+" × "+t("d.video"),qty:+v.videoQty,rate:+v.videoRate,amount:+v.videoQty*+v.videoRate});
+    if((+v.designQty||0)*(+v.designRate||0))items.push({kind:"design",description:v.designQty+" × "+t("d.design"),qty:+v.designQty,rate:+v.designRate,amount:+v.designQty*+v.designRate});
+    if(+v.extraAmount)items.push({kind:"other",description:v.extraDesc||t("inv.extra"),amount:+v.extraAmount});
+    v.items=items; v.updatedAt=new Date().toISOString();
+    if(inv)Object.assign(inv,v);else{v.id=uid();v.createdAt=v.updatedAt;S.invoices.push(v);}
+  });
+}
+function vInvoices(){
+  var w=can("invoices"), rows=(S.invoices||[]).slice().sort(function(a,b){return (a.date||"")<(b.date||"")?1:-1;});
+  var h='<div class="sec"><div class="rowhead"><div><h2>'+t("inv.list")+'</h2><p class="sub" style="margin:0">'+t("inv.listS")+'</p></div>'
+    +(w&&S.customers.length?'<button class="btn primary" data-act="newinvoice">'+t("inv.new")+'</button>':'')+'</div>'
+    +'<div class="card"><div class="tbl-wrap"><table><thead><tr><th>'+t("inv.number")+'</th><th>'+t("inv.customer")+'</th><th>'+t("inv.issue")+'</th><th>'+t("inv.dueDate")+'</th><th>'+t("th.status")+'</th><th class="r">'+t("inv.total")+'</th><th class="r">'+t("th.paid")+'</th><th></th></tr></thead><tbody>';
+  if(!rows.length)h+='<tr><td colspan="8" class="empty">'+t("inv.empty")+'</td></tr>';
+  rows.forEach(function(inv){var c=S.customers.filter(function(x){return x.id===inv.customerId;})[0], st=invoiceState(inv);
+    h+='<tr><td><b class="num">'+esc(inv.number||inv.id)+'</b></td><td>'+esc(c?c.name:"—")+'</td><td>'+n(esc(inv.date||"—"))+'</td><td>'+n(esc(inv.dueDate||"—"))+'</td>'
+      +'<td><span class="pill '+(st==="paid2"?"on":(st==="sent"?"amb":""))+'">'+t("inv."+st)+'</span></td>'
+      +'<td class="r"><span class="num">'+money(invoiceTotal(inv))+'</span></td><td class="r"><span class="num pos">'+money(invoicePaid(inv))+'</span></td>'
+      +'<td class="r"><button class="btn sm ghost" data-act="printinvoice" data-id="'+inv.id+'">'+t("inv.open")+'</button> '
+      +(w?'<button class="btn sm ghost" data-act="editinvoice" data-id="'+inv.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
+  });
+  return h+'</tbody></table></div></div></div>';
 }
 
 /* ═════════════ CLIENTS ═════════════ */
@@ -1579,7 +1729,8 @@ function vClient(){
    +'<p class="sub" style="margin:0"><span class="pill '+(c.billing==="prepaid"?"cy":"amb")+'">'+t("b."+c.billing)+'</span> '
    +(c.billing==="package"?t("cli.month",{v:money(c.monthlyFee)}):t("cli.pv",{v:money(c.rate)}))+'</p></div>'
    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      +'<button class="btn primary" data-act="invoice" data-id="'+c.id+'">'+t("cd.invoice")+'</button>'
+      +(can("invoices")?'<button class="btn primary" data-act="newinvoice" data-id="'+c.id+'">'+t("cd.invoice")+'</button>':'')
+      +'<button class="btn" data-act="invoice" data-id="'+c.id+'">'+t("cd.preview")+'</button>'
       +(wp?'<button class="btn" data-act="newpay" data-id="'+c.id+'">'+t("cd.pay")+'</button>':'')
       +(w?'<button class="btn" data-act="editclient" data-id="'+c.id+'">'+t("cd.rename")+'</button>':'')+'</div>' 
    +'</div>';
@@ -1620,6 +1771,11 @@ function vClient(){
    +'<td class="r"><span class="num mut">'+money(st.billed)+'</span></td>'
    +'<td class="r"><span class="num mut">'+money(st.paid)+'</span></td>'
    +'<td class="r"><span class="num '+state.cls+'" style="font-weight:600">'+money(state.v)+'</span></td><td></td></tr>';
+  h+='</tbody></table></div></div>';
+  var invs=(S.invoices||[]).filter(function(x){return x.customerId===c.id;}).sort(function(a,b){return (a.date||"")<(b.date||"")?1:-1;});
+  h+='<div class="sec card"><h2>'+t("inv.list")+'</h2><div class="tbl-wrap"><table><thead><tr><th>'+t("inv.number")+'</th><th>'+t("inv.issue")+'</th><th>'+t("th.status")+'</th><th class="r">'+t("inv.total")+'</th><th></th></tr></thead><tbody>';
+  if(!invs.length)h+='<tr><td colspan="5" class="empty">'+t("inv.empty")+'</td></tr>';
+  invs.forEach(function(inv){var ist=invoiceState(inv);h+='<tr><td class="num">'+esc(inv.number||inv.id)+'</td><td>'+n(esc(inv.date||"—"))+'</td><td><span class="pill">'+t("inv."+ist)+'</span></td><td class="r"><span class="num">'+money(invoiceTotal(inv))+'</span></td><td class="r"><button class="btn sm ghost" data-act="printinvoice" data-id="'+inv.id+'">'+t("inv.open")+'</button></td></tr>';});
   return h+'</tbody></table></div></div>';
 }
 
@@ -1651,9 +1807,10 @@ function vTeam(){
      +'<td class="r">'+(lg.carryIn?'<span class="num neg">−'+money(lg.carryIn)+'</span>':'<span class="mut">—</span>')+'</td>'
      +'<td class="r"><span class="num '+(lg.carryOut?"neg":"acc")+'" style="font-weight:600">'
        +(lg.carryOut?t("ad.owes")+" "+money(lg.carryOut):money(lg.payout))+'</span></td>'
-     +'<td class="r">'+(w?'<button class="btn sm ghost" data-act="editemp" data-id="'+e.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
+     +'<td class="r">'+(wa?'<button class="btn sm primary" data-act="newpayout" data-id="'+e.id+'">'+t("po.add")+'</button> ':'')
+     +(w?'<button class="btn sm ghost" data-act="editemp" data-id="'+e.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
   });
-  h+='<tr class="sum"><td colspan="6" class="r mut">'+t("tm.total")+'</td>'
+  h+='<tr class="sum"><td colspan="7" class="r mut">'+t("tm.total")+'</td>'
    +'<td class="r"><span class="num" style="font-weight:600">'+money(tot)+'</span></td><td></td></tr>';
   h+='</tbody></table></div></div>';
 
@@ -1687,6 +1844,8 @@ function vEmployee(){
   var wa=can("advances"), w=can("team");
   var lg=empLedger(e,MONTH), cur=lg.cur;
   var advs=S.advances.filter(function(a){return a.employeeId===e.id;})
+    .sort(function(a,b){return a.date<b.date?1:-1;});
+  var payouts=S.payouts.filter(function(a){return a.employeeId===e.id&&a.kind!=="reimb";})
     .sort(function(a,b){return a.date<b.date?1:-1;});
 
   var h='<div class="sec"><button class="btn ghost sm" data-act="closeemp">← '+t("emp.back")+'</button></div>';
@@ -1733,6 +1892,14 @@ function vEmployee(){
      +'<td class="r"><span class="num neg">−'+money(a.amount)+'</span></td>'
      +'<td class="r">'+(wa?'<button class="btn sm ghost" data-act="editadv" data-id="'+a.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
   });
+  h+='</tbody></table></div></div>';
+  h+='<div class="sec card"><h2>'+t("po.t")+'</h2><div class="tbl-wrap"><table><thead><tr>'
+   +'<th>'+t("th.date")+'</th><th>'+t("th.desc")+'</th><th class="r">'+t("th.amt")+'</th><th></th></tr></thead><tbody>';
+  if(!payouts.length)h+='<tr><td colspan="4" class="empty">'+t("po.none")+'</td></tr>';
+  payouts.forEach(function(p){
+    h+='<tr><td>'+n(esc(p.date))+'</td><td>'+esc(p.note||"—")+'</td><td class="r"><span class="num pos">'+money(p.amount)+'</span></td>'
+     +'<td class="r">'+(wa?'<button class="btn sm ghost" data-act="editpayout" data-id="'+p.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
+  });
   return h+'</tbody></table></div></div>';
 }
 
@@ -1752,8 +1919,9 @@ function vWork(){
     var e=S.employees.filter(function(y){return y.id===x.editorId;})[0];
     var pay=e?((x.amount!==""&&x.amount!=null)?+x.amount:(+x.qty||0)*(+e.rate||0)):0;
     var bill=0;
-    if(c&&c.billing!=="package"){
+    if(c){
       if(x.type==="video"&&c.billing!=="per_design") bill=(+x.qty||0)*(+c.rate||0);
+      if(c.billing==="package"&&x.type==="video") bill=0;
       else if(x.type==="design") bill=(+x.qty||0)*(+c.drate||(c.billing==="per_design"?+c.rate:0)||0);
     }
     h+='<tr><td>'+n(esc(x.date))+'</td><td>'+esc(c?c.name:"—")+'</td>'
@@ -1795,31 +1963,37 @@ function vCalendar(){
   var h='<div class="sec"><div class="rowhead"><div><h2>'+t("cal.t")+'</h2>'
    +'<p class="sub" style="margin:0">'+t("cal.s",{h:cap})+'</p></div>'
    +(w?'<button class="btn primary" data-act="newshoot">'+t("cal.add")+'</button>':'')+'</div>'
-   +'<div class="card"><div class="cal">';
+   +'<div class="card"><div class="cal-scroll"><div class="cal">';
   t("dows").forEach(function(d){h+='<div class="dow">'+d+'</div>';});
   for(var i=0;i<start;i++) h+='<div class="day mute"></div>';
   for(var d=1;d<=days;d++){
     var iso=Y+"-"+String(M+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
     var dow=new Date(Y,M,d).getDay();
-    var evs=S.shoots.filter(function(s){return s.date===iso;});
-    var load=evs.reduce(function(a,s){return a+(+s.hours||0);},0);
+    var evs=S.shoots.filter(function(s){return s.date===iso;})
+      .sort(function(a,b){return (a.time||"")>(b.time||"")?1:-1;});
+    var load=evs.filter(function(s){return s.status!=="cancelled";})
+      .reduce(function(a,s){return a+(+s.hours||0);},0);
     var isOff=dow===off;
     h+='<div class="day'+(isOff?" off":"")+(iso===todayISO()?" today":"")+'"'+(w?' data-act="dayclick" data-date="'+iso+'"':' style="cursor:default"')+'>'
      +'<div class="dn">'+d+(isOff?' <span class="cy">'+t("cal.off")+'</span>':'')+'</div>'
      +(load?'<span class="load'+(!isOff&&load>cap?" over":"")+'">'+load+'h</span>':'')
      +evs.map(function(s){var c=S.customers.filter(function(y){return y.id===s.customerId;})[0];
-       return '<div class="ev">'+esc(c?c.name:s.title)+'</div>';}).join("")+'</div>';
+       return '<div class="ev '+esc(s.status||"planned")+'">'+esc((s.time?s.time+" · ":"")+(s.title||(c&&c.name)||t("cal.k."+(s.kind||"meeting"))))+'</div>';}).join("")+'</div>';
   }
-  h+='</div></div>';
+  h+='</div></div></div>';
   var up=S.shoots.filter(function(s){return inMonth(s.date,MONTH);}).sort(function(a,b){return a.date>b.date?1:-1;});
   h+='<div class="sec card"><h2>'+t("cal.booked")+'</h2><div class="tbl-wrap"><table><thead><tr>'
-   +'<th>'+t("th.date")+'</th><th>'+t("th.time")+'</th><th>'+t("th.client")+'</th><th>'+t("th.shoot")+'</th>'
-   +'<th class="r">'+t("th.hours")+'</th><th></th></tr></thead><tbody>';
-  if(!up.length) h+='<tr><td colspan="6" class="empty">'+t("cal.none")+'</td></tr>';
+   +'<th>'+t("th.date")+'</th><th>'+t("th.time")+'</th><th>'+t("cal.kind")+'</th><th>'+t("th.client")+'</th><th>'+t("th.shoot")+'</th>'
+   +'<th>'+t("cal.assignee")+'</th><th>'+t("cal.status")+'</th><th class="r">'+t("th.hours")+'</th><th></th></tr></thead><tbody>';
+  if(!up.length) h+='<tr><td colspan="9" class="empty">'+t("cal.none")+'</td></tr>';
   up.forEach(function(s){
     var c=S.customers.filter(function(y){return y.id===s.customerId;})[0];
-    h+='<tr><td>'+n(esc(s.date))+'</td><td>'+n(esc(s.time||"—"))+'</td><td>'+esc(c?c.name:"—")+'</td>'
-     +'<td>'+esc(s.title)+'</td><td class="r">'+n((s.hours||0)+"h")+'</td>'
+    var e=S.employees.filter(function(y){return y.id===s.employeeId;})[0];
+    h+='<tr><td>'+n(esc(s.date))+'</td><td>'+n(esc(s.time||"—"))+'</td>'
+     +'<td><span class="pill">'+t("cal.k."+(s.kind||"meeting"))+'</span></td><td>'+esc(c?c.name:(s.contact||"—"))+'</td>'
+     +'<td><b>'+esc(s.title||"—")+'</b>'+(s.notes?'<div class="mut" style="font-size:11.5px">'+esc(s.notes)+'</div>':'')+'</td>'
+     +'<td>'+esc(e?e.name:"—")+'</td><td><span class="pill '+((s.status||"planned")==="confirmed"?"on":"")+'">'+t("cal.st."+(s.status||"planned"))+'</span></td>'
+     +'<td class="r">'+n((s.hours||0)+"h")+'</td>'
      +'<td class="r">'+(w?'<button class="btn sm ghost" data-act="editshoot" data-id="'+s.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
   });
   return h+'</tbody></table></div></div></div>';
@@ -2275,14 +2449,19 @@ function form(title,fields,vals,onSave,extra,saveLabel){
 
 
 /* ══════ a proper one-page invoice, opened in its own clean window ══════ */
-function printInvoice(c){
+function printInvoice(c,invoice){
   if(!c) return;
-  var st=stmt(c,MONTH);
+  var st;
+  if(invoice){
+    var ipaid=invoicePaid(invoice), itotal=invoiceTotal(invoice);
+    st={lines:(invoice.items||[]).map(function(x){return{date:invoice.date,desc:x.description,charge:+x.amount||0,paid:0};}),billed:itotal,paid:ipaid,balance:itotal-ipaid};
+    S.payments.filter(function(p){return p.invoiceId===invoice.id&&p.kind!=="funding";}).forEach(function(p){st.lines.push({date:p.date,desc:t("line.pay"),charge:0,paid:+p.amount||0});});
+  }else st=stmt(c,MONTH);
   var co=S.settings.company||"Studio";
   var logo=S.settings.logo||"";
   var rtl=(t("dir")==="rtl");
   var today=todayISO();
-  var invNo=(c.name||"INV").replace(/[^A-Za-z0-9]/g,"").slice(0,4).toUpperCase()+"-"+today.replace(/-/g,"").slice(2);
+  var invNo=invoice&&invoice.number?invoice.number:(c.name||"INV").replace(/[^A-Za-z0-9]/g,"").slice(0,4).toUpperCase()+"-"+today.replace(/-/g,"").slice(2);
   var cur=S.settings.currency||"$";
   var m2=function(v){return cur+Number(v||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});};
 
@@ -2380,8 +2559,9 @@ function printInvoice(c){
      +'<div class="invbox"><div class="lbl">'+t("inv.title")+'</div><div class="no">'+esc(invNo)+'</div></div></div>'
    +'<div class="meta">'
      +'<div class="blk"><div class="k">'+t("inv.to")+'</div><div class="v">'+esc(c.name)+'</div></div>'
-     +'<div class="blk"><div class="k">'+t("inv.date")+'</div><div class="v sm mono">'+today+'</div></div>'
-     +'<div class="blk"><div class="k">'+t("inv.period")+'</div><div class="v sm">'+monthName(MONTH)+'</div></div>'
+     +'<div class="blk"><div class="k">'+t("inv.date")+'</div><div class="v sm mono">'+esc(invoice&&invoice.date||today)+'</div></div>'
+     +(invoice&&invoice.dueDate?'<div class="blk"><div class="k">'+t("inv.dueDate")+'</div><div class="v sm mono">'+esc(invoice.dueDate)+'</div></div>':'')
+     +'<div class="blk"><div class="k">'+t("inv.period")+'</div><div class="v sm">'+monthName(invoice&&invoice.period||MONTH)+'</div></div>'
      +'<div class="blk"><span class="badge" style="background:'+status.bg+';color:'+status.c+'">'+status.txt+'</span></div>'
    +'</div>'
    +'<div class="body">'
@@ -2411,13 +2591,15 @@ function printInvoice(c){
 function clientForm(c){
   form(c?t("cli.edit"):t("cli.add"),[
     {k:"name",label:t("f.cliname")},
+    {k:"email",label:t("f.email"),type:"email"},
+    {k:"phone",label:t("f.phone")},
     {k:"billing",label:t("f.howpay"),type:"select",options:[["package",t("b.packageL")],["per_video",t("b.per_videoL")],["per_design",t("b.per_designL")],["prepaid",t("b.prepaidL")]]},
     {k:"monthlyFee",label:t("f.fee"),type:"number",step:"0.01",showIf:{k:"billing",in:["package"]}},
     {k:"videos",label:t("f.vids"),type:"number",showIf:{k:"billing",in:["package"]}},
     {k:"posts",label:t("f.posts"),type:"number",showIf:{k:"billing",in:["package"]}},
-    {k:"adSpend",label:t("f.ads"),type:"number",step:"0.01",hint:t("f.adsH"),showIf:{k:"billing",in:["package"]}},
+    {k:"adSpend",label:t("f.ads"),type:"number",step:"0.01",hint:t("f.adsH")},
     {k:"rate",label:t("f.rate"),type:"number",step:"0.01",showIf:{k:"billing",in:["per_video","prepaid"]}},
-    {k:"drate",label:t("f.drate"),type:"number",step:"0.01",hint:t("f.drateH"),showIf:{k:"billing",in:["per_video","per_design"]}},
+    {k:"drate",label:t("f.drate"),type:"number",step:"0.01",hint:t("f.drateH"),showIf:{k:"billing",in:["package","per_video","per_design"]}},
     {k:"expected",label:t("f.exp"),type:"number",showIf:{k:"billing",in:["per_video"]}},
     {k:"credit",label:t("f.advance"),type:"number",step:"0.01",hint:t("f.advanceH")},
     {k:"openingDue",label:t("f.opening"),type:"number",step:"0.01",hint:t("f.openingH")},
@@ -2474,7 +2656,11 @@ function shootForm(s,date){
   form(s?t("cal.edit"):t("cal.add"),[
     {k:"date",label:t("f.date"),type:"date",def:date||todayISO()},
     {k:"time",label:t("f.time"),type:"time"},
+    {k:"kind",label:t("cal.kind"),type:"select",def:"meeting",options:[["meeting",t("cal.k.meeting")],["shoot",t("cal.k.shoot")],["call",t("cal.k.call")],["delivery",t("cal.k.delivery")],["other",t("cal.k.other")]]},
+    {k:"status",label:t("cal.status"),type:"select",def:"planned",options:[["planned",t("cal.st.planned")],["confirmed",t("cal.st.confirmed")],["done",t("cal.st.done")],["cancelled",t("cal.st.cancelled")]]},
     {k:"customerId",label:t("f.client"),type:"select",options:[["","—"]].concat(S.customers.map(function(c){return [c.id,c.name];}))},
+    {k:"contact",label:t("cal.contact"),hint:"Email / WhatsApp"},
+    {k:"employeeId",label:t("cal.assignee"),type:"select",options:[["","—"]].concat(S.employees.map(function(e){return [e.id,e.name];}))},
     {k:"title",label:t("f.shooting")},
     {k:"hours",label:t("f.hours"),type:"number",step:"0.5",def:2},
     {k:"notes",label:t("f.notes"),type:"textarea"}
@@ -2575,6 +2761,7 @@ function payForm(pay,custId){
     {k:"date",label:t("f.date"),type:"date",def:todayISO()},
     {k:"customerId",label:t("f.client"),type:"select",options:S.customers.map(function(c){return [c.id,c.name];}),def:custId||""},
     {k:"kind",label:t("f.paykind"),type:"select",options:[["payment",t("k.payment")],["funding",t("k.funding")]],def:"payment"},
+    {k:"invoiceId",label:t("inv.number"),type:"select",options:[["","—"]].concat((S.invoices||[]).filter(function(i){return !custId||i.customerId===custId;}).map(function(i){return [i.id,i.number||i.id];}))},
     {k:"amount",label:t("f.amountpaid"),type:"number",step:"0.01"},
     {k:"method",label:t("f.method"),type:"select",options:[["cash",t("m.cash")],["bank",t("m.bank")],["other",t("m.other")]]},
     {k:"note",label:t("f.note"),type:"textarea"}
@@ -2703,6 +2890,9 @@ document.addEventListener("click",function(ev){
   else if(act==="newclient") clientForm(null);
   else if(act==="editclient") clientForm(f(S.customers));
   else if(act==="invoice") printInvoice(f(S.customers));
+  else if(act==="newinvoice") invoiceForm(null,id||null);
+  else if(act==="editinvoice") invoiceForm(f(S.invoices));
+  else if(act==="printinvoice") {var ii=f(S.invoices);if(ii)printInvoice(S.customers.filter(function(c){return c.id===ii.customerId;})[0],ii);}
   else if(act==="newemp") empForm(null);
   else if(act==="editemp") empForm(f(S.employees));
   else if(act==="newwork") workForm(null);
@@ -2782,6 +2972,7 @@ Store.load().then(async function(d){
   if(d&&d.settings){S=d;
     if(!S.settings.pins)S.settings.pins={owner:"",manager:"",accountant:""};
     if(!S.payments)S.payments=[];
+    if(!S.invoices)S.invoices=[];
     if(!S.advances)S.advances=[];
     if(!S.payouts)S.payouts=[];
     if(!S.osadvances)S.osadvances=[];

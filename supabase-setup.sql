@@ -29,8 +29,8 @@ begin
     case when n = 0 then 'owner' else 'staff' end,
     n = 0,
     case when n = 0
-      then '{"tabs":["flow","clients","team","work","costs","calendar","outside","users","setup"],
-              "edit":["clients","team","work","costs","calendar","payments","advances","outside","setup","users"],
+      then '{"tabs":["flow","clients","invoices","team","work","costs","calendar","outside","users","setup"],
+              "edit":["clients","invoices","team","work","costs","calendar","payments","advances","outside","setup","users"],
               "personal":true}'::jsonb
       else '{"tabs":[],"edit":[],"personal":false}'::jsonb
     end
@@ -77,7 +77,8 @@ do $$
 declare tname text;
 begin
   foreach tname in array array[
-    'customers','employees','work','payments','advances','costs','shoots','outside','projects'
+    'customers','employees','work','payments','invoices','advances','payouts','costs','shoots','outside','projects',
+    'osadvances','debts','transfers','notifications'
   ] loop
     execute format($f$
       create table if not exists public.%I (
@@ -98,14 +99,27 @@ create table if not exists public.settings (
 );
 insert into public.settings (id, data) values (1, '{}'::jsonb) on conflict (id) do nothing;
 
+-- Immutable audit trail for changes made by the MCP connector or other trusted services.
+create table if not exists public.audit_log (
+  id          uuid primary key default gen_random_uuid(),
+  action      text not null,
+  resource    text not null,
+  record_id   text,
+  actor       text not null default 'system',
+  data        jsonb not null default '{}'::jsonb,
+  created_at  timestamptz not null default now()
+);
+
 -- ── 4. row level security ───────────────────────────────────────
 alter table public.profiles  enable row level security;
 alter table public.settings  enable row level security;
+alter table public.audit_log enable row level security;
 do $$
 declare tname text;
 begin
   foreach tname in array array[
-    'customers','employees','work','payments','advances','costs','shoots','outside','projects'
+    'customers','employees','work','payments','invoices','advances','payouts','costs','shoots','outside','projects',
+    'osadvances','debts','transfers','notifications'
   ] loop
     execute format('alter table public.%I enable row level security;', tname);
   end loop;
@@ -133,7 +147,8 @@ declare r record;
 begin
   for r in select * from (values
       ('customers','clients'), ('employees','team'),   ('work','work'),
-      ('payments','payments'), ('advances','advances'), ('costs','costs'),
+      ('payments','payments'), ('invoices','invoices'), ('advances','advances'), ('payouts','advances'), ('costs','costs'),
+      ('osadvances','outside'), ('debts','outside'), ('transfers','outside'), ('notifications','calendar'),
       ('shoots','calendar')
   ) as t(tbl, sec) loop
     execute format('drop policy if exists %I on public.%I;', r.tbl||'_read',  r.tbl);
@@ -146,6 +161,11 @@ begin
       r.tbl||'_write', r.tbl, r.sec, r.sec);
   end loop;
 end $$;
+
+-- Only the owner can inspect the audit trail. Trusted connector writes use the
+-- server-side service role and are therefore not exposed to browsers.
+drop policy if exists audit_log_read on public.audit_log;
+create policy audit_log_read on public.audit_log for select using (public.is_owner());
 
 -- THE PRIVATE ONES.
 -- The owner's outside income and side projects are hidden in the database itself,
@@ -170,7 +190,8 @@ do $$
 declare tname text;
 begin
   foreach tname in array array[
-    'customers','employees','work','payments','advances','costs','shoots','outside','projects','settings','profiles'
+    'customers','employees','work','payments','invoices','advances','payouts','costs','shoots','outside','projects',
+    'osadvances','debts','transfers','notifications','settings','profiles','audit_log'
   ] loop
     begin
       execute format('alter publication supabase_realtime add table public.%I;', tname);
