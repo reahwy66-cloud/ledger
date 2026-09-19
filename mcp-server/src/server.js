@@ -581,15 +581,31 @@ app.post('/push/test', async (req, res) => {
   try {
     const { data, error } = await db.auth.getUser(token);
     if (error || !data?.user) return res.status(401).json({ error: 'Invalid token' });
-    const result = await sendPush({
-      title: 'رِواء ستوديو',
-      body: 'تنبيه تجريبي — الإشعارات شغّالة ✓',
-      url: './',
-      tag: 'riwa-push-test',
-      dir: 'rtl',
-      lang: 'ar'
-    }, data.user.id);
-    return res.json({ ok: result.sent > 0, ...result });
+
+    const subscription = req.body?.subscription;
+    if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+      return res.status(400).json({ error: 'Invalid subscription' });
+    }
+
+    await savePushSubscription(data.user.id, subscription, String(req.body?.userAgent || ''));
+
+    try {
+      await webpush.sendNotification(subscription, JSON.stringify({
+        title: 'رِواء ستوديو',
+        body: 'تنبيه تجريبي — الإشعارات شغّالة ✓',
+        url: './',
+        tag: 'riwa-push-test',
+        dir: 'rtl',
+        lang: 'ar'
+      }), { TTL: 300 });
+      return res.json({ ok: true, sent: 1 });
+    } catch (pushError) {
+      return res.status(502).json({
+        ok: false,
+        error: 'Push provider rejected the notification',
+        statusCode: pushError?.statusCode || null
+      });
+    }
   } catch (_error) {
     return res.status(500).json({ error: 'Could not send test push' });
   }
