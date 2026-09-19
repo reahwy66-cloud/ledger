@@ -56,7 +56,7 @@ function pushKeys() {
 const PUSH_KEYS = missingConfig.length ? null : pushKeys();
 if (PUSH_KEYS) {
   webpush.setVapidDetails(
-    'mailto:notifications@riwa-studio.local',
+    new URL(process.env.PUBLIC_MCP_URL).origin,
     PUSH_KEYS.publicKey,
     PUSH_KEYS.privateKey
   );
