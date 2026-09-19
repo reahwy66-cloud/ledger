@@ -30,6 +30,19 @@ The connector records financial events. It does **not** initiate bank transfers.
 
 6. Deploy behind HTTPS and connect `https://your-host.example/mcp` in ChatGPT developer mode. ChatGPT discovers Supabase OAuth automatically and asks the signed-in owner to approve access.
 
+## Cloudflare Workers (free, no always-on server)
+
+The connector includes `wrangler.jsonc` and an edge-safe stateless MCP route.
+
+1. In Cloudflare Workers & Pages, import this GitHub repository and set the root directory to `mcp-server`.
+2. Use build command `npm install` and deploy command `npm run deploy:cloudflare`.
+3. Add encrypted secrets `SUPABASE_SERVICE_ROLE_KEY` and these variables:
+   - `SUPABASE_URL=https://YOUR_PROJECT.supabase.co`
+   - `PUBLIC_MCP_URL=https://YOUR_WORKER.workers.dev/mcp`
+4. Deploy, then verify `https://YOUR_WORKER.workers.dev/health` returns `{"ok":true,...}`.
+
+Never commit or screenshot a Supabase secret key. If one is exposed, revoke it and create a replacement before deploying.
+
 ## Appointment notifications
 
 Without `NOTIFICATION_WEBHOOK_URL`, requested notifications remain safely queued in the `notifications` table. Point the webhook at your WhatsApp, email, SMS, Make, Zapier, or n8n workflow to deliver them. The payload includes the recipient, client, appointment title, date and time.
