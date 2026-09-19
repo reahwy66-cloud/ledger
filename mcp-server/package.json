@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
-    "check": "node --check src/server.js"
+    "check": "node --check src/server.js && node --check src/worker.js",
+    "deploy:cloudflare": "wrangler deploy"
   },
   "engines": {
     "node": ">=20"
@@ -16,6 +17,8 @@
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
     "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "wrangler": "^4.135.0"
   }
 }
-
