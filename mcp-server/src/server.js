@@ -8,13 +8,12 @@ import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod/v4';
 
 const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'PUBLIC_MCP_URL'];
-for (const key of required) {
-  if (!process.env[key]) throw new Error(`Missing required environment variable: ${key}`);
-}
-
-const db = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false }
-});
+const missingConfig = required.filter(key => !process.env[key]);
+const db = missingConfig.length ? null : createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { auth: { persistSession: false, autoRefreshToken: false } }
+);
 
 const TABLES = Object.freeze({
   clients: 'customers',
@@ -414,7 +413,17 @@ function buildServer() {
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
-app.get('/health', (_req, res) => res.json({ ok: true, service: 'studio-ledger-mcp' }));
+app.get('/health', (_req, res) => res.status(missingConfig.length ? 503 : 200).json({
+  ok: missingConfig.length === 0,
+  service: 'studio-ledger-mcp',
+  missingConfig
+}));
+app.use((req, res, next) => {
+  if (missingConfig.length) {
+    return res.status(503).json({ error: 'Service configuration is incomplete', missingConfig });
+  }
+  next();
+});
 app.get('/.well-known/oauth-protected-resource', (_req, res) => res.json({
   resource: process.env.PUBLIC_MCP_URL,
   authorization_servers: [`${process.env.SUPABASE_URL.replace(/\/$/, '')}/auth/v1`],
@@ -442,28 +451,27 @@ async function authorize(req, res, next) {
   }
 }
 
-const transports = new Map();
-app.all('/mcp', authorize, async (req, res) => {
+/* Stateless transport keeps the connector reliable on edge/serverless hosts:
+   every POST is self-contained, so no in-memory session has to survive between
+   requests or across Cloudflare isolates. */
+app.post('/mcp', authorize, async (req, res) => {
+  let transport;
   try {
-    const sessionId = req.headers['mcp-session-id'];
-    let transport = sessionId ? transports.get(sessionId) : null;
-    if (!transport && req.method === 'POST' && isInitializeRequest(req.body)) {
-      transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => crypto.randomUUID(),
-        onsessioninitialized: sid => transports.set(sid, transport)
-      });
-      transport.onclose = () => {
-        if (transport.sessionId) transports.delete(transport.sessionId);
-      };
-      await buildServer().connect(transport);
+    if (!isInitializeRequest(req.body) && !req.body?.method) {
+      return res.status(400).json({ error: 'Invalid MCP request' });
     }
-    if (!transport) return res.status(400).json({ error: 'Invalid or missing MCP session' });
+    transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+    await buildServer().connect(transport);
     await transport.handleRequest(req, res, req.body);
   } catch (error) {
     console.error(error);
     if (!res.headersSent) res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    if (transport) await transport.close().catch(() => {});
   }
 });
+app.get('/mcp', authorize, (_req, res) => res.status(405).json({ error: 'Use POST for this stateless MCP endpoint' }));
+app.delete('/mcp', authorize, (_req, res) => res.status(405).json({ error: 'No persistent MCP session' }));
 
 const port = Number(process.env.PORT || 3000);
 app.listen(port, () => console.log(`Studio Ledger MCP listening on :${port}`));
