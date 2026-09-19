@@ -250,9 +250,73 @@ async function ensureOneOffManualPush() {
   if (error) throw error;
 }
 
+async function ensureBanaVideoTestAppointment() {
+  const appointmentId = 'test_bana_video_20260919_2240';
+  const reminderId = 'scheduled_bana_video_20260919_2240';
+
+  const { data: existingAppointment, error: appointmentReadError } = await db
+    .from('shoots')
+    .select('id')
+    .eq('id', appointmentId)
+    .maybeSingle();
+  if (appointmentReadError) throw appointmentReadError;
+
+  if (!existingAppointment) {
+    const appointment = {
+      id: appointmentId,
+      data: {
+        title: 'فيديو بانة',
+        date: '2026-09-19',
+        time: '22:40',
+        kind: 'other',
+        status: 'planned',
+        customerId: '',
+        employeeId: '',
+        contact: '',
+        hours: 0.5,
+        notes: 'اختبار تذكير من رِواء'
+      },
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await db.from('shoots').insert(appointment);
+    if (error) throw error;
+  }
+
+  const { data: existingReminder, error: reminderReadError } = await db
+    .from('notifications')
+    .select('id')
+    .eq('id', reminderId)
+    .maybeSingle();
+  if (reminderReadError) throw reminderReadError;
+
+  if (!existingReminder) {
+    const record = {
+      id: reminderId,
+      data: {
+        type: 'scheduled_push',
+        source: 'appointment_test',
+        status: 'pending',
+        appointmentId,
+        appointmentTitle: 'فيديو بانة',
+        title: 'رِواء ستوديو',
+        body: 'فيديو بانة — حان موعده الآن',
+        dueAt: '2026-09-19T22:40:00+03:00',
+        url: './',
+        tag: 'bana-video-2240',
+        userId: null,
+        createdAt: new Date().toISOString()
+      },
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await db.from('notifications').insert(record);
+    if (error) throw error;
+  }
+}
+
 export async function runDueNotifications(now = new Date()) {
   if (!db) return { ok: false, reason: 'not_configured', checked: 0, sent: 0, failed: 0 };
   await ensureOneOffManualPush();
+  await ensureBanaVideoTestAppointment();
   const { data, error } = await db.from('notifications').select('id,data');
   if (error) throw error;
 
