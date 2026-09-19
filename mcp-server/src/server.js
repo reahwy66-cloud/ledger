@@ -424,12 +424,16 @@ app.use((req, res, next) => {
   }
   next();
 });
-app.get('/.well-known/oauth-protected-resource', (_req, res) => res.json({
-  resource: process.env.PUBLIC_MCP_URL,
-  authorization_servers: [`${process.env.SUPABASE_URL.replace(/\/$/, '')}/auth/v1`],
-  bearer_methods_supported: ['header'],
-  scopes_supported: ['openid', 'email', 'profile']
-}));
+function protectedResourceMetadata(_req, res) {
+  return res.json({
+    resource: process.env.PUBLIC_MCP_URL,
+    authorization_servers: [`${process.env.SUPABASE_URL.replace(/\/$/, '')}/auth/v1`],
+    bearer_methods_supported: ['header'],
+    scopes_supported: ['openid', 'email', 'profile']
+  });
+}
+app.get('/.well-known/oauth-protected-resource', protectedResourceMetadata);
+app.get('/.well-known/oauth-protected-resource/mcp', protectedResourceMetadata);
 
 async function authorize(req, res, next) {
   const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
