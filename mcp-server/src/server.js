@@ -162,6 +162,21 @@ async function queueNotification(appointment, customer) {
   const { error } = await db.from('notifications').upsert(notification);
   if (error) throw error;
 
+  let pushResult = { sent: 0, failed: 0, total: 0 };
+  try {
+    pushResult = await sendPush({
+      title: 'رِواء ستوديو',
+      body: [appointment.title, appointment.date, appointment.time].filter(Boolean).join(' · '),
+      url: './',
+      tag: `appointment-${appointment.id}`,
+      dir: 'rtl',
+      lang: 'ar'
+    });
+    if (pushResult.sent > 0) notification.data.status = 'push_sent';
+  } catch (_pushError) {
+    notification.data.status = 'queued_push_failed';
+  }
+
   if (process.env.NOTIFICATION_WEBHOOK_URL) {
     try {
       const response = await fetch(process.env.NOTIFICATION_WEBHOOK_URL, {
@@ -176,8 +191,10 @@ async function queueNotification(appointment, customer) {
     } catch (_error) {
       notification.data.status = 'queued_webhook_failed';
     }
-    await db.from('notifications').upsert({ ...notification, data: notification.data, updated_at: new Date().toISOString() });
   }
+
+  notification.data.push = pushResult;
+  await db.from('notifications').upsert({ ...notification, data: notification.data, updated_at: new Date().toISOString() });
   return notification.data.status;
 }
 
@@ -537,7 +554,21 @@ app.post('/push/subscribe', async (req, res) => {
       return res.status(400).json({ error: 'Invalid subscription' });
     }
     const id = await savePushSubscription(data.user.id, subscription, String(req.body?.userAgent || ''));
-    return res.json({ ok: true, id });
+    let testSent = false;
+    try {
+      await webpush.sendNotification(subscription, JSON.stringify({
+        title: 'رِواء ستوديو',
+        body: 'تم تفعيل التنبيهات بنجاح ✓',
+        url: './',
+        tag: 'riwa-push-enabled',
+        dir: 'rtl',
+        lang: 'ar'
+      }), { TTL: 300 });
+      testSent = true;
+    } catch (_pushError) {
+      testSent = false;
+    }
+    return res.json({ ok: true, id, testSent });
   } catch (_error) {
     return res.status(500).json({ error: 'Could not save subscription' });
   }
