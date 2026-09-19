@@ -1,7 +1,7 @@
 /* رِواء ستوديو — offline shell.
    The app itself is cached so it opens without a connection.
    Live data always goes to the network; it is never served stale. */
-const CACHE = 'studio-ledger-v4';
+const CACHE = 'studio-ledger-v5';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
                './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon.png', './push.js'];
 
@@ -37,6 +37,9 @@ self.addEventListener('fetch', e => {
 
 
 self.addEventListener('push', event => {
+  if (self.registration && self.registration.index && self.registration.index.setAppBadge) {
+    // no-op: compatibility placeholder
+  }
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch (_e) {
     data = { body: event.data ? event.data.text() : '' };
