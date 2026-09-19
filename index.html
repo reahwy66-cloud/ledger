@@ -2448,7 +2448,7 @@ function vSetup(){
     ?(pushState==="enabled"?"مفعّلة":pushState==="denied"?"محظورة من إعدادات الآيفون":pushState==="unsupported"?"غير مدعومة على هذا الجهاز":"غير مفعّلة")
     :(pushState==="enabled"?"Enabled":pushState==="denied"?"Blocked in iPhone settings":pushState==="unsupported"?"Not supported on this device":"Not enabled");
   var pushNote=LANG==="ar"?"استلم تنبيهات رِواء ستوديو حتى عندما يكون التطبيق مغلقًا.":"Receive Riwa Studio alerts even when the app is closed.";
-  var pushBtn=LANG==="ar"?(pushState==="enabled"?"مفعّلة":"تفعيل"):(pushState==="enabled"?"Enabled":"Enable");
+  var pushBtn=LANG==="ar"?(pushState==="enabled"?"إرسال تنبيه تجريبي":"تفعيل"):(pushState==="enabled"?"Send test notification":"Enable");
   h+=box(pushTitle,pushStatus,pushNote,"pushnotify",pushBtn);
   h+=box(t("pwa.t"),t("pwa.h"),t("pwa.note"),"pwa",t("pwa.b"));
   h+='</div>';
@@ -3080,14 +3080,20 @@ document.addEventListener("click",function(ev){
         return;
       }
       try{
-        await window.RiwaPush.enable();
+        if(window.RiwaPush.status()==="enabled"){
+          if(!window.RiwaPush.test) throw new Error("test_unavailable");
+          await window.RiwaPush.test();
+          alert(LANG==="ar"?"تم إرسال التنبيه التجريبي. سكّر التطبيق وتأكد أنه وصلك.":"Test notification sent. Close the app and confirm it arrives.");
+        }else{
+          await window.RiwaPush.enable();
+        }
         render();
       }catch(e){
         var msg=String(e&&e.message||e);
         if(msg==="denied"){
           alert(LANG==="ar"?"التنبيهات محظورة. افتح إعدادات الآيفون > الإشعارات > رِواء ستوديو وفعّل السماح بالإشعارات.":"Notifications are blocked. Open iPhone Settings > Notifications > Riwa Studio and allow notifications.");
         }else{
-          alert(LANG==="ar"?"تعذّر تفعيل التنبيهات الآن. جرّب مرة ثانية بعد قليل.":"Couldn’t enable notifications right now. Try again shortly.");
+          alert(LANG==="ar"?"تعذّر إرسال/تفعيل التنبيهات الآن. جرّب مرة ثانية بعد قليل.":"Couldn’t send or enable notifications right now. Try again shortly.");
         }
         render();
       }
