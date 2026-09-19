@@ -2442,6 +2442,14 @@ function vSetup(){
         MODE==="cloud"?t("cl.onS"):t("cl.offS"),
         MODE==="cloud"?"cloudmanage":"cloudon",
         MODE==="cloud"?t("cl.manage"):t("cl.connect"));
+  var pushState=(window.RiwaPush&&window.RiwaPush.status)?window.RiwaPush.status():"unsupported";
+  var pushTitle=LANG==="ar"?"التنبيهات":"Notifications";
+  var pushStatus=LANG==="ar"
+    ?(pushState==="enabled"?"مفعّلة":pushState==="denied"?"محظورة من إعدادات الآيفون":pushState==="unsupported"?"غير مدعومة على هذا الجهاز":"غير مفعّلة")
+    :(pushState==="enabled"?"Enabled":pushState==="denied"?"Blocked in iPhone settings":pushState==="unsupported"?"Not supported on this device":"Not enabled");
+  var pushNote=LANG==="ar"?"استلم تنبيهات رِواء ستوديو حتى عندما يكون التطبيق مغلقًا.":"Receive Riwa Studio alerts even when the app is closed.";
+  var pushBtn=LANG==="ar"?(pushState==="enabled"?"مفعّلة":"تفعيل"):(pushState==="enabled"?"Enabled":"Enable");
+  h+=box(pushTitle,pushStatus,pushNote,"pushnotify",pushBtn);
   h+=box(t("pwa.t"),t("pwa.h"),t("pwa.note"),"pwa",t("pwa.b"));
   h+='</div>';
   h+='<div class="sec card"><span class="eyebrow">'+t("sp.data")+'</span>'
@@ -3065,6 +3073,26 @@ document.addEventListener("click",function(ev){
   else if(act==="cloudmanage") cloudManage();
   else if(act==="cloudoff"){clearCfg();location.reload();}
   else if(act==="pwa") pwaGuide();
+  else if(act==="pushnotify"){
+    (async function(){
+      if(!window.RiwaPush||!window.RiwaPush.enable){
+        alert(LANG==="ar"?"التنبيهات غير متاحة على هذا الجهاز.":"Notifications are not available on this device.");
+        return;
+      }
+      try{
+        await window.RiwaPush.enable();
+        render();
+      }catch(e){
+        var msg=String(e&&e.message||e);
+        if(msg==="denied"){
+          alert(LANG==="ar"?"التنبيهات محظورة. افتح إعدادات الآيفون > الإشعارات > رِواء ستوديو وفعّل السماح بالإشعارات.":"Notifications are blocked. Open iPhone Settings > Notifications > Riwa Studio and allow notifications.");
+        }else{
+          alert(LANG==="ar"?"تعذّر تفعيل التنبيهات الآن. جرّب مرة ثانية بعد قليل.":"Couldn’t enable notifications right now. Try again shortly.");
+        }
+        render();
+      }
+    })();
+  }
   else if(act==="edituser"){var u=USERS.filter(function(x){return x.id===id;})[0];if(u)userForm(u);}
   else if(act==="signout"){(async function(){if(SB)await SB.auth.signOut();ME=null;renderAuth();})();}
   else if(act==="theme"){S.settings.theme=(S.settings.theme==="dark")?"light":"dark";save();render();}
