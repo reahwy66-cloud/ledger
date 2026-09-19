@@ -60,5 +60,18 @@ async function enable(){
   return true;
 }
 
-window.RiwaPush={enable:enable,status:status};
+async function testPush(){
+  var token=sessionToken();
+  if(!token) throw new Error("sign_in");
+  var response=await fetch(PUSH_API+"/push/test",{
+    method:"POST",
+    headers:{"content-type":"application/json","authorization":"Bearer "+token}
+  });
+  var data={};
+  try{ data=await response.json(); }catch(_e){}
+  if(!response.ok || !data.ok) throw new Error("test_failed");
+  return data;
+}
+
+window.RiwaPush={enable:enable,status:status,test:testPush};
 })();
