@@ -13,7 +13,8 @@
   "keep_vars": true,
   "vars": {
     "SUPABASE_URL": "https://gvnpixjkcmbrdfefbamr.supabase.co",
-    "PUBLIC_MCP_URL": "https://studio-ledger-mcp.reahwy66.workers.dev/mcp"
+    "PUBLIC_MCP_URL": "https://studio-ledger-mcp.reahwy66.workers.dev/mcp",
+    "STUDIO_TIMEZONE_OFFSET": "+03:00"
   },
   "observability": {
     "enabled": true
