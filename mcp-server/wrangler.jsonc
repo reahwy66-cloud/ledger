@@ -10,6 +10,7 @@
     "nodejs_compat_populate_process_env"
   ],
   "workers_dev": true,
+  "keep_vars": true,
   "observability": {
     "enabled": true
   }

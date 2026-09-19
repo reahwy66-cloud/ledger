@@ -3,11 +3,11 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Ledger">
+<meta name="apple-mobile-web-app-title" content="رِواء ستوديو">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="favicon.png">
-<title>Studio Ledger</title>
+<title>رِواء ستوديو</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -405,7 +405,7 @@ en:{
  "au.out":"Sign out","au.wait":"Waiting for approval","au.waitS":"Your account is created. {who} needs to switch it on and choose what you can see.",
  "au.first":"The first account created becomes the owner.","au.weak":"Password must be at least 6 characters.",
  "au.check":"Check your email to confirm the address, then sign in.",
- "oauth.t":"Connect Studio Ledger","oauth.s":"ChatGPT is requesting permission to use your ledger tools.","oauth.client":"Application","oauth.scopes":"Requested access","oauth.allow":"Allow access","oauth.deny":"Deny","oauth.bad":"This authorization request is invalid or expired.",
+ "oauth.t":"Connect رِواء ستوديو","oauth.s":"ChatGPT is requesting permission to use your ledger tools.","oauth.client":"Application","oauth.scopes":"Requested access","oauth.allow":"Allow access","oauth.deny":"Deny","oauth.bad":"This authorization request is invalid or expired.",
  "us.t":"People","us.s":"Switch someone on and pick exactly what they can reach.",
  "us.none":"Nobody else has signed up yet. Send them the link and they will appear here.",
  "us.owner":"Owner","us.staff":"Staff","us.pending":"Waiting","us.active":"Active","us.off":"Switched off",
@@ -662,7 +662,7 @@ ar:{
  "au.out":"تسجيل الخروج","au.wait":"بانتظار الموافقة","au.waitS":"حسابك قيد المراجعة من {who}.",
  "au.first":"أول حساب يُنشأ يصبح صاحب الشركة.","au.weak":"كلمة المرور 6 أحرف على الأقل.",
  "au.check":"أكّد بريدك الإلكتروني ثم سجّل الدخول.",
- "oauth.t":"ربط Studio Ledger","oauth.s":"يطلب ChatGPT إذنك لاستخدام أدوات إدارة الشركة.","oauth.client":"التطبيق","oauth.scopes":"الصلاحيات المطلوبة","oauth.allow":"السماح بالوصول","oauth.deny":"رفض","oauth.bad":"طلب الربط غير صالح أو انتهت صلاحيته.",
+ "oauth.t":"ربط رِواء ستوديو","oauth.s":"يطلب ChatGPT إذنك لاستخدام أدوات إدارة الشركة.","oauth.client":"التطبيق","oauth.scopes":"الصلاحيات المطلوبة","oauth.allow":"السماح بالوصول","oauth.deny":"رفض","oauth.bad":"طلب الربط غير صالح أو انتهت صلاحيته.",
  "us.t":"المستخدمون","us.s":"فعّل الحساب وحدّد صلاحياته.",
  "us.none":"لا يوجد مستخدمون آخرون.",
  "us.owner":"صاحب الشركة","us.staff":"موظف","us.pending":"بالانتظار","us.active":"نشط","us.off":"موقوف",
@@ -825,6 +825,7 @@ async function pull(){
     S.settings=Object.assign({},S.settings,st.data.data,localOnly);
     PULLED.settings=true;
   }
+  if(applyBrandDefaults()) setTimeout(save,0);
   setSync("cl.synced");
 }
 
@@ -1029,7 +1030,18 @@ function addMonth(y,n){var p=y.split("-"),d=new Date(+p[0],+p[1]-1+n,1);
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){
   return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function el(id){return document.getElementById(id);}
-var LOGO="data:image/png;base64,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";
+var BRAND_NAME="رِواء ستوديو";
+var LOGO="riwa-logo.png";
+function applyBrandDefaults(){
+  var changed=false, company=(S.settings.company||"").trim();
+  if(!company||/^(Studio Ledger|Ledger|Studio)$/i.test(company)){
+    if(S.settings.company!==BRAND_NAME){S.settings.company=BRAND_NAME;changed=true;}
+  }
+  if(!S.settings.logo||S.settings.logo.indexOf("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAACgBAM")===0){
+    if(S.settings.logo!==LOGO){S.settings.logo=LOGO;changed=true;}
+  }
+  return changed;
+}
 var SWATCH=[["#9DA79F","c.sage"],["#F5F2EA","c.bone"],["#7FBF9C","c.jade"],["#DE8A6E","c.seal"],["#D8B26A","c.brass"],["#8FB0B8","c.ink"]];
 function applyTheme(){
   var th=S.settings.theme||"dark";
@@ -1047,7 +1059,7 @@ function n(v){return '<span class="num">'+v+'</span>';}
 
 /* ═════════════ seed ═════════════ */
 function seed(){return{
- settings:{company:"",currency:"$",managerPct:30,rentMode:"myshare",rentSharePct:20,
+ settings:{company:BRAND_NAME,currency:"$",managerPct:30,rentMode:"myshare",rentSharePct:20,
    rentFlat:300,rentAnnual:3000,rentMonthsLeft:10,rentSetAside:0,openingCash:0,basis:"cash",dayCapacity:6,offDay:5,lang:"ar",theme:"dark",accent:"#9DA79F",logo:LOGO,
    pins:{owner:"",manager:"",accountant:""}},
  employees:[
@@ -2561,8 +2573,9 @@ function printInvoice(c,invoice){
     st={lines:(invoice.items||[]).map(function(x){return{date:invoice.date,desc:x.description,charge:+x.amount||0,paid:0};}),billed:itotal,paid:ipaid,balance:itotal-ipaid};
     S.payments.filter(function(p){return p.invoiceId===invoice.id&&p.kind!=="funding";}).forEach(function(p){st.lines.push({date:p.date,desc:t("line.pay"),charge:0,paid:+p.amount||0});});
   }else st=stmt(c,MONTH);
-  var co=S.settings.company||"Studio";
+  var co=S.settings.company||BRAND_NAME;
   var logo=S.settings.logo||"";
+  try{logo=new URL(logo,location.href).href;}catch(e){}
   var rtl=(t("dir")==="rtl");
   var today=todayISO();
   var invNo=invoice&&invoice.number?invoice.number:(c.name||"INV").replace(/[^A-Za-z0-9]/g,"").slice(0,4).toUpperCase()+"-"+today.replace(/-/g,"").slice(2);
@@ -3086,7 +3099,7 @@ document.addEventListener("click",function(ev){
   else if(act==="export"){
     var b=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
     var u=URL.createObjectURL(b),l=document.createElement("a");
-    l.href=u;l.download="studio-ledger-"+todayISO()+".json";l.click();URL.revokeObjectURL(u);}
+    l.href=u;l.download="riwa-studio-"+todayISO()+".json";l.click();URL.revokeObjectURL(u);}
   else if(act==="import"){
     var q=document.createElement("input");q.type="file";q.accept="application/json";
     q.onchange=function(){var rd=new FileReader();rd.onload=function(){
@@ -3120,6 +3133,7 @@ Store.load().then(async function(d){
     if(!S.settings.theme)S.settings.theme="dark";
     if(!S.settings.accent)S.settings.accent="#9DA79F";
     if(S.settings.logo==null)S.settings.logo=LOGO;
+    applyBrandDefaults();
     S.customers.forEach(function(c){
       if(c.openingDue==null)c.openingDue=0;
       if(!c.startMonth)c.startMonth=ymNow();

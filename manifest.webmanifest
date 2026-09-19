@@ -1,6 +1,6 @@
 {
-  "name": "Studio Ledger",
-  "short_name": "Ledger",
+  "name": "رِواء ستوديو",
+  "short_name": "رِواء",
   "description": "Money in, money out, and who gets what.",
   "start_url": "./",
   "scope": "./",

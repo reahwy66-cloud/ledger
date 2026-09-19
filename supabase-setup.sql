@@ -201,4 +201,4 @@ begin
 end $$;
 
 -- ── done ────────────────────────────────────────────────────────
-select 'Studio Ledger is ready. The first account you create becomes the owner.' as status;
+select 'رِواء ستوديو is ready. The first account you create becomes the owner.' as status;

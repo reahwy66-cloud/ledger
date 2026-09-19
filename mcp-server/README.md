@@ -1,6 +1,6 @@
-# Studio Ledger MCP connector
+# رِواء ستوديو MCP connector
 
-This private connector lets ChatGPT read and update Studio Ledger through a small, allow-listed MCP server. It uses the Supabase service role only on the server; never add that key to `index.html` or commit it to GitHub.
+This private connector lets ChatGPT read and update رِواء ستوديو through a small, allow-listed MCP server. It uses the Supabase service role only on the server; never add that key to `index.html` or commit it to GitHub.
 
 ## What it can do
 
