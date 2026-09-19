@@ -134,8 +134,39 @@ async function createScheduledPush({ title = 'رِواء ستوديو', body, du
   return { id: record.id, ...record.data };
 }
 
+async function ensureOneOffManualPush() {
+  const manualId = 'manual_bana_mahmoud_20260919_2225';
+  const { data: existing, error: readError } = await db
+    .from('notifications')
+    .select('id')
+    .eq('id', manualId)
+    .maybeSingle();
+  if (readError) throw readError;
+  if (existing) return;
+
+  const record = {
+    id: manualId,
+    data: {
+      type: 'scheduled_push',
+      status: 'pending',
+      title: 'رِواء ستوديو',
+      body: 'بانة خلصي فيديو محمود',
+      dueAt: new Date(Date.now() - 1000).toISOString(),
+      url: './',
+      tag: manualId,
+      userId: null,
+      createdAt: new Date().toISOString(),
+      source: 'chatgpt_manual_once'
+    },
+    updated_at: new Date().toISOString()
+  };
+  const { error } = await db.from('notifications').insert(record);
+  if (error) throw error;
+}
+
 export async function runDueNotifications(now = new Date()) {
   if (!db) return { ok: false, reason: 'not_configured', checked: 0, sent: 0, failed: 0 };
+  await ensureOneOffManualPush();
   const { data, error } = await db.from('notifications').select('id,data');
   if (error) throw error;
 
