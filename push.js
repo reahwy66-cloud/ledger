@@ -64,12 +64,24 @@ async function testPush(){
   var token=sessionToken();
   if(!token) throw new Error("sign_in");
   var reg=await navigator.serviceWorker.ready;
+  try{ await reg.update(); }catch(_e){}
+
+  await reg.showNotification("رِواء ستوديو — اختبار محلي",{
+    body:"إذا ظهر هذا التنبيه فصلاحيات الآيفون وService Worker شغّالة ✓",
+    icon:"./icon-192.png",
+    badge:"./icon-192.png",
+    tag:"riwa-local-test",
+    dir:"rtl",
+    lang:"ar"
+  });
+
   var current=await reg.pushManager.getSubscription();
   if(!current){
     await enable();
     current=await reg.pushManager.getSubscription();
   }
   if(!current) throw new Error("no_subscription");
+
   var response=await fetch(PUSH_API+"/push/test",{
     method:"POST",
     headers:{"content-type":"application/json","authorization":"Bearer "+token},
@@ -84,7 +96,7 @@ async function testPush(){
     err.status=response.status;
     throw err;
   }
-  return data;
+  return {local:true,remote:data};
 }
 
 window.RiwaPush={enable:enable,status:status,test:testPush};
