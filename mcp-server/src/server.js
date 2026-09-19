@@ -611,7 +611,9 @@ app.post('/push/test', async (req, res) => {
       return res.status(502).json({
         ok: false,
         error: 'Push provider rejected the notification',
-        statusCode: pushError?.statusCode || null
+        statusCode: pushError?.statusCode || null,
+        providerBody: typeof pushError?.body === 'string' ? pushError.body.slice(0, 500) : null,
+        providerMessage: String(pushError?.message || '').slice(0, 500)
       });
     }
   } catch (_error) {
