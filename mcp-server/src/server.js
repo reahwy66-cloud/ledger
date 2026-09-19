@@ -109,6 +109,80 @@ async function sendPush(payload, userId = null) {
   return { sent, failed, total: rows.length };
 }
 
+async function createScheduledPush({ title = 'رِواء ستوديو', body, dueAt, url = './', tag = 'riwa-reminder', userId = null }) {
+  const when = new Date(dueAt);
+  if (!Number.isFinite(when.getTime())) throw new Error('Invalid dueAt');
+  if (when.getTime() <= Date.now()) throw new Error('dueAt must be in the future');
+
+  const record = {
+    id: `scheduled_${id()}`,
+    data: {
+      type: 'scheduled_push',
+      status: 'pending',
+      title,
+      body,
+      dueAt: when.toISOString(),
+      url,
+      tag,
+      userId,
+      createdAt: new Date().toISOString()
+    },
+    updated_at: new Date().toISOString()
+  };
+  const { error } = await db.from('notifications').insert(record);
+  if (error) throw error;
+  return { id: record.id, ...record.data };
+}
+
+export async function runDueNotifications(now = new Date()) {
+  if (!db) return { ok: false, reason: 'not_configured', checked: 0, sent: 0, failed: 0 };
+  const { data, error } = await db.from('notifications').select('id,data');
+  if (error) throw error;
+
+  const nowMs = now.getTime();
+  const due = (data || []).filter(row => {
+    if (row.data?.type !== 'scheduled_push' || row.data?.status !== 'pending') return false;
+    const dueMs = new Date(row.data?.dueAt || 0).getTime();
+    return Number.isFinite(dueMs) && dueMs <= nowMs;
+  });
+
+  let sent = 0;
+  let failed = 0;
+  for (const row of due) {
+    const d = row.data || {};
+    try {
+      const result = await sendPush({
+        title: d.title || 'رِواء ستوديو',
+        body: d.body || '',
+        url: d.url || './',
+        tag: d.tag || `scheduled-${row.id}`,
+        dir: 'rtl',
+        lang: 'ar'
+      }, d.userId || null);
+
+      const delivered = result.sent > 0;
+      const next = {
+        ...d,
+        status: delivered ? 'sent' : 'failed',
+        sentAt: new Date().toISOString(),
+        delivery: result
+      };
+      await db.from('notifications').upsert({ id: row.id, data: next, updated_at: new Date().toISOString() });
+      if (delivered) sent++; else failed++;
+    } catch (err) {
+      failed++;
+      const next = {
+        ...d,
+        status: 'failed',
+        failedAt: new Date().toISOString(),
+        error: String(err?.message || err).slice(0, 500)
+      };
+      await db.from('notifications').upsert({ id: row.id, data: next, updated_at: new Date().toISOString() });
+    }
+  }
+  return { ok: true, checked: due.length, sent, failed };
+}
+
 function safeEqual(a, b) {
   const left = Buffer.from(String(a || ''));
   const right = Buffer.from(String(b || ''));
@@ -470,6 +544,53 @@ function buildServer() {
     let notification = 'not_requested';
     if (args.sendNotification) notification = await queueNotification(appointment, customer);
     return text({ appointment, notification });
+  });
+
+  server.registerTool('schedule_push_notification', {
+    title: 'Schedule a push notification',
+    description: 'Schedule a one-time رِواء ستوديو push notification. dueAt must be an ISO 8601 timestamp with an explicit timezone offset.',
+    inputSchema: {
+      body: z.string().min(1),
+      dueAt: z.string().describe('ISO 8601 timestamp including timezone offset, e.g. 2026-09-19T22:30:00+03:00'),
+      title: z.string().default('رِواء ستوديو'),
+      url: z.string().default('./'),
+      tag: z.string().default('riwa-reminder')
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false }
+  }, async ({ body, dueAt, title, url, tag }) => {
+    return text(await createScheduledPush({ title, body, dueAt, url, tag }));
+  });
+
+  server.registerTool('list_scheduled_notifications', {
+    title: 'List scheduled push notifications',
+    description: 'List pending or recently processed رِواء ستوديو scheduled notifications.',
+    inputSchema: {
+      status: z.enum(['pending', 'sent', 'failed', 'cancelled', 'all']).default('pending'),
+      limit: z.number().int().min(1).max(100).default(25)
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false }
+  }, async ({ status, limit }) => {
+    const { data, error } = await db.from('notifications').select('id,data,updated_at').order('updated_at', { ascending: false }).limit(250);
+    if (error) throw error;
+    let items = (data || []).filter(row => row.data?.type === 'scheduled_push');
+    if (status !== 'all') items = items.filter(row => row.data?.status === status);
+    return text(items.slice(0, limit).map(row => ({ id: row.id, ...row.data, updatedAt: row.updated_at })));
+  });
+
+  server.registerTool('cancel_scheduled_notification', {
+    title: 'Cancel a scheduled push notification',
+    description: 'Cancel one pending رِواء ستوديو scheduled notification by id.',
+    inputSchema: { id: z.string() },
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false }
+  }, async ({ id: notificationId }) => {
+    const { data: row, error } = await db.from('notifications').select('id,data').eq('id', notificationId).maybeSingle();
+    if (error) throw error;
+    if (!row || row.data?.type !== 'scheduled_push') throw new Error('Scheduled notification not found');
+    if (row.data?.status !== 'pending') return text({ id: notificationId, status: row.data?.status || 'unknown', changed: false });
+    const next = { ...row.data, status: 'cancelled', cancelledAt: new Date().toISOString() };
+    const { error: writeError } = await db.from('notifications').upsert({ id: notificationId, data: next, updated_at: new Date().toISOString() });
+    if (writeError) throw writeError;
+    return text({ id: notificationId, status: 'cancelled', changed: true });
   });
 
   server.registerTool('send_push_notification', {
