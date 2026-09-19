@@ -63,13 +63,21 @@ async function enable(){
 async function testPush(){
   var token=sessionToken();
   if(!token) throw new Error("sign_in");
+  var reg=await navigator.serviceWorker.ready;
+  var current=await reg.pushManager.getSubscription();
+  if(!current){
+    await enable();
+    current=await reg.pushManager.getSubscription();
+  }
+  if(!current) throw new Error("no_subscription");
   var response=await fetch(PUSH_API+"/push/test",{
     method:"POST",
-    headers:{"content-type":"application/json","authorization":"Bearer "+token}
+    headers:{"content-type":"application/json","authorization":"Bearer "+token},
+    body:JSON.stringify({subscription:current.toJSON(),userAgent:navigator.userAgent})
   });
   var data={};
   try{ data=await response.json(); }catch(_e){}
-  if(!response.ok || !data.ok) throw new Error("test_failed");
+  if(!response.ok || !data.ok) throw new Error(data.error||"test_failed");
   return data;
 }
 
