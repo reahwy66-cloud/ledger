@@ -110,7 +110,7 @@ async function queueNotification(appointment, customer) {
 
 function buildServer() {
   const server = new McpServer(
-    { name: 'studio-ledger', version: '1.0.0' },
+    { name: 'riwa-studio', version: '1.0.0' },
     { instructions: 'Resolve names with list_records before writes. Never record a client payment or wage payment without explicit user confirmation. Never delete without explicit confirmation. Creating an invoice or appointment is allowed when the requested details are complete.' }
   );
 
@@ -474,4 +474,4 @@ app.get('/mcp', authorize, (_req, res) => res.status(405).json({ error: 'Use POS
 app.delete('/mcp', authorize, (_req, res) => res.status(405).json({ error: 'No persistent MCP session' }));
 
 const port = Number(process.env.PORT || 3000);
-app.listen(port, () => console.log(`Studio Ledger MCP listening on :${port}`));
+app.listen(port, () => console.log(`رِواء ستوديو MCP listening on :${port}`));
