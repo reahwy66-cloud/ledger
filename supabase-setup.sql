@@ -29,8 +29,8 @@ begin
     case when n = 0 then 'owner' else 'staff' end,
     n = 0,
     case when n = 0
-      then '{"tabs":["flow","clients","invoices","team","work","costs","calendar","outside","users","setup"],
-              "edit":["clients","invoices","team","work","costs","calendar","payments","advances","outside","setup","users"],
+      then '{"tabs":["flow","ledger","clients","invoices","funding","team","work","costs","calendar","outside","users","setup"],
+              "edit":["clients","invoices","funding","team","work","costs","calendar","payments","advances","outside","setup","users"],
               "personal":true}'::jsonb
       else '{"tabs":[],"edit":[],"personal":false}'::jsonb
     end
@@ -77,7 +77,7 @@ do $$
 declare tname text;
 begin
   foreach tname in array array[
-    'customers','employees','work','payments','invoices','advances','payouts','costs','shoots','outside','projects',
+    'customers','employees','work','payments','invoices','fundings','advances','payouts','costs','shoots','outside','projects',
     'osadvances','debts','transfers','notifications'
   ] loop
     execute format($f$
@@ -118,7 +118,7 @@ do $$
 declare tname text;
 begin
   foreach tname in array array[
-    'customers','employees','work','payments','invoices','advances','payouts','costs','shoots','outside','projects',
+    'customers','employees','work','payments','invoices','fundings','advances','payouts','costs','shoots','outside','projects',
     'osadvances','debts','transfers','notifications'
   ] loop
     execute format('alter table public.%I enable row level security;', tname);
@@ -147,7 +147,7 @@ declare r record;
 begin
   for r in select * from (values
       ('customers','clients'), ('employees','team'),   ('work','work'),
-      ('payments','payments'), ('invoices','invoices'), ('advances','advances'), ('payouts','advances'), ('costs','costs'),
+      ('payments','payments'), ('invoices','invoices'), ('fundings','funding'), ('advances','advances'), ('payouts','advances'), ('costs','costs'),
       ('osadvances','outside'), ('debts','outside'), ('transfers','outside'), ('notifications','calendar'),
       ('shoots','calendar')
   ) as t(tbl, sec) loop
@@ -190,7 +190,7 @@ do $$
 declare tname text;
 begin
   foreach tname in array array[
-    'customers','employees','work','payments','invoices','advances','payouts','costs','shoots','outside','projects',
+    'customers','employees','work','payments','invoices','fundings','advances','payouts','costs','shoots','outside','projects',
     'osadvances','debts','transfers','notifications','settings','profiles','audit_log'
   ] loop
     begin
