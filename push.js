@@ -77,7 +77,13 @@ async function testPush(){
   });
   var data={};
   try{ data=await response.json(); }catch(_e){}
-  if(!response.ok || !data.ok) throw new Error(data.error||"test_failed");
+  if(!response.ok || !data.ok){
+    var detail=[data.error,data.statusCode,data.providerMessage,data.providerBody].filter(Boolean).join(" | ");
+    var err=new Error(detail||("HTTP "+response.status));
+    err.code=data.error||"test_failed";
+    err.status=response.status;
+    throw err;
+  }
   return data;
 }
 
