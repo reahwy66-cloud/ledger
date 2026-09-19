@@ -574,6 +574,27 @@ app.post('/push/subscribe', async (req, res) => {
   }
 });
 
+app.post('/push/test', async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const { data, error } = await db.auth.getUser(token);
+    if (error || !data?.user) return res.status(401).json({ error: 'Invalid token' });
+    const result = await sendPush({
+      title: 'رِواء ستوديو',
+      body: 'تنبيه تجريبي — الإشعارات شغّالة ✓',
+      url: './',
+      tag: 'riwa-push-test',
+      dir: 'rtl',
+      lang: 'ar'
+    }, data.user.id);
+    return res.json({ ok: result.sent > 0, ...result });
+  } catch (_error) {
+    return res.status(500).json({ error: 'Could not send test push' });
+  }
+});
+
 function protectedResourceMetadata(_req, res) {
   return res.json({
     resource: process.env.PUBLIC_MCP_URL,
