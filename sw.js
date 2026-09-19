@@ -1,9 +1,9 @@
 /* رِواء ستوديو — offline shell.
    The app itself is cached so it opens without a connection.
    Live data always goes to the network; it is never served stale. */
-const CACHE = 'studio-ledger-v3';
+const CACHE = 'studio-ledger-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
-               './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon.png'];
+               './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon.png', './push.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -32,5 +32,40 @@ self.addEventListener('fetch', e => {
         return res;
       })
       .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
+  );
+});
+
+
+self.addEventListener('push', event => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (_e) {
+    data = { body: event.data ? event.data.text() : '' };
+  }
+  const title = data.title || 'رِواء ستوديو';
+  event.waitUntil(self.registration.showNotification(title, {
+    body: data.body || '',
+    icon: data.icon || './icon-192.png',
+    badge: data.badge || './icon-192.png',
+    dir: data.dir || 'auto',
+    lang: data.lang || 'ar',
+    tag: data.tag || 'riwa-studio',
+    renotify: data.renotify !== false,
+    data: { url: data.url || './' }
+  }));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || './';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const client of list) {
+        if ('focus' in client) {
+          if ('navigate' in client) client.navigate(target).catch(() => {});
+          return client.focus();
+        }
+      }
+      return clients.openWindow ? clients.openWindow(target) : undefined;
+    })
   );
 });
