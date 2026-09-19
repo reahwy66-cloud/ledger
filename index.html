@@ -3145,6 +3145,35 @@ document.addEventListener("click",function(ev){
 });
 document.addEventListener("keydown",function(e){if(e.key==="Escape")el("modalHost").innerHTML="";});
 
+async function handleAppointmentConfirmation(){
+  var params=new URLSearchParams(location.search);
+  var appointmentId=params.get("confirmAppointment");
+  if(!appointmentId||!SB) return;
+
+  var ok=confirm(LANG==="ar"
+    ?"هل تم الإجراء/الموعد؟ اضغط موافق لتسجيله كمنتهي."
+    :"Was the appointment completed? Tap OK to mark it done.");
+  if(!ok) return;
+
+  try{
+    var session=(await SB.auth.getSession()).data.session;
+    if(!session||!session.access_token) throw new Error("sign_in");
+    var response=await fetch("https://studio-ledger-mcp.reahwy66.workers.dev/appointments/complete",{
+      method:"POST",
+      headers:{"content-type":"application/json","authorization":"Bearer "+session.access_token},
+      body:JSON.stringify({id:appointmentId})
+    });
+    var data={}; try{data=await response.json();}catch(_e){}
+    if(!response.ok||!data.ok) throw new Error(data.error||("HTTP "+response.status));
+    history.replaceState(null,"",location.pathname+location.hash);
+    alert(LANG==="ar"?"تم تسجيل الموعد كمنتهي ✓":"Appointment marked complete ✓");
+    try{await Store.load().then(function(d){if(d&&d.settings)S=d;});}catch(_e){}
+    render();
+  }catch(e){
+    alert((LANG==="ar"?"تعذّر تأكيد الموعد: ":"Couldn’t confirm appointment: ")+String(e&&e.message||e));
+  }
+}
+
 /* ═════════════ boot ═════════════ */
 if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
   window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});
@@ -3180,6 +3209,7 @@ Store.load().then(async function(d){
   var went=false;
   try{ went=await bootCloud(); }catch(e){ went=false; }
   if(!went){ MODE="local"; renderSetup(); }
+  else { setTimeout(function(){handleAppointmentConfirmation();},300); }
 });
 })();
 </script>
