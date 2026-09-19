@@ -258,7 +258,7 @@ en:{
  gate:"Who is using the app?", gatePin:"Enter the code", gateWrong:"That code is not right.",
  unlock:"Unlock", cancel:"Cancel", save:"Save", del:"Delete", edit:"Edit", add:"Add",
  "tab.flow":"Summary","tab.clients":"Clients","tab.team":"Team","tab.work":"Work log",
- "tab.costs":"Costs","tab.calendar":"Appointments","tab.invoices":"Invoices","tab.outside":"Outside","tab.setup":"Setup",
+ "tab.costs":"Costs","tab.calendar":"Appointments","tab.invoices":"Invoices","tab.funding":"Ad funding","tab.outside":"Outside","tab.setup":"Setup",
  "k.in":"Money in","k.in.n":"{n} active clients",
  "k.out":"Money out","k.out.n":"Wages, ads and running costs",
  "k.net":"Profit to split","k.net.n":"Before the {p}% goes out","k.net.none":"No profit to split this month",
@@ -277,7 +277,7 @@ en:{
  "out.t":"Outside the company","out.s":"Kept completely apart from the company books — the manager's {p}% never touches this.",
  "out.proj":"Project payouts",
  "cl.t":"Client by client","cl.s":"Log deliveries in the Work log and the per-video rows fill themselves in.",
- "th.client":"Client","th.pay":"How they pay","th.videos":"Videos","th.posts":"Posts","th.month":"This month",
+ "th.client":"Client","th.pay":"How they pay","th.videos":"Videos","th.posts":"Designs / posts","th.month":"This month",
  "th.billing":"Billing","th.rate":"Rate / fee","th.expected":"Expected","th.status":"Status",
  "th.name":"Name","th.role":"Role","th.paid":"Paid","th.person":"Person","th.basis":"Basis","th.wage":"Pay",
  "th.date":"Date","th.what":"What","th.qty":"Qty","th.by":"Done by","th.epay":"Editor pay","th.billed":"Billed",
@@ -307,7 +307,7 @@ en:{
  "cd.owes":"Owes you","cd.credit":"In credit","cd.settled":"Settled up","cd.nothing":"Nothing recorded yet.",
  "cd.pay":"Record payment","cd.rename":"Rename","cd.promised":"Promised each month","cd.none":"—",
  "pm.add":"Record a payment","pm.edit":"Edit payment","pm.none":"No payments yet.",
- "line.open":"Balance carried over","line.adv":"Paid in advance","line.sub":"Package — {m}","line.pay":"Payment",
+ "line.open":"Balance carried over","line.adv":"Paid in advance","line.sub":"Package — {m}","line.pay":"Payment","line.funding":"Ad funding","line.salaryShare":"Shared salary — {n}",
  "f.amountpaid":"Amount received","f.method":"How they paid","m.cash":"Cash","m.bank":"Bank transfer","m.other":"Other",
  "f.start":"Client since","f.startH":"Monthly package fees are charged from this month onward.",
  "f.end":"Stopped after","f.endH":"Leave empty while they are still a client.",
@@ -360,10 +360,11 @@ en:{
  "wk.mine":"Me","wk.mineN":"Me ({n})",
  "basis.t":"Profit is worked out on","basis.cash":"Money actually collected","basis.billed":"Everything invoiced",
  "basis.h":"{v}","basis.s":"Cash basis only shares out money that has arrived. Invoiced basis shares out what clients owe, paid or not.",
- "fund.t":"Ad funding","fund.n":"Held for the platforms, never counted as profit",
- "fund.add":"Record ad funding","fund.left":"Unspent funding","fund.spent":"Spent on ads",
+ "fund.t":"Ad funding","fund.n":"Track the media budget and your fixed or percentage fee separately.",
+ "fund.add":"New funding","fund.edit":"Edit funding","fund.empty":"No funding campaigns yet.","fund.left":"Unspent funding","fund.spent":"Spent on ads",
+ "fund.platform":"Platform","fund.budget":"Media budget","fund.feeMode":"Fee method","fund.fixed":"Fixed amount","fund.percent":"Percentage","fund.feeValue":"Fee value","fund.fee":"Your fee","fund.total":"Client total","fund.payer":"Media spend paid by","fund.pay":"Record payment","fund.unpaid":"Unpaid","fund.partial":"Partly paid","fund.paid":"Paid",
  "f.paykind":"What is this money","k.payment":"Payment against the account","k.funding":"Ad funding",
- "cost.payer":"Paid by","cost.box":"The company box","cost.owner":"{n} personally",
+ "cost.payer":"Paid by","cost.box":"The company box","cost.owner":"{n} personally","cost.client":"Client paid directly",
  "reim.t":"Owed back to {n}","reim.n":"Costs paid personally, not yet reimbursed",
  "reim.add":"Record a reimbursement","reim.none":"Nothing outstanding","reim.line":"Reimbursement",
  "lg.work":"Delivery","lg.fund":"Ad funding","lg.reim":"Reimbursement",
@@ -413,7 +414,7 @@ en:{
  "us.personalH":"The database itself blocks access while this is off.",
  "us.on":"Account switched on","us.ownerLock":"The owner always has everything.",
  "sec.flow":"Summary","sec.ledger":"Ledger","sec.clients":"Clients","sec.team":"Team","sec.work":"Work log","sec.costs":"Costs",
- "sec.calendar":"Appointments","sec.invoices":"Invoices","sec.outside":"Outside the company","sec.users":"People","sec.setup":"Setup",
+ "sec.calendar":"Appointments","sec.invoices":"Invoices","sec.funding":"Ad funding","sec.outside":"Outside the company","sec.users":"People","sec.setup":"Setup",
  "sec.payments":"Client payments","sec.advances":"Advances",
  "pwa.t":"Install on your phone","pwa.h":"Add it to your home screen","pwa.b":"How",
  "pwa.and":"Android","pwa.ios":"iPhone","pwa.now":"Install now",
@@ -436,11 +437,11 @@ en:{
  "tm.note":"Partners on a percentage share the profit once company costs are covered, instead of taking a salary. Their percentages should total 100%.",
  "wk.t":"Work log — {m}","wk.s":"Every delivery logged pays an editor and bills a client at the same time.",
  "wk.add":"Log a delivery","wk.edit":"Edit delivery","wk.none":"Nothing logged for {m} yet.","wk.inpack":"in package",
- "d.video":"Video","d.post":"Post","d.design":"Design","d.task":"Task",
+ "d.video":"Video","d.post":"Post","d.design":"Design","d.task":"Task","d.shoot":"Photo shoot","d.voice":"Voice recording",
  "cs.t":"Running costs — {m}","cs.s":"These come off before the profit is split, so the manager carries his share of them.",
  "cs.add":"Add cost","cs.edit":"Edit cost","cs.none":"Nothing recorded for this month.","cs.tot":"Total",
  "cs.note":"Rent is not listed here; it comes out of the owner's share.",
- "c.Transport":"Transport","c.Ads":"Ads","c.Phone":"Phone","c.Internet":"Internet","c.Equipment":"Equipment","c.Software":"Software","c.Rent":"Rent","c.Other":"Other",
+ "c.Transport":"Transport","c.Ads":"Ads","c.Talent":"Talent / actor","c.Phone":"Phone","c.Internet":"Internet","c.Equipment":"Equipment","c.Software":"Software","c.Rent":"Rent","c.Other":"Other",
  "cal.t":"Appointments","cal.s":"About {h} free hours a day. Tap a day to add an appointment.",
  "cal.add":"Add appointment","cal.edit":"Edit appointment","cal.booked":"Appointments this month","cal.none":"No appointments. Tap any day above to add one.","cal.off":"off",
  "cal.kind":"Type","cal.status":"Status","cal.assignee":"Assigned to","cal.contact":"Contact",
@@ -465,11 +466,12 @@ en:{
  "ins.h1":"Go to app.netlify.com/drop","ins.h2":"Rename this file to index.html and drag it onto the page","ins.h3":"You get a free web address in about ten seconds. Anyone with the link can open it.",
  "ins.warn":"Data is on the server and shared by everyone.",
  "f.name":"Name","f.cliname":"Client name","f.email":"Email","f.phone":"Phone / WhatsApp","f.howpay":"How they pay","f.fee":"Monthly fee","f.vids":"Videos included","f.posts":"Posts included",
- "f.ads":"Ad money inside the fee","f.adsH":"Money that passes straight to the ad platform, not profit.",
+ "f.ads":"Legacy ad money inside the fee","f.adsH":"Use the Ad funding page for new campaigns.","f.designs":"Designs included",
  "f.rate":"Rate per video","f.exp":"Videos expected each month","f.credit":"Amount paid up front","f.note":"Note","f.activecli":"Active client",
  "f.role":"Role","f.roleH":"Editor, designer, manager…","f.howpaid":"How they are paid","f.rate2":"Rate","f.rateH":"For a profit share, put the percentage here.","f.onbooks":"Currently on the books",
  "f.date":"Date","f.client":"Client","f.delivered":"What was delivered","f.howmany":"How many","f.whodid":"Who did it","f.nobody":"Nobody / me",
- "f.override":"Override their pay","f.overrideH":"Leave empty to use their normal rate.",
+ "f.override":"Override their pay","f.overrideH":"Leave empty to use their normal rate.","f.clientcharge":"Extra client charge","f.clientchargeH":"For an on-demand shoot, voice recording, or another item outside the package.",
+ "f.startDate":"Start date","f.endDate":"End date","f.sharedClient":"Salary shared with client","f.sharedPct":"Client share %","f.sharedH":"Charged to the selected client and deducted from the company's wage cost.",
  "f.whatis":"What is it","f.cat":"Category","f.amount":"Amount","f.repeats":"Repeats every month from this date",
  "f.time":"Time","f.shooting":"Appointment title","f.hours":"Hours it will take","f.notes":"Notes",
  "f.source":"Source","f.type":"Type","f.permonth":"Per month","f.running":"Still running",
@@ -496,7 +498,7 @@ ar:{
  gate:"من يستخدم البرنامج؟", gatePin:"أدخل الرمز", gateWrong:"الرمز غير صحيح.",
  unlock:"دخول", cancel:"إلغاء", save:"حفظ", del:"حذف", edit:"تعديل", add:"إضافة",
  "tab.flow":"الملخّص","tab.clients":"العملاء","tab.team":"الفريق","tab.work":"سجل الأعمال",
- "tab.costs":"المصروفات","tab.calendar":"المواعيد","tab.invoices":"الفواتير","tab.outside":"خارج الشركة","tab.setup":"الإعدادات",
+ "tab.costs":"المصروفات","tab.calendar":"المواعيد","tab.invoices":"الفواتير","tab.funding":"التمويل","tab.outside":"خارج الشركة","tab.setup":"الإعدادات",
  "tab.users":"المستخدمون","tab.ledger":"السجل",
  "part.none":"لا يوجد شركاء بنسب بعد. أضف شريكاً من تبويب الفريق واختر «حصة من الربح».",
  "part.warn":"مجموع نسب الشركاء {n}% وليس 100%. الأرقام ستبقى خاطئة حتى تُصحَّح.",
@@ -535,10 +537,11 @@ ar:{
  "wk.mine":"أنا","wk.mineN":"أنا ({n})",
  "basis.t":"الربح يُحتسب على","basis.cash":"المقبوض فعلاً","basis.billed":"المفوتر كاملاً",
  "basis.h":"{v}","basis.s":"على المقبوض: لا يُقسَّم إلا ما دخل الصندوق. على المفوتر: يُقسَّم كل ما استحقّ على العملاء ولو لم يُدفع.",
- "fund.t":"التمويل الإعلاني","fund.n":"محجوز للمنصّات ولا يُحتسب ربحاً",
- "fund.add":"تسجيل تمويل إعلاني","fund.left":"تمويل غير مصروف","fund.spent":"المصروف على الإعلانات",
+ "fund.t":"التمويل الإعلاني","fund.n":"افصل ميزانية المنصة عن عمولتك الثابتة أو النسبية.",
+ "fund.add":"تمويل جديد","fund.edit":"تعديل التمويل","fund.empty":"لا توجد عمليات تمويل بعد.","fund.left":"تمويل غير مصروف","fund.spent":"المصروف على الإعلانات",
+ "fund.platform":"المنصة","fund.budget":"ميزانية الإعلان","fund.feeMode":"طريقة العمولة","fund.fixed":"مبلغ ثابت","fund.percent":"نسبة مئوية","fund.feeValue":"قيمة العمولة","fund.fee":"ربحك","fund.total":"الإجمالي على العميل","fund.payer":"من دفع للمنصة","fund.pay":"تسجيل دفعة","fund.unpaid":"غير مدفوع","fund.partial":"مدفوع جزئياً","fund.paid":"مدفوع",
  "f.paykind":"طبيعة المبلغ","k.payment":"دفعة على الحساب","k.funding":"تمويل إعلاني",
- "cost.payer":"دفعه","cost.box":"صندوق الشركة","cost.owner":"{n} من جيبه",
+ "cost.payer":"دفعه","cost.box":"صندوق الشركة","cost.owner":"{n} من جيبه","cost.client":"العميل مباشرة",
  "reim.t":"مستحق الاسترداد لـ{n}","reim.n":"مصروفات دفعها من جيبه ولم تُسترد",
  "reim.add":"تسجيل استرداد","reim.none":"لا يوجد","reim.line":"استرداد مصروفات",
  "lg.work":"تسليم","lg.fund":"تمويل إعلاني","lg.reim":"استرداد مصروفات",
@@ -582,7 +585,7 @@ ar:{
  "out.t":"خارج الشركة","out.s":"منفصل تماماً عن حسابات الشركة.",
  "out.proj":"دفعات المشاريع",
  "cl.t":"تفصيل العملاء","cl.s":"تُحتسب تلقائياً من سجل الأعمال.",
- "th.client":"العميل","th.pay":"طريقة الدفع","th.videos":"فيديو","th.posts":"منشورات","th.month":"هذا الشهر",
+ "th.client":"العميل","th.pay":"طريقة الدفع","th.videos":"فيديو","th.posts":"تصاميم / منشورات","th.month":"هذا الشهر",
  "th.billing":"الفوترة","th.rate":"السعر","th.expected":"المتوقّع","th.status":"الحالة",
  "th.name":"الاسم","th.role":"الدور","th.paid":"المدفوع","th.person":"الاسم","th.basis":"الأساس","th.wage":"المستحق",
  "th.date":"التاريخ","th.what":"البند","th.qty":"العدد","th.by":"المنفّذ","th.epay":"أجر المونتير","th.billed":"المفوتر",
@@ -610,7 +613,7 @@ ar:{
  "cd.owes":"مستحق عليه","cd.credit":"له رصيد","cd.settled":"الحساب مُسوّى","cd.nothing":"لا توجد حركات.",
  "cd.pay":"تسجيل دفعة","cd.rename":"تعديل","cd.promised":"المتفق عليه شهرياً","cd.none":"—",
  "pm.add":"تسجيل دفعة","pm.edit":"تعديل الدفعة","pm.none":"لا توجد دفعات.",
- "line.open":"رصيد سابق","line.adv":"دفعة مقدمة","line.sub":"اشتراك {m}","line.pay":"دفعة",
+ "line.open":"رصيد سابق","line.adv":"دفعة مقدمة","line.sub":"اشتراك {m}","line.pay":"دفعة","line.funding":"تمويل إعلاني","line.salaryShare":"مشاركة راتب — {n}",
  "tm.t":"الفريق","tm.s":"أضف أي شخص بأي طريقة دفع.","tm.add":"إضافة شخص","tm.edit":"تعديل",
  "p.percent":"% من الربح","p.monthly":"شهري","p.per_video":"بالفيديو","p.per_task":"بالمهمة",
  "p.percentL":"حصة من الربح","p.monthlyL":"مبلغ شهري ثابت","p.per_videoL":"لكل فيديو","p.per_taskL":"لكل مهمة",
@@ -623,11 +626,11 @@ ar:{
  "emp.hist":"السُّلف","emp.thismonth":"مستحق نهاية {m}",
  "wk.t":"سجل الأعمال — {m}","wk.s":"كل تسليم يُحتسب للمونتير ويُفوتر على العميل.",
  "wk.add":"تسجيل تسليم","wk.edit":"تعديل","wk.none":"لا توجد تسليمات في {m}.","wk.inpack":"ضمن الباقة",
- "d.video":"فيديو","d.post":"منشور","d.design":"تصميم","d.task":"مهمة",
+ "d.video":"فيديو","d.post":"منشور","d.design":"تصميم","d.task":"مهمة","d.shoot":"جلسة تصوير","d.voice":"تسجيل صوتي",
  "cs.t":"مصروفات التشغيل — {m}","cs.s":"تُخصم قبل تقسيم الربح.",
  "cs.add":"إضافة مصروف","cs.edit":"تعديل","cs.none":"لا توجد مصروفات.","cs.tot":"الإجمالي",
  "cs.note":"الإيجار غير مُدرج هنا لأنه يُخصم من حصة صاحب الشركة.",
- "c.Transport":"مواصلات","c.Ads":"إعلانات","c.Phone":"اتصالات","c.Internet":"إنترنت","c.Equipment":"معدات","c.Software":"برمجيات","c.Rent":"إيجار","c.Other":"أخرى",
+ "c.Transport":"مواصلات","c.Ads":"إعلانات","c.Talent":"وجه إعلاني","c.Phone":"اتصالات","c.Internet":"إنترنت","c.Equipment":"معدات","c.Software":"برمجيات","c.Rent":"إيجار","c.Other":"أخرى",
  "cal.t":"المواعيد","cal.s":"{h} ساعات متاحة يومياً. اضغط على يوم لإضافة موعد.",
  "cal.add":"إضافة موعد","cal.edit":"تعديل الموعد","cal.booked":"مواعيد هذا الشهر","cal.none":"لا توجد مواعيد.","cal.off":"عطلة",
  "cal.kind":"نوع الموعد","cal.status":"الحالة","cal.assignee":"المسؤول","cal.contact":"جهة الاتصال",
@@ -668,7 +671,7 @@ ar:{
  "us.personalH":"قاعدة البيانات تمنع الوصول إليها عند إبقائها مغلقة.",
  "us.on":"تفعيل الحساب","us.ownerLock":"صلاحية كاملة",
  "sec.flow":"الملخّص","sec.ledger":"السجل","sec.clients":"العملاء","sec.team":"الفريق","sec.work":"سجل الأعمال","sec.costs":"المصروفات",
- "sec.calendar":"المواعيد","sec.invoices":"الفواتير","sec.outside":"خارج الشركة","sec.users":"المستخدمون","sec.setup":"الإعدادات",
+ "sec.calendar":"المواعيد","sec.invoices":"الفواتير","sec.funding":"التمويل","sec.outside":"خارج الشركة","sec.users":"المستخدمون","sec.setup":"الإعدادات",
  "sec.payments":"دفعات العملاء","sec.advances":"السُّلف",
  "cl.t2":"الحساب","cl.off":"غير متصل","cl.on":"{n} مستخدمون",
  "cl.offS":"البيانات محفوظة على هذا الجهاز فقط.",
@@ -687,12 +690,13 @@ ar:{
  "pwa.a1":"افتح الرابط في كروم","pwa.a2":"اضغط النقاط الثلاث","pwa.a3":"اختر تثبيت التطبيق",
  "pwa.i1":"افتح الرابط في سفاري","pwa.i2":"اضغط زر المشاركة","pwa.i3":"اختر إضافة إلى الشاشة الرئيسية",
  "pwa.note":"يعمل بملء الشاشة مثل أي تطبيق.",
- "f.name":"الاسم","f.cliname":"اسم العميل","f.email":"البريد الإلكتروني","f.phone":"الهاتف / واتساب","f.howpay":"طريقة الدفع","f.fee":"الاشتراك الشهري","f.vids":"عدد الفيديوهات","f.posts":"عدد المنشورات",
- "f.ads":"مبلغ الإعلانات ضمن الاشتراك","f.adsH":"يُحوَّل للمنصّة ولا يُحتسب ربحاً.",
+ "f.name":"الاسم","f.cliname":"اسم العميل","f.email":"البريد الإلكتروني","f.phone":"الهاتف / واتساب","f.howpay":"طريقة الدفع","f.fee":"الاشتراك الشهري","f.vids":"عدد الفيديوهات","f.posts":"عدد المنشورات","f.designs":"التصاميم ضمن الباقة",
+ "f.ads":"تمويل قديم ضمن الاشتراك","f.adsH":"استخدم صفحة التمويل للعمليات الجديدة.",
  "f.rate":"سعر الفيديو","f.exp":"العدد المتوقع شهرياً","f.credit":"مدفوع مقدماً","f.note":"ملاحظة","f.activecli":"عميل نشط",
  "f.role":"الدور","f.roleH":"مونتير، مصمم، مدير…","f.howpaid":"طريقة الدفع","f.rate2":"السعر","f.rateH":"للحصة من الربح أدخل النسبة.","f.onbooks":"نشط",
  "f.date":"التاريخ","f.client":"العميل","f.delivered":"البند","f.howmany":"العدد","f.whodid":"المنفّذ","f.nobody":"بدون",
- "f.override":"تعديل الأجر","f.overrideH":"اتركه فارغاً لاستخدام السعر المعتاد.",
+ "f.override":"تعديل الأجر","f.overrideH":"اتركه فارغاً لاستخدام السعر المعتاد.","f.clientcharge":"إضافة على حساب العميل","f.clientchargeH":"لجلسة تصوير أو تسجيل صوتي أو أي خدمة خارج الباقة.",
+ "f.startDate":"تاريخ البدء","f.endDate":"تاريخ التوقف","f.sharedClient":"عميل مشارك بالراتب","f.sharedPct":"حصة العميل %","f.sharedH":"تُضاف حصة العميل إلى حسابه وتخفّض تكلفة الراتب على الشركة.",
  "f.whatis":"البيان","f.cat":"التصنيف","f.amount":"المبلغ","f.repeats":"يتكرر شهرياً",
  "f.time":"الوقت","f.shooting":"عنوان الموعد","f.hours":"عدد الساعات","f.notes":"ملاحظات",
  "f.source":"المصدر","f.type":"النوع","f.permonth":"شهرياً","f.running":"مستمر",
@@ -734,18 +738,18 @@ function t(k,a){
 
 /* ═════════════ roles ═════════════ */
 var PERM={
-  owner:      {tabs:["flow","ledger","clients","invoices","team","costs","calendar","outside","setup"],edit:["clients","invoices","team","work","costs","calendar","outside","setup","payments","advances"],personal:true},
-  manager:    {tabs:["flow","ledger","clients","invoices","team","costs","calendar"],edit:["work","calendar"],personal:false},
-  accountant: {tabs:["flow","ledger","clients","invoices","team","costs","calendar"],edit:["clients","invoices","work","costs","payments"],personal:false}
+  owner:      {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar","outside","setup"],edit:["clients","invoices","funding","team","work","costs","calendar","outside","setup","payments","advances"],personal:true},
+  manager:    {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["work","calendar"],personal:false},
+  accountant: {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["clients","invoices","funding","work","costs","payments"],personal:false}
 };
-var FULL={tabs:["flow","ledger","clients","invoices","team","work","costs","calendar","outside","users","setup"],
-          edit:["clients","invoices","team","work","costs","calendar","payments","advances","outside","setup","users"],personal:true};
-var SEC_TABS=["flow","ledger","clients","invoices","team","costs","calendar","outside","users","setup"];
-var SEC_EDIT=["clients","invoices","team","work","costs","calendar","payments","advances","outside","setup","users"];
+var FULL={tabs:["flow","ledger","clients","invoices","funding","team","work","costs","calendar","outside","users","setup"],
+          edit:["clients","invoices","funding","team","work","costs","calendar","payments","advances","outside","setup","users"],personal:true};
+var SEC_TABS=["flow","ledger","clients","invoices","funding","team","costs","calendar","outside","users","setup"];
+var SEC_EDIT=["clients","invoices","funding","team","work","costs","calendar","payments","advances","outside","setup","users"];
 var PRESETS={
-  manager:{tabs:["flow","ledger","clients","invoices","team","costs","calendar"],edit:["work","calendar"],personal:false},
-  acct:{tabs:["flow","ledger","clients","invoices","team","costs","calendar"],edit:["clients","invoices","work","costs","payments"],personal:false},
-  view:{tabs:["flow","ledger","clients","invoices","team","costs","calendar"],edit:[],personal:false},
+  manager:{tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["work","calendar"],personal:false},
+  acct:{tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["clients","invoices","funding","work","costs","payments"],personal:false},
+  view:{tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:[],personal:false},
   none:{tabs:[],edit:[],personal:false}
 };
 var MODE="local";      // "local" | "cloud"
@@ -783,7 +787,7 @@ var SUPA_URL = "https://gvnpixjkcmbrdfefbamr.supabase.co";
 var SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2bnBpeGprY21icmRmZWZiYW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MDAyNDAsImV4cCI6MjEwMDQ3NjI0MH0.PPuHBLPRwFPvjMgoIWHCubDTX9at5gSgn4QKxcgsbQI";
 
 var SB=null, SYNC="", PULLED={}, RT=null, PUSHT=null, DIRTY=false, PUSHING=false, PUSHAGAIN=false;
-var TBL=[["customers","clients"],["employees","team"],["work","work"],["payments","payments"],["invoices","invoices"],
+var TBL=[["customers","clients"],["employees","team"],["work","work"],["payments","payments"],["invoices","invoices"],["fundings","funding"],
          ["advances","advances"],["payouts","advances"],["costs","costs"],["shoots","calendar"],
          ["outside","outside"],["projects","outside"],["osadvances","outside"],
          ["debts","outside"],["transfers","outside"]];
@@ -850,17 +854,9 @@ async function push(){
         var up=await SB.from(key).upsert(rows);
         if(up&&up.error) throw up.error;
       }
-      /* remove rows that no longer exist locally.
-         when the table is now empty we must still clear whatever is on the server,
-         otherwise the last deleted row survives and reappears on the next read. */
-      var ids=rows.map(function(r){return r.id;});
-      var dr;
-      if(ids.length){
-        dr=await SB.from(key).delete().not("id","in","("+ids.join(",")+")");
-      }else{
-        dr=await SB.from(key).delete().neq("id","__none__");   // empty locally → wipe the table server-side
-      }
-      if(dr&&dr.error) throw dr.error;
+      /* Deliberately no "delete what is missing locally" sync here. A partial
+         browser load must never be able to wipe cloud rows. Individual deletes
+         are sent explicitly from the confirmed Delete button below. */
     }catch(e){
       ok=false;
       try{ console.error("[sync] table \""+key+"\" failed:", (e&&e.message)||e); }catch(_){}
@@ -885,10 +881,28 @@ async function pushEverything(){
   await push(); await pull(); render();
 }
 
+function cloudRowFor(id){
+  for(var i=0;i<TBL.length;i++){
+    var key=TBL[i][0], sec=TBL[i][1];
+    if((S[key]||[]).some(function(x){return x.id===id;}))return {table:key,sec:sec,id:id};
+  }
+  return null;
+}
+async function deleteCloudRow(row){
+  if(!row||MODE!=="cloud"||!SB||!can(row.sec))return;
+  try{
+    var r=await SB.from(row.table).delete().eq("id",row.id);
+    if(r&&r.error)throw r.error;
+  }catch(e){
+    try{console.error("[sync] explicit delete failed:",(e&&e.message)||e);}catch(_){}
+    setSync("cl.err");
+  }
+}
+
 function watch(){
   if(RT) return;
   RT=SB.channel("sl");
-  ["customers","employees","work","payments","invoices","advances","payouts","costs","shoots","outside","projects",
+  ["customers","employees","work","payments","invoices","fundings","advances","payouts","costs","shoots","outside","projects",
    "osadvances","debts","transfers","settings","profiles"]
     .forEach(function(tb){
       RT.on("postgres_changes",{event:"*",schema:"public",table:tb},function(){
@@ -1049,8 +1063,9 @@ function seed(){return{
   {id:uid(),name:"زبون 5 (قريب)",billing:"prepaid",monthlyFee:0,videos:0,posts:0,adSpend:0,rate:12,expected:0,credit:79,openingDue:0,startMonth:ymNow(),endMonth:"",active:true,note:"دفع 79$ سلف — بيتسلّم فيديوهات بـ12$ لحد ما يخلص الرصيد"},
   {id:uid(),name:"زبون 6",billing:"per_video",monthlyFee:0,videos:0,posts:0,adSpend:0,rate:15,expected:10,credit:0,openingDue:0,startMonth:ymNow(),endMonth:"",active:true,note:""}],
  work:[],
-  payments:[],
+ payments:[],
  invoices:[],
+ fundings:[],
  advances:[],
  payouts:[],
  osadvances:[],
@@ -1091,10 +1106,33 @@ function workCounts(empId,m,isOwner){
   var w=S.work.filter(function(x){
     return inMonth(x.date,m)&&(x.editorId===empId||(isOwner&&!x.editorId));});
   var o={};
-  ["video","post","design","task"].forEach(function(k){
+  ["video","post","design","shoot","voice","task"].forEach(function(k){
     o[k]=w.filter(function(x){return x.type===k;}).reduce(function(a,x){return a+(+x.qty||0);},0);});
   return o;
 }
+function daysInMonth(m){var p=m.split("-");return new Date(+p[0],+p[1],0).getDate();}
+function monthlyPay(e,m){
+  if(e.payType!=="monthly")return 0;
+  var start=e.startDate||"", end=e.endDate||"";
+  if(start&&start.slice(0,7)>m)return 0;
+  if(end&&end.slice(0,7)<m)return 0;
+  var pay=+e.rate||0;
+  if(start&&start.slice(0,7)===m){
+    var first=Math.max(1,+start.slice(8,10)||1), dim=daysInMonth(m);
+    pay=pay*(dim-first+1)/dim;
+  }
+  if(end&&end.slice(0,7)===m){
+    var last=Math.min(daysInMonth(m),+end.slice(8,10)||daysInMonth(m));
+    var begin=start&&start.slice(0,7)===m?Math.max(1,+start.slice(8,10)||1):1;
+    pay=(+e.rate||0)*Math.max(0,last-begin+1)/daysInMonth(m);
+  }
+  return Math.round(pay*100)/100;
+}
+function salaryShare(e,m){return Math.round(monthlyPay(e,m)*(+e.sharedPct||0))/100;}
+function fundingFee(f){return f.feeMode==="percent"?(+f.budget||0)*(+f.feeValue||0)/100:(+f.feeValue||0);}
+function fundingTotal(f){return (+f.budget||0)+fundingFee(f);}
+function fundingPaid(f){return S.payments.filter(function(p){return p.kind==="funding"&&p.fundingId===f.id;})
+  .reduce(function(a,p){return a+(+p.amount||0);},0);}
 var _cc={};
 function clearCalc(){_cc={};}
 function calc(m){
@@ -1113,37 +1151,43 @@ function _calc(m){
     var amt=0,basis="";
     var designs=mine.filter(function(w){return w.type==="design";}).reduce(function(a,w){return a+(+w.qty||0);},0);
     var monthInvoices=(S.invoices||[]).filter(function(inv){return inv.customerId===c.id&&inv.period===m&&(inv.status==="sent"||inv.status==="paid");});
+    var salaryCharges=S.employees.filter(function(e){return e.sharedCustomerId===c.id;})
+      .reduce(function(a,e){return a+salaryShare(e,m);},0);
+    var extras=mine.reduce(function(a,w){return a+(+w.charge||0);},0);
+    var clientFunding=(S.fundings||[]).filter(function(f){return f.customerId===c.id&&inMonth(f.date,m)&&f.status!=="cancelled";});
+    var fundingBilled=clientFunding.reduce(function(a,f){return a+fundingTotal(f);},0);
+    var fundingCost=clientFunding.reduce(function(a,f){return a+(+f.spentAmount||0);},0);
     if(monthInvoices.length){
-      amt=monthInvoices.reduce(function(total,inv){return total+(inv.items||[]).filter(function(i){return i.kind!=="ads";}).reduce(function(a,i){return a+(+i.amount||0);},0);},0);
-      adSpend+=monthInvoices.reduce(function(total,inv){return total+(inv.items||[]).filter(function(i){return i.kind==="ads";}).reduce(function(a,i){return a+(+i.amount||0);},0);},0);
+      amt=monthInvoices.reduce(function(total,inv){return total+(inv.items||[]).reduce(function(a,i){return a+(+i.amount||0);},0);},0);
       basis=monthInvoices.map(function(inv){return inv.number||t("inv.title");}).join(", ");
     }
     else if(c.billing==="package"){
-      amt=(+c.monthlyFee||0)+designs*(+c.drate||0);
+      amt=(+c.monthlyFee||0)+designs*(+c.drate||0)+extras+salaryCharges+fundingBilled;
       adSpend+=+c.adSpend||0;
       basis=t("b.packageL")+(designs&&(+c.drate)?(" + "+designs+" × "+money(+c.drate||0)):"");
     }
-    else if(c.billing==="per_design"){amt=designs*(+c.drate||+c.rate||0);basis=designs+" × "+money(+c.drate||+c.rate||0);}
+    else if(c.billing==="per_design"){amt=designs*(+c.drate||+c.rate||0)+extras+salaryCharges+fundingBilled;basis=designs+" × "+money(+c.drate||+c.rate||0);}
     else{
       // per-video client: videos at the video rate, plus any designs at the design rate
-      amt=vids*(+c.rate||0)+designs*(+c.drate||0);
+      amt=vids*(+c.rate||0)+designs*(+c.drate||0)+extras+salaryCharges+fundingBilled;
       basis=vids+" × "+money(+c.rate||0)+(designs&&(+c.drate)?(" + "+designs+" × "+money(+c.drate||0)):"");
     }
     if(cashBasis){
       // only money that actually arrived counts, and never the ad funding
       amt=S.payments.filter(function(x){
-            return x.customerId===c.id&&x.kind!=="funding"&&inMonth(x.date,m);})
+            return x.customerId===c.id&&inMonth(x.date,m);})
           .reduce(function(a,x){return a+(+x.amount||0);},0);
     }
-    revenue+=amt;clients.push({c:c,vids:vids,posts:posts,amt:amt,basis:basis});
+    adSpend+=fundingCost;
+    revenue+=amt;clients.push({c:c,vids:vids,posts:posts,designs:designs,amt:amt,basis:basis});
   });
   var payroll=0,people=[];
   S.employees.forEach(function(e){
     if(!e.active||e.payType==="percent")return;
     var pay=0,basis="";
-    if(e.payType==="monthly"){pay=+e.rate||0;basis=t("p.monthly");}
+    if(e.payType==="monthly"){pay=monthlyPay(e,m);basis=t("p.monthly");}
     else{
-      var mine=work.filter(function(w){return w.editorId===e.id;});
+      var mine=work.filter(function(w){return w.editorId===e.id&&(e.payType!=="per_video"||w.type==="video");});
       var q=mine.reduce(function(a,w){return a+(+w.qty||0);},0);
       var ov=mine.reduce(function(a,w){return a+((w.amount!==""&&w.amount!=null)?+w.amount:0);},0);
       var noOv=mine.filter(function(w){return w.amount===""||w.amount==null;}).reduce(function(a,w){return a+(+w.qty||0);},0);
@@ -1155,8 +1199,9 @@ function _calc(m){
   S.costs.forEach(function(x){
     var hit=x.recurring?((x.date||"").slice(0,7)<=m):inMonth(x.date,m);
     if(!hit)return;
-    opex+=+x.amount||0; costs.push(x);
-    if(x.payer&&x.payer!=="box") ownerPaid+=+x.amount||0;
+    costs.push(x);
+    if(x.payer!=="client_direct")opex+=+x.amount||0;
+    if(x.payer&&x.payer!=="box"&&x.payer!=="client_direct") ownerPaid+=+x.amount||0;
   });
   var rentTop=S.settings.rentMode==="expense"?(+S.settings.rentFlat||0):0;
   opex+=rentTop;
@@ -1248,6 +1293,31 @@ function stmt(c,thru){
       billed+=amt;
     });
   });
+  /* Services outside the normal package/rate: shoots, voice work, rush fees, etc. */
+  S.work.filter(function(w){return w.customerId===c.id&&(+w.charge||0)>0&&(w.date||"").slice(0,7)<=thru&&!invoicedMonth((w.date||"").slice(0,7));})
+    .forEach(function(w){
+      var amt=+w.charge||0;
+      lines.push({date:w.date,desc:t("d."+(w.type||"task"))+(w.note?" — "+w.note:""),charge:amt,paid:0});
+      billed+=amt;
+    });
+  /* Ad funding is billed as media budget + fee; only the fee is company profit. */
+  (S.fundings||[]).filter(function(f){return f.customerId===c.id&&f.status!=="cancelled"&&(f.date||"").slice(0,7)<=thru&&!invoicedMonth((f.date||"").slice(0,7));})
+    .forEach(function(f){
+      var amt=fundingTotal(f);
+      lines.push({date:f.date,desc:t("line.funding")+" · "+(f.platform||"Meta")+" ("+money(+f.budget||0)+" + "+money(fundingFee(f))+")",charge:amt,paid:0,fid:f.id});
+      billed+=amt;
+    });
+  /* A client's agreed share of an employee salary becomes a monthly account charge. */
+  S.employees.filter(function(e){return e.sharedCustomerId===c.id&&(+e.sharedPct||0)>0;}).forEach(function(e){
+    var m=(e.startDate||((c.startMonth||thru)+"-01")).slice(0,7), stop=e.endDate&&e.endDate.slice(0,7)<thru?e.endDate.slice(0,7):thru,guard=0;
+    while(m<=stop&&guard++<120){
+      if(!invoicedMonth(m)){
+        var amt=salaryShare(e,m);
+        if(amt){lines.push({date:(e.startDate&&e.startDate.slice(0,7)===m?e.startDate:m+"-01"),desc:t("line.salaryShare",{n:e.name}),charge:amt,paid:0});billed+=amt;}
+      }
+      m=addMonth(m,1);
+    }
+  });
   S.payments.filter(function(x){return x.customerId===c.id&&(x.date||"").slice(0,7)<=thru;})
     .forEach(function(x){
       lines.push({date:x.date,desc:t("line.pay")+(x.note?" — "+x.note:"")+(x.method?" ("+t("m."+x.method)+")":""),charge:0,paid:+x.amount||0,pid:x.id});
@@ -1262,12 +1332,12 @@ function stmt(c,thru){
 function delivered(c,month){
   var w=S.work.filter(function(x){return x.customerId===c.id&&(month?inMonth(x.date,month):true);});
   var o={};
-  ["video","post","design","task"].forEach(function(k){
+  ["video","post","design","shoot","voice","task"].forEach(function(k){
     o[k]=w.filter(function(x){return x.type===k;}).reduce(function(a,x){return a+(+x.qty||0);},0);});
   return o;
 }
 function deliveredChips(o){
-  var out=["video","post","design","task"].filter(function(k){return o[k]>0;})
+  var out=["video","post","design","shoot","voice","task"].filter(function(k){return o[k]>0;})
     .map(function(k){return '<span class="pill">'+o[k]+' '+t("d."+k)+'</span>';});
   return out.length?out.join(" "):'<span class="mut">'+t("cd.none")+'</span>';
 }
@@ -1333,7 +1403,7 @@ function renderSetup(){
    +'</div></div>';
 }
 /* ═════════════ shell ═════════════ */
-var TABS=[["flow","tab.flow"],["ledger","tab.ledger"],["clients","tab.clients"],["invoices","tab.invoices"],["team","tab.team"],
+var TABS=[["flow","tab.flow"],["ledger","tab.ledger"],["clients","tab.clients"],["invoices","tab.invoices"],["funding","tab.funding"],["team","tab.team"],
           ["costs","tab.costs"],["calendar","tab.calendar"],["outside","tab.outside"],
           ["users","tab.users"],["setup","tab.setup"]];
 function render(){
@@ -1344,7 +1414,7 @@ function render(){
   var allowed=myTabs();
   if(!allowed.length){renderWait();return;}
   if(allowed.indexOf(TAB)<0) TAB=allowed[0];
-  var views={flow:vFlow,ledger:vLedger,clients:vClients,invoices:vInvoices,team:vTeam,costs:vCosts,calendar:vCalendar,outside:vOutside,users:vUsers,setup:vSetup};
+  var views={flow:vFlow,ledger:vLedger,clients:vClients,invoices:vInvoices,funding:vFunding,team:vTeam,costs:vCosts,calendar:vCalendar,outside:vOutside,users:vUsers,setup:vSetup};
   el("app").innerHTML='<div class="wrap"><div class="mast">'
    +'<div class="brand">'+stampHTML()+'<div>'+(S.settings.company?'<h1>'+esc(S.settings.company)+'</h1>':'')+'<small>'+t("tagline")+'</small></div></div>'
    +'<div class="tools">'
@@ -1437,7 +1507,7 @@ function vFlow(){
       var tgt=x.c.billing==="package"?x.c.videos:(x.c.expected||0);
       return '<tr><td><b>'+esc(x.c.name)+'</b></td><td class="mut">'+esc(x.basis)+'</td>'
        +'<td class="r">'+n(x.vids+(tgt?' <span class="mut">/ '+tgt+'</span>':''))+'</td>'
-       +'<td class="r">'+n(x.posts+(x.c.posts?' <span class="mut">/ '+x.c.posts+'</span>':''))+'</td>'
+       +'<td class="r">'+n((x.designs||x.posts)+((x.c.designs||x.c.posts)?' <span class="mut">/ '+(x.c.designs||x.c.posts)+'</span>':''))+'</td>'
        +'<td class="r"><span class="num acc">'+money(x.amt)+'</span></td></tr>';}).join("")
      :'<tr><td colspan="5" class="empty">'+t("cli.none")+'</td></tr>')
    +'</tbody></table></div></div>';
@@ -1539,6 +1609,26 @@ function vInvoices(){
   return h+'</tbody></table></div></div></div>';
 }
 
+/* ═════════════ AD FUNDING ═════════════ */
+function vFunding(){
+  var w=can("funding"), rows=(S.fundings||[]).slice().sort(function(a,b){return (a.date||"")<(b.date||"")?1:-1;});
+  var h='<div class="sec"><div class="rowhead"><div><h2>'+t("fund.t")+'</h2><p class="sub" style="margin:0">'+t("fund.n")+'</p></div>'
+    +(w?'<button class="btn primary" data-act="newfunding">'+t("fund.add")+'</button>':'')+'</div>'
+    +'<div class="card"><div class="tbl-wrap"><table><thead><tr><th>'+t("th.date")+'</th><th>'+t("th.client")+'</th><th>'+t("fund.platform")+'</th>'
+    +'<th class="r">'+t("fund.budget")+'</th><th class="r">'+t("fund.fee")+'</th><th class="r">'+t("fund.total")+'</th><th>'+t("th.status")+'</th><th></th></tr></thead><tbody>';
+  if(!rows.length)h+='<tr><td colspan="8" class="empty">'+t("fund.empty")+'</td></tr>';
+  rows.forEach(function(f){
+    var c=S.customers.filter(function(x){return x.id===f.customerId;})[0], total=fundingTotal(f), paid=fundingPaid(f);
+    var state=paid>=total-0.005?"paid":(paid>0?"partial":"unpaid");
+    h+='<tr><td>'+n(esc(f.date||"—"))+'</td><td><b>'+esc(c?c.name:"—")+'</b>'+(f.note?'<div class="mut" style="font-size:11.5px">'+esc(f.note)+'</div>':'')+'</td>'
+      +'<td><span class="pill">'+esc(f.platform||"Meta")+'</span></td><td class="r"><span class="num">'+money(f.budget)+'</span></td>'
+      +'<td class="r"><span class="num pos">'+money(fundingFee(f))+'</span></td><td class="r"><span class="num">'+money(total)+'</span></td>'
+      +'<td><span class="pill '+(state==="paid"?"on":(state==="partial"?"amb":""))+'">'+t("fund."+state)+'</span>'+(paid?'<div class="mut" style="font-size:11.5px">'+money(paid)+'</div>':'')+'</td>'
+      +'<td class="r">'+(w?'<button class="btn sm primary" data-act="payfunding" data-id="'+f.id+'">'+t("fund.pay")+'</button> <button class="btn sm ghost" data-act="editfunding" data-id="'+f.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
+  });
+  return h+'</tbody></table></div></div></div>';
+}
+
 /* ═════════════ CLIENTS ═════════════ */
 function vClients(){
   if(SEL) return vClient();
@@ -1593,11 +1683,19 @@ function movements(upto){
     out.push({date:x.date,kind:x.kind==="funding"?"fund":"pay",who:c?c.name:"—",note:x.note||"",
       amt:+x.amount||0,dir:1,id:x.id,act:"editpay",sec:"payments"});
   });
+  /* media spend attached to a funding campaign */
+  (S.fundings||[]).forEach(function(x){
+    var c=S.customers.filter(function(y){return y.id===x.customerId;})[0];
+    var payer=x.payer||"box", pe=S.employees.filter(function(y){return y.id===payer;})[0];
+    var tag=payer==="box"?"":(" · "+t("cost.owner",{n:pe?pe.name:"—"}));
+    if((+x.spentAmount||0)>0)out.push({date:x.date,kind:"fundspend",who:c?c.name:(x.platform||"—"),note:(x.platform||"Meta")+tag,
+      amt:+x.spentAmount||0,dir:payer==="box"?-1:0,id:x.id,act:"editfunding",sec:"funding"});
+  });
   /* costs only leave the box when the box paid for them */
   S.costs.forEach(function(x){
     var payer=x.payer||"box";
     var pe=payer==="box"?null:S.employees.filter(function(y){return y.id===payer;})[0];
-    var tag=payer==="box"?"":" · "+t("cost.owner",{n:pe?pe.name:"—"});
+    var tag=payer==="box"?"":(payer==="client_direct"?" · "+t("cost.client"):" · "+t("cost.owner",{n:pe?pe.name:"—"}));
     var push=function(d){
       out.push({date:d,kind:"cost",who:t("c."+x.category),note:(x.note||"")+tag,
         amt:+x.amount||0,dir:payer==="box"?-1:0,id:x.id,act:"editcost",sec:"costs"});
@@ -1634,7 +1732,8 @@ function funding(upto){
   var got=S.payments.filter(function(x){return x.kind==="funding"&&(x.date||"").slice(0,7)<=upto;})
     .reduce(function(a,x){return a+(+x.amount||0);},0);
   var spent=S.costs.filter(function(x){return x.category==="Ads"&&(x.date||"").slice(0,7)<=upto;})
-    .reduce(function(a,x){return a+(+x.amount||0);},0);
+    .reduce(function(a,x){return a+(+x.amount||0);},0)
+    +(S.fundings||[]).filter(function(x){return (x.date||"").slice(0,7)<=upto;}).reduce(function(a,x){return a+(+x.spentAmount||0);},0);
   return {got:got,spent:spent,left:got-spent};
 }
 /* costs someone paid out of their own pocket, less what they have been given back */
@@ -1663,8 +1762,10 @@ function available(upto,exceptId){
 }
 function owedBack(empId,upto){
   var paid=S.costs.filter(function(x){
-      return x.payer===empId&&((x.date||"").slice(0,7)<=upto);})
-    .reduce(function(a,x){return a+(+x.amount||0);},0);
+      return x.payer===empId&&x.payer!=="client_direct"&&((x.date||"").slice(0,7)<=upto);})
+    .reduce(function(a,x){return a+(+x.amount||0);},0)
+    +(S.fundings||[]).filter(function(x){return x.payer===empId&&((x.date||"").slice(0,7)<=upto);})
+      .reduce(function(a,x){return a+(+x.spentAmount||0);},0);
   var back=S.payouts.filter(function(x){
       return x.employeeId===empId&&x.kind==="reimb"&&(x.date||"").slice(0,7)<=upto;})
     .reduce(function(a,x){return a+(+x.amount||0);},0);
@@ -1679,7 +1780,7 @@ function boxParts(m){
   return {
     open:+S.settings.openingCash||0,
     inn:sum(function(x){return x.kind==="pay"||x.kind==="fund";}),
-    cost:sum(function(x){return x.kind==="cost"&&x.dir<0;}),
+    cost:sum(function(x){return (x.kind==="cost"||x.kind==="fundspend")&&x.dir<0;}),
     adv:sum(function(x){return x.kind==="adv";}),
     wage:sum(function(x){return x.kind==="out";}),
     reim:sum(function(x){return x.kind==="reim";}),
@@ -1747,7 +1848,7 @@ function vClient(){
    +'<div class="mut" style="margin-top:16px;font-size:12px">'+t("cd.all",{m:monthName(c.startMonth||MONTH)})+'</div>'
    +'<div style="margin-top:6px">'+deliveredChips(da)+'</div>'
    +(c.billing==="package"?'<div class="carve" style="margin-top:14px"><span>'+t("cd.promised")+'</span>'
-      +'<span class="num">'+c.videos+' '+t("d.video")+' · '+c.posts+' '+t("d.post")+'</span></div>':'')
+      +'<span class="num">'+c.videos+' '+t("d.video")+' · '+(c.designs!=null?c.designs:c.posts)+' '+t("d.design")+'</span></div>':'')
    +'</div>'
    +'<div class="card"><span class="eyebrow">'+t("f.note")+'</span>'
    +'<p style="margin-top:10px;font-size:13px">'+(c.note?esc(c.note):'<span class="mut">'+t("cd.none")+'</span>')+'</p>'
@@ -1917,12 +2018,12 @@ function vWork(){
   rows.forEach(function(x){
     var c=S.customers.filter(function(y){return y.id===x.customerId;})[0];
     var e=S.employees.filter(function(y){return y.id===x.editorId;})[0];
-    var pay=e?((x.amount!==""&&x.amount!=null)?+x.amount:(+x.qty||0)*(+e.rate||0)):0;
-    var bill=0;
+    var pay=e&&!(e.payType==="per_video"&&x.type!=="video")?((x.amount!==""&&x.amount!=null)?+x.amount:(e.payType==="monthly"?0:(+x.qty||0)*(+e.rate||0))):0;
+    var bill=+x.charge||0;
     if(c){
-      if(x.type==="video"&&c.billing!=="per_design") bill=(+x.qty||0)*(+c.rate||0);
-      if(c.billing==="package"&&x.type==="video") bill=0;
-      else if(x.type==="design") bill=(+x.qty||0)*(+c.drate||(c.billing==="per_design"?+c.rate:0)||0);
+      if(!bill&&x.type==="video"&&c.billing!=="per_design") bill=(+x.qty||0)*(+c.rate||0);
+      if(!(+x.charge||0)&&c.billing==="package"&&x.type==="video") bill=0;
+      else if(!bill&&x.type==="design") bill=(+x.qty||0)*(+c.drate||(c.billing==="per_design"?+c.rate:0)||0);
     }
     h+='<tr><td>'+n(esc(x.date))+'</td><td>'+esc(c?c.name:"—")+'</td>'
      +'<td><span class="pill">'+t("d."+x.type)+'</span>'+(x.note?' <span class="mut" style="font-size:11.5px">'+esc(x.note)+'</span>':'')+'</td>'
@@ -2120,6 +2221,7 @@ function vLedger(){
     if(LGTYPE==="money") rows=rows.filter(function(x){return x.kind!=="work";});
     else rows=rows.filter(function(x){
       if(LGTYPE==="wage") return x.kind==="out"||x.kind==="reim";
+      if(LGTYPE==="fund") return x.kind==="fund"||x.kind==="fundspend";
       return x.kind===LGTYPE;});
   }
   if(LGWHO!=="all"){
@@ -2150,7 +2252,7 @@ function vLedger(){
    +kpi("net",t("box.t"),money(box.balance),t("box.n"))
    +kpi("in",t("box.in"),money(mIn),monthName(MONTH))
    +kpi("out",t("box.out"),money(mOut),monthName(MONTH))
-   +(fu.left!==0?kpi("you",t("fund.left"),money(fu.left),t("fund.n")):"")
+   +(fu.left>0.005?kpi("you",t("fund.left"),money(fu.left),t("fund.n")):"")
    +(ob.due>0.005&&rentEmp?kpi("out",t("reim.t",{n:rentEmp.name}),money(ob.due),t("reim.n")):"")
    +'</div></div>';
 
@@ -2187,8 +2289,8 @@ function vLedger(){
    +'<th class="r">'+t("lg.run")+'</th><th></th></tr></thead><tbody>';
   if(!rows.length) h+='<tr><td colspan="7" class="empty">'+t("lg.none")+'</td></tr>';
   rows.forEach(function(x){
-    var lbl={pay:"lg.pay",cost:"lg.cost",adv:"lg.adv",out:"lg.out",work:"lg.work",fund:"lg.fund",reim:"lg.reim",trans:"lg.trans"}[x.kind]||"lg.pay";
-    var pill={pay:"on",cost:"",adv:"cy",out:"amb",work:"",fund:"cy",reim:"amb",trans:"on"}[x.kind]||"";
+    var lbl={pay:"lg.pay",cost:"lg.cost",fundspend:"fund.spent",adv:"lg.adv",out:"lg.out",work:"lg.work",fund:"lg.fund",reim:"lg.reim",trans:"lg.trans"}[x.kind]||"lg.pay";
+    var pill={pay:"on",cost:"",fundspend:"",adv:"cy",out:"amb",work:"",fund:"cy",reim:"amb",trans:"on"}[x.kind]||"";
     var can_=can(x.sec);
     h+='<tr><td>'+n(esc(x.date))+'</td>'
      +'<td><span class="pill '+pill+'">'+t(lbl)+'</span></td>'
@@ -2437,7 +2539,9 @@ function form(title,fields,vals,onSave,extra,saveLabel){
   var scrim=document.querySelector(".scrim");
   scrim.addEventListener("mousedown",function(e){if(e.target===this)close();});
   el("fCancel").onclick=close;
-  if(el("fDel")) el("fDel").onclick=function(){if(confirm(t("confirmDel"))){onSave(null);close();save();render();}};
+  if(el("fDel")) el("fDel").onclick=function(){if(confirm(t("confirmDel"))){
+    var cloudRow=cloudRowFor(vals.id);onSave(null);close();save();render();deleteCloudRow(cloudRow);
+  }};
   el("fSave").onclick=function(){
     var out={};
     fields.forEach(function(f){var q=el("formBody").querySelector('[name="'+f.k+'"]');
@@ -2468,7 +2572,7 @@ function printInvoice(c,invoice){
   var charges=st.lines.filter(function(l){return (+l.charge||0)>0;});
   var pays=st.lines.filter(function(l){return (+l.paid||0)>0;});
   var da=delivered(c,null);
-  var chips=["video","design","post","task"].filter(function(k){return da[k]>0;})
+  var chips=["video","design","post","shoot","voice","task"].filter(function(k){return da[k]>0;})
     .map(function(k){return da[k]+" "+t("d."+k);}).join(" · ");
 
   var status = st.balance<0.005 ? {txt:t("inv.status.paid"),c:"#3f7a5c",bg:"#e8f2ec"}
@@ -2597,6 +2701,7 @@ function clientForm(c){
     {k:"monthlyFee",label:t("f.fee"),type:"number",step:"0.01",showIf:{k:"billing",in:["package"]}},
     {k:"videos",label:t("f.vids"),type:"number",showIf:{k:"billing",in:["package"]}},
     {k:"posts",label:t("f.posts"),type:"number",showIf:{k:"billing",in:["package"]}},
+    {k:"designs",label:t("f.designs"),type:"number",showIf:{k:"billing",in:["package"]}},
     {k:"adSpend",label:t("f.ads"),type:"number",step:"0.01",hint:t("f.adsH")},
     {k:"rate",label:t("f.rate"),type:"number",step:"0.01",showIf:{k:"billing",in:["per_video","prepaid"]}},
     {k:"drate",label:t("f.drate"),type:"number",step:"0.01",hint:t("f.drateH"),showIf:{k:"billing",in:["package","per_video","per_design"]}},
@@ -2616,6 +2721,10 @@ function empForm(e){
     {k:"name",label:t("f.name")},{k:"role",label:t("f.role"),hint:t("f.roleH")},
     {k:"payType",label:t("f.howpaid"),type:"select",options:[["per_video",t("p.per_videoL")],["monthly",t("p.monthlyL")],["per_task",t("p.per_taskL")],["percent",t("p.percentL")]]},
     {k:"rate",label:t("f.rate2"),type:"number",step:"0.01",hint:t("f.rateH")},
+    {k:"startDate",label:t("f.startDate"),type:"date",showIf:{k:"payType",in:["monthly"]}},
+    {k:"endDate",label:t("f.endDate"),type:"date",showIf:{k:"payType",in:["monthly"]}},
+    {k:"sharedCustomerId",label:t("f.sharedClient"),type:"select",options:[["","—"]].concat(S.customers.map(function(c){return [c.id,c.name];})),showIf:{k:"payType",in:["monthly"]}},
+    {k:"sharedPct",label:t("f.sharedPct"),type:"number",step:"0.01",hint:t("f.sharedH"),showIf:{k:"payType",in:["monthly"]}},
     {k:"note",label:t("f.note"),type:"textarea"},
     {k:"active",label:"",type:"check",checkLabel:t("f.onbooks"),def:true}
   ],e,function(v){
@@ -2627,24 +2736,42 @@ function workForm(w){
   form(w?t("wk.edit"):t("wk.add"),[
     {k:"date",label:t("f.date"),type:"date",def:todayISO()},
     {k:"customerId",label:t("f.client"),type:"select",options:S.customers.map(function(c){return [c.id,c.name];})},
-    {k:"type",label:t("f.delivered"),type:"select",options:[["video",t("d.video")],["post",t("d.post")],["design",t("d.design")],["task",t("d.task")]]},
+    {k:"type",label:t("f.delivered"),type:"select",options:[["video",t("d.video")],["post",t("d.post")],["design",t("d.design")],["shoot",t("d.shoot")],["voice",t("d.voice")],["task",t("d.task")]]},
     {k:"qty",label:t("f.howmany"),type:"number",def:1},
     {k:"editorId",label:t("f.whodid"),type:"select",options:[["",(function(){
         var ow=S.employees.filter(function(x){return x.id===calc(MONTH).rentEmp;})[0];
         return ow?t("wk.mineN",{n:ow.name}):t("wk.mine");})()]].concat(S.employees.filter(function(e){return e.payType!=="percent";}).map(function(e){return [e.id,e.name];}))},
     {k:"amount",label:t("f.override"),type:"number",step:"0.01",hint:t("f.overrideH")},
+    {k:"charge",label:t("f.clientcharge"),type:"number",step:"0.01",hint:t("f.clientchargeH")},
     {k:"note",label:t("f.note"),type:"textarea"}
   ],w,function(v){
     if(v===null){S.work=S.work.filter(function(x){return x.id!==w.id;});return;}
     if(w) Object.assign(w,v); else {v.id=uid();S.work.push(v);}});
 }
+function fundingForm(x){
+  form(x?t("fund.edit"):t("fund.add"),[
+    {k:"date",label:t("f.date"),type:"date",def:todayISO()},
+    {k:"customerId",label:t("f.client"),type:"select",options:S.customers.map(function(c){return [c.id,c.name];})},
+    {k:"platform",label:t("fund.platform"),def:"Meta"},
+    {k:"budget",label:t("fund.budget"),type:"number",step:"0.01"},
+    {k:"feeMode",label:t("fund.feeMode"),type:"select",options:[["fixed",t("fund.fixed")],["percent",t("fund.percent")]],def:"fixed"},
+    {k:"feeValue",label:t("fund.feeValue"),type:"number",step:"0.01"},
+    {k:"spentAmount",label:t("fund.spent"),type:"number",step:"0.01"},
+    {k:"payer",label:t("fund.payer"),type:"select",def:"box",options:[["box",t("cost.box")]].concat(S.employees.filter(function(e){return e.payType==="percent";}).map(function(e){return [e.id,t("cost.owner",{n:e.name})];}))},
+    {k:"note",label:t("f.note"),type:"textarea"}
+  ],x,function(v){
+    if(v===null){S.fundings=S.fundings.filter(function(y){return y.id!==x.id;});return;}
+    if(x)Object.assign(x,v);else{v.id=uid();v.status="active";S.fundings.push(v);}
+  });
+}
 function costForm(x){
   form(x?t("cs.edit"):t("cs.add"),[
     {k:"note",label:t("f.whatis")},
-    {k:"category",label:t("f.cat"),type:"select",options:["Transport","Phone","Internet","Ads","Equipment","Software","Rent","Other"].map(function(c){return [c,t("c."+c)];})},
+    {k:"category",label:t("f.cat"),type:"select",options:["Transport","Phone","Internet","Ads","Talent","Equipment","Software","Rent","Other"].map(function(c){return [c,t("c."+c)];})},
     {k:"payer",label:t("cost.payer"),type:"select",def:"box",
-     options:[["box",t("cost.box")]].concat(S.employees.filter(function(e){return e.payType==="percent";})
+     options:[["box",t("cost.box")],["client_direct",t("cost.client")]].concat(S.employees.filter(function(e){return e.payType==="percent";})
        .map(function(e){return [e.id,t("cost.owner",{n:e.name})];}))},
+    {k:"customerId",label:t("f.client"),type:"select",options:[["","—"]].concat(S.customers.map(function(c){return [c.id,c.name];})),showIf:{k:"payer",in:["client_direct"]}},
     {k:"amount",label:t("f.amount"),type:"number",step:"0.01"},
     {k:"date",label:t("f.date"),type:"date",def:todayISO()},
     {k:"recurring",label:"",type:"check",checkLabel:t("f.repeats")}
@@ -2756,13 +2883,15 @@ function advForm(a,empId){
     if(v===null){S.advances=S.advances.filter(function(x){return x.id!==a.id;});return;}
     if(a) Object.assign(a,v); else {v.id=uid();S.advances.push(v);}});
 }
-function payForm(pay,custId){
+function payForm(pay,custId,defaults){
+  defaults=defaults||{};
   form(pay?t("pm.edit"):t("pm.add"),[
     {k:"date",label:t("f.date"),type:"date",def:todayISO()},
     {k:"customerId",label:t("f.client"),type:"select",options:S.customers.map(function(c){return [c.id,c.name];}),def:custId||""},
-    {k:"kind",label:t("f.paykind"),type:"select",options:[["payment",t("k.payment")],["funding",t("k.funding")]],def:"payment"},
-    {k:"invoiceId",label:t("inv.number"),type:"select",options:[["","—"]].concat((S.invoices||[]).filter(function(i){return !custId||i.customerId===custId;}).map(function(i){return [i.id,i.number||i.id];}))},
-    {k:"amount",label:t("f.amountpaid"),type:"number",step:"0.01"},
+    {k:"kind",label:t("f.paykind"),type:"select",options:[["payment",t("k.payment")],["funding",t("k.funding")]],def:defaults.kind||"payment"},
+    {k:"invoiceId",label:t("inv.number"),type:"select",options:[["","—"]].concat((S.invoices||[]).filter(function(i){return !custId||i.customerId===custId;}).map(function(i){return [i.id,i.number||i.id];})),showIf:{k:"kind",in:["payment"]}},
+    {k:"fundingId",label:t("fund.t"),type:"select",def:defaults.fundingId||"",options:[["","—"]].concat((S.fundings||[]).filter(function(i){return !custId||i.customerId===custId;}).map(function(i){return [i.id,(i.platform||"Meta")+" · "+money(fundingTotal(i))];})),showIf:{k:"kind",in:["funding"]}},
+    {k:"amount",label:t("f.amountpaid"),type:"number",step:"0.01",def:defaults.amount||""},
     {k:"method",label:t("f.method"),type:"select",options:[["cash",t("m.cash")],["bank",t("m.bank")],["other",t("m.other")]]},
     {k:"note",label:t("f.note"),type:"textarea"}
   ],pay,function(v){
@@ -2873,8 +3002,11 @@ document.addEventListener("click",function(ev){
   else if(act==="newadv") advForm(null,id);
   else if(act==="editadv") advForm(f(S.advances));
   else if(act==="newpay") payForm(null,id);
-  else if(act==="newfund"){ payForm(null,id); var kf=document.querySelector('#formBody [name="kind"]');
-    if(kf){kf.value="funding";kf.dispatchEvent(new Event("change",{bubbles:true}));} }
+  else if(act==="newfund"||act==="newfunding") fundingForm(null);
+  else if(act==="editfunding") fundingForm(f(S.fundings));
+  else if(act==="payfunding"){
+    var ff=f(S.fundings);if(ff){var remain=Math.max(0,fundingTotal(ff)-fundingPaid(ff));payForm(null,ff.customerId,{kind:"funding",fundingId:ff.id,amount:remain.toFixed(2)});}
+  }
   else if(act==="lgclear"){ LGTYPE="all"; LGWHO="all"; render(); }
   else if(act==="newreimb"){
     var em2=S.employees.filter(function(x){return x.id===id;})[0];
@@ -2973,6 +3105,7 @@ Store.load().then(async function(d){
     if(!S.settings.pins)S.settings.pins={owner:"",manager:"",accountant:""};
     if(!S.payments)S.payments=[];
     if(!S.invoices)S.invoices=[];
+    if(!S.fundings)S.fundings=[];
     if(!S.advances)S.advances=[];
     if(!S.payouts)S.payouts=[];
     if(!S.osadvances)S.osadvances=[];
