@@ -3093,7 +3093,8 @@ document.addEventListener("click",function(ev){
         if(msg==="denied"){
           alert(LANG==="ar"?"التنبيهات محظورة. افتح إعدادات الآيفون > الإشعارات > رِواء ستوديو وفعّل السماح بالإشعارات.":"Notifications are blocked. Open iPhone Settings > Notifications > Riwa Studio and allow notifications.");
         }else{
-          alert(LANG==="ar"?"تعذّر إرسال/تفعيل التنبيهات الآن. جرّب مرة ثانية بعد قليل.":"Couldn’t send or enable notifications right now. Try again shortly.");
+          var detail=String(e&&e.message||"");
+          alert((LANG==="ar"?"فشل اختبار التنبيهات. السبب: ":"Notification test failed: ")+detail);
         }
         render();
       }
