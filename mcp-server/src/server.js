@@ -574,6 +574,14 @@ app.post('/push/subscribe', async (req, res) => {
   }
 });
 
+app.options('/push/test', (_req, res) => {
+  res.set({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  }).status(204).end();
+});
+
 app.post('/push/test', async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
