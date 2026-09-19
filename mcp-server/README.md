@@ -6,6 +6,8 @@ This private connector lets ChatGPT read and update Studio Ledger through a smal
 
 - Read a company snapshot and list records.
 - Add or update clients, team members, work, costs, projects, invoices and appointments.
+- Record ad funding with a media budget plus either a fixed fee or percentage fee.
+- Support prorated monthly salaries and a client's agreed share of an employee salary.
 - Record client and wage payments after explicit confirmation.
 - Queue appointment notifications and optionally send them to a webhook.
 - Delete one record only after an explicit `DELETE` confirmation.
