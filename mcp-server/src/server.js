@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import crypto from 'node:crypto';
 import express from 'express';
+import webpush from 'web-push';
 import { createClient } from '@supabase/supabase-js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
@@ -35,6 +36,78 @@ const editableResourceSchema = z.enum(['clients', 'team', 'work', 'costs', 'outs
 const text = value => ({ content: [{ type: 'text', text: JSON.stringify(value, null, 2) }] });
 const id = () => crypto.randomUUID();
 const today = () => new Date().toISOString().slice(0, 10);
+
+function b64url(buf) {
+  return Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function pushKeys() {
+  const seed = crypto.createHash('sha256')
+    .update(String(process.env.SUPABASE_SERVICE_ROLE_KEY || 'riwa-studio-push'))
+    .digest();
+  const ecdh = crypto.createECDH('prime256v1');
+  ecdh.setPrivateKey(seed);
+  return {
+    privateKey: b64url(ecdh.getPrivateKey()),
+    publicKey: b64url(ecdh.getPublicKey())
+  };
+}
+
+const PUSH_KEYS = missingConfig.length ? null : pushKeys();
+if (PUSH_KEYS) {
+  webpush.setVapidDetails(
+    'mailto:notifications@riwa-studio.local',
+    PUSH_KEYS.publicKey,
+    PUSH_KEYS.privateKey
+  );
+}
+
+async function savePushSubscription(userId, subscription, userAgent = '') {
+  const key = crypto.createHash('sha256').update(String(subscription.endpoint || '')).digest('hex').slice(0, 32);
+  const record = {
+    id: `push_${key}`,
+    data: {
+      type: 'push_subscription',
+      userId,
+      subscription,
+      userAgent,
+      active: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    updated_at: new Date().toISOString()
+  };
+  const { error } = await db.from('notifications').upsert(record);
+  if (error) throw error;
+  return record.id;
+}
+
+async function sendPush(payload, userId = null) {
+  let query = db.from('notifications').select('id,data');
+  const { data, error } = await query;
+  if (error) throw error;
+  const rows = (data || []).filter(row =>
+    row.data?.type === 'push_subscription' &&
+    row.data?.active !== false &&
+    (!userId || row.data?.userId === userId)
+  );
+
+  let sent = 0;
+  let failed = 0;
+  for (const row of rows) {
+    try {
+      await webpush.sendNotification(row.data.subscription, JSON.stringify(payload), { TTL: 3600 });
+      sent++;
+    } catch (err) {
+      failed++;
+      if (err?.statusCode === 404 || err?.statusCode === 410) {
+        const clean = { ...row.data, active: false, updatedAt: new Date().toISOString() };
+        await db.from('notifications').upsert({ id: row.id, data: clean, updated_at: new Date().toISOString() });
+      }
+    }
+  }
+  return { sent, failed, total: rows.length };
+}
 
 function safeEqual(a, b) {
   const left = Buffer.from(String(a || ''));
@@ -382,6 +455,20 @@ function buildServer() {
     return text({ appointment, notification });
   });
 
+  server.registerTool('send_push_notification', {
+    title: 'Send a push notification',
+    description: 'Send a Web Push notification to devices that enabled notifications for رِواء ستوديو.',
+    inputSchema: {
+      title: z.string().default('رِواء ستوديو'),
+      body: z.string(),
+      url: z.string().default('./'),
+      tag: z.string().default('riwa-studio')
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false }
+  }, async ({ title, body, url, tag }) => {
+    return text(await sendPush({ title, body, url, tag, dir: 'rtl', lang: 'ar' }));
+  });
+
   server.registerTool('delete_record', {
     title: 'Delete a ledger record',
     description: 'Permanently delete one record. The confirmation phrase must be DELETE and should only be supplied after explicit user confirmation.',
@@ -424,6 +511,38 @@ app.use((req, res, next) => {
   }
   next();
 });
+app.get('/push/config', (_req, res) => {
+  if (!PUSH_KEYS) return res.status(503).json({ error: 'Push is not configured' });
+  res.set('Access-Control-Allow-Origin', '*');
+  return res.json({ publicKey: PUSH_KEYS.publicKey });
+});
+
+app.options('/push/subscribe', (_req, res) => {
+  res.set({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  }).status(204).end();
+});
+
+app.post('/push/subscribe', async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const { data, error } = await db.auth.getUser(token);
+    if (error || !data?.user) return res.status(401).json({ error: 'Invalid token' });
+    const subscription = req.body?.subscription;
+    if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+      return res.status(400).json({ error: 'Invalid subscription' });
+    }
+    const id = await savePushSubscription(data.user.id, subscription, String(req.body?.userAgent || ''));
+    return res.json({ ok: true, id });
+  } catch (_error) {
+    return res.status(500).json({ error: 'Could not save subscription' });
+  }
+});
+
 function protectedResourceMetadata(_req, res) {
   return res.json({
     resource: process.env.PUBLIC_MCP_URL,
