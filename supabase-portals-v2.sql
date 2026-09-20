@@ -39,7 +39,7 @@ begin
   q:=greatest(1,least(100,coalesce((p_data->>'qty')::numeric,1)));
   dt:=coalesce(nullif(p_data->>'date',''),to_char(current_date,'YYYY-MM-DD'));
 
-  if typ not in ('video','post','design','shoot','voice','task') then raise exception 'bad_type'; end if;
+  if typ not in ('video','post','design','shoot','voice','script','task') then raise exception 'bad_type'; end if;
   if not exists(
     select 1 from public.customers
     where id=cid and coalesce((data->>'active')::boolean,true)
