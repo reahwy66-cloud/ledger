@@ -206,6 +206,59 @@ begin
   return jsonb_build_object('ok',true,'id',rid,'work',jsonb_build_object('id',rid)||safe);
 end $$;
 
+create or replace function public.portal_client_salary_charges(p_cid text)
+returns jsonb
+language plpgsql stable security definer set search_path=public as $
+declare
+  c_start text;
+  e record;
+  m date;
+  stop_m date;
+  start_d date;
+  end_d date;
+  dim integer;
+  first_d integer;
+  last_d integer;
+  base numeric;
+  amt numeric;
+  out jsonb := '[]'::jsonb;
+begin
+  select data->>'startMonth' into c_start from public.customers where id=p_cid;
+
+  for e in
+    select data
+    from public.employees
+    where data->>'sharedCustomerId'=p_cid
+      and data->>'payType'='monthly'
+      and coalesce((data->>'sharedPct')::numeric,0)>0
+  loop
+    start_d := nullif(e.data->>'startDate','')::date;
+    end_d := nullif(e.data->>'endDate','')::date;
+    m := date_trunc('month',coalesce(start_d,to_date(coalesce(c_start,to_char(current_date,'YYYY-MM'))||'-01','YYYY-MM-DD')))::date;
+    stop_m := date_trunc('month',least(coalesce(end_d,current_date),current_date))::date;
+
+    while m<=stop_m loop
+      dim := extract(day from (date_trunc('month',m)+interval '1 month - 1 day'))::integer;
+      first_d := 1;
+      last_d := dim;
+      if start_d is not null and date_trunc('month',start_d)::date=m then first_d:=extract(day from start_d)::integer; end if;
+      if end_d is not null and date_trunc('month',end_d)::date=m then last_d:=extract(day from end_d)::integer; end if;
+      base := coalesce((e.data->>'rate')::numeric,0) * greatest(0,last_d-first_d+1) / dim;
+      amt := round(base * coalesce((e.data->>'sharedPct')::numeric,0) / 100,2);
+      if amt<>0 then
+        out := out || jsonb_build_array(jsonb_build_object(
+          'date',to_char(m,'YYYY-MM-DD'),
+          'amount',amt,
+          'description','حصة تشغيل'
+        ));
+      end if;
+      m := (m+interval '1 month')::date;
+    end loop;
+  end loop;
+
+  return out;
+end $;
+
 create or replace function public.portal_client_snapshot(p_token text)
 returns jsonb
 language plpgsql stable security definer set search_path=public as $$
@@ -237,14 +290,7 @@ begin
       select jsonb_agg(jsonb_build_object('id',id)||data order by data->>'date' desc)
       from public.fundings where data->>'customerId'=cid
     ),'[]'::jsonb),
-    'salaryShares',coalesce((
-      select jsonb_agg(jsonb_build_object(
-        'name',data->>'name','sharedPct',data->'sharedPct','rate',data->'rate',
-        'payType',data->>'payType','startDate',data->>'startDate','endDate',data->>'endDate'
-      ))
-      from public.employees
-      where data->>'sharedCustomerId'=cid and coalesce((data->>'sharedPct')::numeric,0)>0
-    ),'[]'::jsonb),
+    'salaryCharges',public.portal_client_salary_charges(cid),
     'company',coalesce((select data->>'company' from public.settings where id=1),'رِواء ستوديو')
   ) into out;
 
