@@ -819,29 +819,57 @@ async function sbClient(url,key){
 function setSync(v){SYNC=v;var n=el("syncDot");if(n)n.textContent=v?t(v):"";}
 
 async function pull(){
-  if(DIRTY||PUSHING){ return; }              // never overwrite local edits that are still being saved
+  if(DIRTY||PUSHING) return;
   PULLED={};
   setSync("cl.pulling");
+
+  /* Permission V3: non-finance users first try the server-side sanitized snapshot.
+     If the migration is not installed yet, fall back to the legacy reader so the
+     app keeps working until the database update is applied. */
+  if(MODE==="cloud"&&!canSeeMoney()){
+    try{
+      var snap=await SB.rpc("staff_safe_snapshot");
+      if(snap&&!snap.error&&snap.data){
+        var d=typeof snap.data==="string"?JSON.parse(snap.data):snap.data;
+        SAFE_API=true;
+        ["customers","employees","work","payments","shoots"].forEach(function(k){
+          S[k]=Array.isArray(d[k])?d[k]:[];
+        });
+        ["invoices","fundings","advances","payouts","costs","transfers","outside","projects","osadvances","debts"].forEach(function(k){S[k]=[];});
+        if(d.settings){
+          var localOnly={theme:S.settings.theme,accent:S.settings.accent,lang:S.settings.lang,logo:S.settings.logo};
+          S.settings=Object.assign({},S.settings,d.settings,localOnly);
+        }
+        PULLED.shoots=true;
+        clearCalc();
+        setSync("cl.synced");
+        return;
+      }
+    }catch(_safeErr){}
+    SAFE_API=false;
+  }else{
+    SAFE_API=false;
+  }
+
   for(var i=0;i<TBL.length;i++){
     var key=TBL[i][0];
     try{
       var r=await SB.from(key).select("id,data");
-      if(!r||r.error||!Array.isArray(r.data)) continue;  // no access, or nothing usable — keep what we have
+      if(!r||r.error||!Array.isArray(r.data)) continue;
       PULLED[key]=true;
       S[key]=r.data.map(function(row){return Object.assign({id:row.id},row.data);});
-    }catch(e){ /* one bad table must not stop the app from opening */ }
+    }catch(e){}
   }
   var st=null;
   try{ st=await SB.from("settings").select("data").eq("id",1).maybeSingle(); }catch(e){}
   if(st&&!st.error&&st.data&&st.data.data&&Object.keys(st.data.data).length){
-    var localOnly={theme:S.settings.theme,accent:S.settings.accent,lang:S.settings.lang};
-    S.settings=Object.assign({},S.settings,st.data.data,localOnly);
+    var localOnly2={theme:S.settings.theme,accent:S.settings.accent,lang:S.settings.lang};
+    S.settings=Object.assign({},S.settings,st.data.data,localOnly2);
     PULLED.settings=true;
   }
   if(applyBrandDefaults()) setTimeout(save,0);
   setSync("cl.synced");
 }
-
 function queuePush(){
   if(MODE!=="cloud"||!SB) return;
   DIRTY=true;
@@ -858,6 +886,7 @@ async function push(){
      and any real error is printed so it can be seen, not swallowed */
   for(var i=0;i<TBL.length;i++){
     var key=TBL[i][0], sec=TBL[i][1];
+    if(SAFE_API&&!canSeeMoney()&&key!=="shoots") continue;
     if(!PULLED[key]||!can(sec)) continue;
     try{
       var rows=(S[key]||[]).map(function(o){
@@ -876,7 +905,7 @@ async function push(){
       try{ console.error("[sync] table \""+key+"\" failed:", (e&&e.message)||e); }catch(_){}
     }
   }
-  if(can("setup")){
+  if(can("setup")&&!(SAFE_API&&!canSeeMoney())){
     try{
       var out=Object.assign({},S.settings); delete out.theme; delete out.accent; delete out.lang;
       var st=await SB.from("settings").upsert({id:1,data:out,updated_at:new Date().toISOString()});
@@ -895,6 +924,36 @@ async function pushEverything(){
   await push(); await pull(); render();
 }
 
+async function safeSaveWork(row){
+  if(!SAFE_API||MODE!=="cloud"||canSeeMoney()) return;
+  try{
+    var r=await SB.rpc("staff_save_work",{p:row});
+    if(r&&r.error) throw r.error;
+  }catch(e){
+    alert((LANG==="ar"?"تعذّر حفظ التسليم: ":"Could not save delivery: ")+(e.message||e));
+    await pull();render();
+  }
+}
+async function safeDeleteWork(id){
+  if(!SAFE_API||MODE!=="cloud"||canSeeMoney()) return;
+  try{
+    var r=await SB.rpc("staff_delete_work",{p_id:id});
+    if(r&&r.error) throw r.error;
+  }catch(e){
+    alert((LANG==="ar"?"تعذّر حذف التسليم: ":"Could not delete delivery: ")+(e.message||e));
+    await pull();render();
+  }
+}
+async function safeAddPayment(row){
+  if(!SAFE_API||MODE!=="cloud"||canSeeMoney()) return;
+  try{
+    var r=await SB.rpc("staff_add_payment",{p:row});
+    if(r&&r.error) throw r.error;
+  }catch(e){
+    alert((LANG==="ar"?"تعذّر تسجيل الدفعة: ":"Could not record payment: ")+(e.message||e));
+    await pull();render();
+  }
+}
 function cloudRowFor(id){
   for(var i=0;i<TBL.length;i++){
     var key=TBL[i][0], sec=TBL[i][1];
@@ -3057,8 +3116,18 @@ function workForm(w){
   }
   fields.push({k:"note",label:t("f.note"),type:"textarea"});
   form(w?t("wk.edit"):t("wk.add"),fields,w,function(v){
-    if(v===null){S.work=S.work.filter(function(x){return x.id!==w.id;});return;}
-    if(w) Object.assign(w,v); else {v.id=uid();S.work.push(v);}
+    if(v===null){
+      if(w&&SAFE_API&&!canSeeMoney()) safeDeleteWork(w.id);
+      S.work=S.work.filter(function(x){return !w||x.id!==w.id;});
+      return;
+    }
+    if(w){
+      Object.assign(w,v);
+      if(SAFE_API&&!canSeeMoney()) safeSaveWork(Object.assign({id:w.id},v));
+    }else{
+      v.id=uid();S.work.push(v);
+      if(SAFE_API&&!canSeeMoney()) safeSaveWork(v);
+    }
   });
 }
 function fundingForm(x){
@@ -3208,7 +3277,10 @@ function payForm(pay,custId,defaults){
     ],pay,function(v){
       if(v===null) return;
       v.kind="payment";
-      if(pay) Object.assign(pay,v); else {v.id=uid();S.payments.push(v);}
+      if(pay) Object.assign(pay,v); else {
+        v.id=uid();S.payments.push(v);
+        if(SAFE_API&&!canSeeMoney()) safeAddPayment(v);
+      }
     });
     return;
   }
