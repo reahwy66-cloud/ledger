@@ -6,58 +6,171 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 (function mobileUiBootstrap(){
   var link=document.createElement("link");
   link.rel="stylesheet";
-  link.href="mobile.css?v=20260920b";
+  link.href="mobile.css?v=20260920c";
   document.head.appendChild(link);
 
+  var ICONS={
+    flow:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-12h6V4h-6v4Z"/></svg>',
+    clients:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM8 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm8 1c-3.3 0-6 1.8-6 4v3h12v-3c0-2.2-2.7-4-6-4ZM8 14c-3.3 0-6 1.5-6 3.5V20h6v-3c0-1.1.5-2.1 1.4-3H8Z"/></svg>',
+    ledger:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 5h10V6H7v2Zm0 5h4v-2H7v2Zm6 0h4v-2h-4v2Zm-6 5h4v-2H7v2Zm6 0h4v-2h-4v2Z"/></svg>',
+    calendar:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v3h6V2h2v3h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2V2Zm12 8H5v9h14v-9ZM7 12h3v3H7v-3Z"/></svg>',
+    invoices:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15l-3-2-3 2-3-2-3 2-3-2-3 2V4a2 2 0 0 1 2-2h2Zm8 2v4h4l-4-4ZM6 11v2h10v-2H6Zm0 4v2h8v-2H6Z"/></svg>',
+    funding:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11h18v2H3v-2Zm2-4h14v2H5V7Zm2-4h10v2H7V3Zm0 12h10v2H7v-2Zm2 4h6v2H9v-2Z"/></svg>',
+    team:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7-1a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM9 13c-4 0-7 2-7 4.5V21h14v-3.5C16 15 13 13 9 13Zm7.5 0c-.8 0-1.6.1-2.3.3 2.3 1 3.8 2.5 3.8 4.2V21h4v-3c0-2.8-2.4-5-5.5-5Z"/></svg>',
+    costs:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4V4Zm3 4v2h10V8H7Zm0 4v2h6v-2H7Zm0 4v2h10v-2H7Z"/></svg>',
+    outside:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7h-2V6.4l-8.3 8.3-1.4-1.4L17.6 5H14V3ZM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/></svg>',
+    users:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"/></svg>',
+    setup:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19.4 13 .1-1-.1-1 2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1L15 3.5h-4l-.4 2.6a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11l-.1 1 .1 1-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.7 1l.4 2.6h4l.4-2.6a8 8 0 0 0 1.7-1l2.4 1 2-3.4-2.2-1.5ZM13 15a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/></svg>'
+  };
+
+  function activeTab(){
+    var b=document.querySelector(".tabs [aria-selected=true]");
+    return b&&b.dataset.tab||"flow";
+  }
+
+  function quickAction(tab){
+    return ({clients:"newclient",team:"newemp",ledger:"newwork",calendar:"newshoot"})[tab]||"newshoot";
+  }
+
+  function closeDrawer(){
+    var d=document.querySelector(".mobile-drawer");
+    var s=document.querySelector(".mobile-drawer-scrim");
+    if(d)d.classList.remove("open");
+    if(s)s.classList.remove("open");
+    document.body.classList.remove("mobile-menu-open");
+  }
+
+  function buildMobileShell(){
+    var wrap=document.querySelector("#app > .wrap");
+    var tabs=wrap&&wrap.querySelector(":scope > .tabs");
+    var mast=wrap&&wrap.querySelector(":scope > .mast");
+    if(!wrap||!tabs||!mast) return;
+
+    var tab=activeTab();
+    document.body.setAttribute("data-mobile-tab",tab);
+
+    var old=wrap.querySelector(":scope > .mobile-header");
+    if(old) old.remove();
+    var oldBottom=wrap.querySelector(":scope > .mobile-bottom-nav");
+    if(oldBottom) oldBottom.remove();
+    var oldDrawer=document.querySelector(".mobile-drawer");
+    if(oldDrawer) oldDrawer.remove();
+    var oldScrim=document.querySelector(".mobile-drawer-scrim");
+    if(oldScrim) oldScrim.remove();
+
+    var header=document.createElement("div");
+    header.className="mobile-header";
+    header.innerHTML=
+      '<button class="mobile-head-btn mobile-menu-btn" type="button" aria-label="Menu"><span></span><span></span><span></span></button>'+
+      '<div class="mobile-logo">'+(mast.querySelector(".stamp")?mast.querySelector(".stamp").outerHTML:"")+'</div>'+
+      '<button class="mobile-head-btn mobile-quick-btn" type="button" data-act="'+quickAction(tab)+'" aria-label="Quick add"><span>+</span></button>';
+    wrap.insertBefore(header,mast);
+
+    var main=["flow","clients","ledger","calendar"];
+    var labels={};
+    Array.from(tabs.querySelectorAll("[data-tab]")).forEach(function(b){labels[b.dataset.tab]=(b.textContent||"").trim();});
+
+    var bottom=document.createElement("nav");
+    bottom.className="mobile-bottom-nav";
+    bottom.setAttribute("aria-label","Primary");
+    bottom.innerHTML=main.filter(function(k){return labels[k];}).map(function(k){
+      return '<button type="button" data-tab="'+k+'" class="'+(tab===k?"active":"")+'" aria-current="'+(tab===k?"page":"false")+'">'+
+        (ICONS[k]||"")+'<span>'+labels[k]+'</span></button>';
+    }).join("");
+    wrap.appendChild(bottom);
+
+    var extras=Array.from(tabs.querySelectorAll("[data-tab]")).filter(function(b){return main.indexOf(b.dataset.tab)<0;});
+    var drawer=document.createElement("aside");
+    drawer.className="mobile-drawer";
+    drawer.setAttribute("aria-hidden","true");
+    drawer.innerHTML=
+      '<div class="mobile-drawer-head"><div class="mobile-drawer-brand">'+
+        (mast.querySelector(".stamp")?mast.querySelector(".stamp").outerHTML:"")+
+        '<div><b>'+(document.documentElement.lang==="en"?"Riwa Studio":"رِواء ستوديو")+'</b><small>'+(document.documentElement.lang==="en"?"More":"المزيد")+'</small></div></div>'+
+        '<button type="button" class="mobile-drawer-close" aria-label="Close">×</button></div>'+
+      '<div class="mobile-drawer-links">'+extras.map(function(b){
+        var k=b.dataset.tab;
+        return '<button type="button" data-tab="'+k+'" class="'+(tab===k?"active":"")+'">'+(ICONS[k]||"")+'<span>'+((b.textContent||"").trim())+'</span><i>‹</i></button>';
+      }).join("")+'</div>'+
+      '<div class="mobile-drawer-tools"></div>';
+
+    var drawerTools=drawer.querySelector(".mobile-drawer-tools");
+    var tools=mast.querySelector(".tools");
+    if(tools){
+      Array.from(tools.children).forEach(function(node){
+        drawerTools.appendChild(node.cloneNode(true));
+      });
+    }
+
+    var scrim=document.createElement("button");
+    scrim.type="button";
+    scrim.className="mobile-drawer-scrim";
+    scrim.setAttribute("aria-label","Close menu");
+
+    document.body.appendChild(scrim);
+    document.body.appendChild(drawer);
+
+    header.querySelector(".mobile-menu-btn").onclick=function(){
+      drawer.classList.add("open");
+      scrim.classList.add("open");
+      drawer.setAttribute("aria-hidden","false");
+      document.body.classList.add("mobile-menu-open");
+    };
+    drawer.querySelector(".mobile-drawer-close").onclick=closeDrawer;
+    scrim.onclick=closeDrawer;
+    drawer.addEventListener("click",function(e){
+      if(e.target.closest("[data-tab]")) setTimeout(closeDrawer,0);
+    });
+  }
+
   function prepareTables(){
-    document.querySelectorAll("table").forEach(function(table){
+    var tab=activeTab();
+    document.querySelectorAll("table").forEach(function(table,tableIndex){
       var headers=Array.from(table.querySelectorAll("thead th")).map(function(th){
         return (th.textContent||"").trim();
       });
       var rows=table.querySelectorAll("tbody tr");
       if(!rows.length) return;
-
       table.classList.add("mobile-card-table");
+      table.setAttribute("data-mobile-section",tab);
 
       rows.forEach(function(row){
         var cells=Array.from(row.children).filter(function(cell){return cell.tagName==="TD";});
+        if(row.classList.contains("sum")){
+          row.setAttribute("data-mobile-summary","1");
+        }
         var visibleCount=0;
-        var primarySet=false;
-
         cells.forEach(function(cell,index){
+          cell.removeAttribute("data-mobile-primary");
+          cell.removeAttribute("data-mobile-action");
+          cell.removeAttribute("data-mobile-empty");
           var label=headers[index]||"";
           var text=(cell.textContent||"").trim();
-          var hasControl=!!cell.querySelector("button,.btn,a,input,select");
-          var empty=!text && !hasControl;
-
+          var hasControl=!!cell.querySelector("button,.btn");
+          var empty=!text&&!hasControl;
           cell.setAttribute("data-mobile-label",label);
-          if(empty){
-            cell.setAttribute("data-mobile-empty","1");
-            return;
-          }
-
+          if(empty){cell.setAttribute("data-mobile-empty","1");return;}
           visibleCount++;
-
-          if(hasControl){
-            cell.setAttribute("data-mobile-action","1");
-          }else if(!primarySet){
-            cell.setAttribute("data-mobile-primary","1");
-            primarySet=true;
-          }
+          if(hasControl) cell.setAttribute("data-mobile-action","1");
         });
 
+        var primaryIndex=0;
+        if(tab==="ledger" && tableIndex===0 && cells.length>2) primaryIndex=2;
+        var primary=cells[primaryIndex];
+        if(primary && primary.getAttribute("data-mobile-empty")!=="1") primary.setAttribute("data-mobile-primary","1");
         row.setAttribute("data-mobile-count",String(visibleCount));
       });
     });
   }
 
-  function run(){ requestAnimationFrame(prepareTables); }
-
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",run,{once:true});
-  }else{
-    run();
+  function refresh(){
+    buildMobileShell();
+    prepareTables();
   }
+
+  function run(){requestAnimationFrame(refresh);}
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",run,{once:true});
+  else run();
 
   var host=document.getElementById("app")||document.body;
   var queued=false;
@@ -66,7 +179,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     queued=true;
     requestAnimationFrame(function(){
       queued=false;
-      prepareTables();
+      refresh();
     });
   }).observe(host,{childList:true,subtree:true});
 })();
