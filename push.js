@@ -6,7 +6,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 (function mobileUiBootstrap(){
   var link=document.createElement("link");
   link.rel="stylesheet";
-  link.href="mobile.css?v=20260920-glass-v2";
+  link.href="mobile.css?v=20260920-glass-v21";
   document.head.appendChild(link);
 
   var ICONS={
@@ -22,6 +22,14 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     users:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"/></svg>',
     setup:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19.4 13 .1-1-.1-1 2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1L15 3.5h-4l-.4 2.6a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11l-.1 1 .1 1-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.7 1l.4 2.6h4l.4-2.6a8 8 0 0 0 1.7-1l2.4 1 2-3.4-2.2-1.5ZM13 15a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/></svg>'
   };
+
+  function applyScheduledTheme(){
+    if(!window.matchMedia || !window.matchMedia("(max-width: 820px)").matches) return;
+    var h=new Date().getHours();
+    var th=(h>=7&&h<19)?"light":"dark";
+    document.documentElement.setAttribute("data-theme",th);
+    document.documentElement.setAttribute("data-auto-theme",th);
+  }
 
   function activeTab(){
     var b=document.querySelector(".tabs [aria-selected=true]");
@@ -207,6 +215,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
   }
 
   function refresh(){
+    applyScheduledTheme();
     buildMobileShell();
     prepareTables();
     bindGlassGestures();
@@ -215,6 +224,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
   function run(){requestAnimationFrame(refresh);}
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",run,{once:true});
   else run();
+  setInterval(applyScheduledTheme,60000);
 
   var host=document.getElementById("app")||document.body;
   var queued=false;
