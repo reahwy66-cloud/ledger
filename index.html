@@ -1192,7 +1192,7 @@ function seed(){return{
    entries:[]}]
 };}
 
-var S=seed(), TAB="flow", MONTH=ymNow(), SEL=null, SELE=null, LGTYPE="all", LGWHO="all", LGCUSTOMER="all", LGPERSON="all", CALDAY=todayISO(), SAFE_API=false, PENDING_PORTAL=[], PORTAL_POLL=null;
+var S=seed(), TAB="flow", MONTH=ymNow(), SEL=null, SELE=null, LGTYPE="all", LGWHO="all", LGCUSTOMER="all", LGPERSON="all", CALDAY=todayISO(), SAFE_API=false, PENDING_PORTAL=[], PORTAL_POLL=null, STUDIO_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 function isMobileUI(){return !!(window.matchMedia&&window.matchMedia("(max-width: 820px)").matches);}
 function save(){clearCalc();Store.save(S);queuePush();}
 
@@ -2234,6 +2234,25 @@ async function copyPortalAccess(code,url){
   var txt=url+"\n"+(LANG==="ar"?"رمز الدخول: ":"Access code: ")+code;
   try{await navigator.clipboard.writeText(txt);}catch(e){}
 }
+async function adminAccessToken(){
+  try{
+    if(!SB||!SB.auth) return "";
+    var r=await SB.auth.getSession();
+    return r&&r.data&&r.data.session&&r.data.session.access_token||"";
+  }catch(e){return "";}
+}
+async function studioApiPost(path,body){
+  var token=await adminAccessToken();
+  if(!token) throw new Error("not_signed_in");
+  var r=await fetch(STUDIO_API+path,{
+    method:"POST",
+    headers:{"content-type":"application/json","authorization":"Bearer "+token},
+    body:JSON.stringify(body||{})
+  });
+  var data={};try{data=await r.json()}catch(e){}
+  if(!r.ok) throw new Error(data.error||("HTTP "+r.status));
+  return data;
+}
 function notificationAppointments(){
   var today=todayISO();
   return (S.shoots||[]).filter(function(x){
@@ -2260,20 +2279,23 @@ function notificationsCenter(){
   var today=todayISO();
 
   var pendingHtml=pending.length?pending.map(function(x){
-    return '<div class="portal-review-row"><div class="portal-review-copy"><b>'+esc(x.employeeName||"—")+' · '+esc(x.customerName||"—")+'</b>'
+    return '<button class="portal-review-row portal-review-open" data-act="portalreviewopen" data-id="'+esc(x.id)+'">'
+      +'<div class="portal-review-copy"><b>'+esc(x.employeeName||"—")+' · '+esc(x.customerName||"—")+'</b>'
       +'<span>'+esc(portalTypeName(x.type))+' · '+n(x.qty||1)+'× · '+esc(x.date||"")+'</span>'
-      +(x.note?'<small>'+esc(x.note)+'</small>':'')+'</div>'
-      +'<div class="portal-review-actions"><button class="btn sm primary" data-act="portalapprove" data-id="'+esc(x.id)+'">'+(LANG==="ar"?"موافقة":"Approve")+'</button>'
-      +'<button class="btn sm ghost" data-act="portalreject" data-id="'+esc(x.id)+'">'+(LANG==="ar"?"رفض":"Reject")+'</button></div></div>';
+      +(x.note?'<small>'+esc(x.note)+'</small>':'')+'</div><span class="notification-chevron">‹</span></button>';
   }).join(""):'<div class="notification-empty">'+(LANG==="ar"?"ما في تسليمات بانتظار الموافقة.":"No pending deliveries.")+'</div>';
 
   var appointmentHtml=appts.length?appts.map(function(x){
     var c=S.customers.filter(function(z){return z.id===x.customerId;})[0];
     var e=S.employees.filter(function(z){return z.id===x.employeeId;})[0];
-    return '<button class="notification-appointment'+(x.date===today?" today":"")+'" data-act="notifcalendar" data-date="'+esc(x.date||"")+'">'
+    return '<div class="notification-appointment'+(x.date===today?" today":"")+'">'
+      +'<button class="notification-main" data-act="notifcalendar" data-date="'+esc(x.date||"")+'">'
       +'<span class="notification-date"><b>'+esc(x.time||"—")+'</b><small>'+(x.date===today?(LANG==="ar"?"اليوم":"Today"):esc(x.date||""))+'</small></span>'
       +'<span class="notification-copy"><b>'+esc(x.title||appointmentKindLabel(x.kind))+'</b><small>'+esc([appointmentKindLabel(x.kind),c&&c.name,e&&e.name].filter(Boolean).join(" · "))+'</small></span>'
-      +'<span class="notification-chevron">‹</span></button>';
+      +'</button><div class="notification-actions">'
+      +'<button class="btn sm primary" data-act="notifdone" data-id="'+esc(x.id)+'">'+(LANG==="ar"?"تم":"Done")+'</button>'
+      +'<button class="btn sm ghost danger" data-act="notifdelete" data-id="'+esc(x.id)+'">'+(LANG==="ar"?"حذف":"Delete")+'</button>'
+      +'</div></div>';
   }).join(""):'<div class="notification-empty">'+(LANG==="ar"?"ما في مواعيد قادمة.":"No upcoming appointments.")+'</div>';
 
   el("modalHost").innerHTML='<div class="scrim"><div class="modal notifications-modal"><div class="sheet-handle"></div>'
@@ -2288,6 +2310,36 @@ function portalTypeName(k){
   var en={video:"Video",post:"Post",design:"Design",shoot:"Shoot",voice:"Voice",script:"Script",task:"Task"};
   return (LANG==="ar"?ar:en)[k]||k||"—";
 }
+function portalReviewConfirm(id){
+  var x=(PENDING_PORTAL||[]).filter(function(r){return r.id===id;})[0];
+  if(!x) return notificationsCenter();
+  el("modalHost").innerHTML='<div class="scrim"><div class="modal portal-review-modal"><div class="sheet-handle"></div>'
+    +'<div class="section-heading"><div><h3>'+(LANG==="ar"?"تأكيد التسليم":"Confirm delivery")+'</h3><p class="sub">'+esc(x.employeeName||"—")+' → '+esc(x.customerName||"—")+'</p></div></div>'
+    +'<div class="portal-confirm-card"><div><span>'+(LANG==="ar"?"نوع العمل":"Work type")+'</span><b>'+esc(portalTypeName(x.type))+'</b></div>'
+    +'<div><span>'+(LANG==="ar"?"الكمية":"Quantity")+'</span><b class="num">'+n(x.qty||1)+'</b></div>'
+    +'<div><span>'+(LANG==="ar"?"التاريخ":"Date")+'</span><b>'+esc(x.date||"")+'</b></div>'
+    +(x.note?'<div class="full"><span>'+(LANG==="ar"?"ملاحظة":"Note")+'</span><b>'+esc(x.note)+'</b></div>':'')+'</div>'
+    +'<div class="portal-confirm-actions"><button class="btn primary" data-act="portalapprove" data-id="'+esc(x.id)+'">'+(LANG==="ar"?"تأكيد والموافقة":"Confirm & approve")+'</button>'
+    +'<button class="btn ghost danger" data-act="portalreject" data-id="'+esc(x.id)+'">'+(LANG==="ar"?"رفض التسليم":"Reject")+'</button>'
+    +'<button class="btn ghost" data-act="notifications">'+(LANG==="ar"?"رجوع":"Back")+'</button></div></div></div>';
+}
+async function appointmentNotificationAction(id,action){
+  var x=(S.shoots||[]).filter(function(a){return a.id===id;})[0];
+  if(!x) return;
+  if(action==="delete"&&!window.confirm(LANG==="ar"?"حذف هذا الموعد نهائياً؟":"Delete this appointment permanently?")) return;
+  if(action==="done"){
+    x.status="done";
+    x.completedAt=new Date().toISOString();
+    save();
+    try{await studioApiPost("/appointments/complete",{id:id});}catch(e){}
+  }else{
+    S.shoots=S.shoots.filter(function(a){return a.id!==id;});
+    save();
+    try{await studioApiPost("/appointments/delete",{id:id});}catch(e){}
+  }
+  render();
+  notificationsCenter();
+}
 function portalInbox(){
   var rows=PENDING_PORTAL||[];
   var body=rows.length?rows.map(function(x){
@@ -2299,20 +2351,24 @@ function portalInbox(){
   }).join(""):'<div class="empty">'+(LANG==="ar"?"ما في طلبات معلّقة.":"No pending submissions.")+'</div>';
   el("modalHost").innerHTML='<div class="scrim"><div class="modal portal-review-modal"><div class="sheet-handle"></div><div class="section-heading"><div><h3>'+(LANG==="ar"?"طلبات التسليم":"Delivery requests")+'</h3><p class="sub">'+(LANG==="ar"?"ما بيدخل أي تسليم بالحساب قبل موافقتك.":"Nothing enters the ledger before you approve it.")+'</p></div><span class="pill">'+rows.length+'</span></div><div class="portal-review-list">'+body+'</div></div></div>';
 }
-async function reviewPortalSubmission(id,action){
+async async function reviewPortalSubmission(id,action){
   if(!SB||!amOwner()) return;
   var note=null;
   if(action==="reject"){
     note=window.prompt(LANG==="ar"?"سبب الرفض (اختياري)":"Rejection reason (optional)","")||"";
   }
-  var r=await SB.rpc("portal_review_submission",{p_id:id,p_action:action,p_note:note});
-  if(r&&r.error){
-    alert((LANG==="ar"?"تعذّر تحديث الطلب: ":"Could not update request: ")+(r.error.message||r.error));
-    return;
+  try{
+    await studioApiPost("/portal/submissions/review",{id:id,action:action,note:note||""});
+  }catch(apiError){
+    var r=await SB.rpc("portal_review_submission",{p_id:id,p_action:action,p_note:note});
+    if(r&&r.error){
+      alert((LANG==="ar"?"تعذّر تحديث الطلب: ":"Could not update request: ")+(r.error.message||r.error));
+      return;
+    }
   }
   await pull();
   render();
-  if(PENDING_PORTAL.length) portalInbox(); else el("modalHost").innerHTML="";
+  if(PENDING_PORTAL.length) notificationsCenter(); else el("modalHost").innerHTML="";
 }
 /* ═════════════ WORK ═════════════ */
 function vWork(){
@@ -3780,6 +3836,9 @@ document.addEventListener("click",function(ev){
   }
   else if(act==="notifications"){notificationsCenter();}
   else if(act==="portalinbox"){notificationsCenter();}
+  else if(act==="portalreviewopen"){portalReviewConfirm(id);}
+  else if(act==="notifdone"){appointmentNotificationAction(id,"done");}
+  else if(act==="notifdelete"){appointmentNotificationAction(id,"delete");}
   else if(act==="notifcalendar"){
     CALDAY=a.dataset.date||todayISO();
     TAB="calendar";
