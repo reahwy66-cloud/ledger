@@ -849,3 +849,75 @@
   .mobile-drawer-links button,
   .btn,.chip,.day,.rolebtn{transition:none !important}
 }
+
+
+/* V2.1 — fading glass header + scheduled day/night polish */
+@media (max-width:820px){
+  .mobile-header{
+    isolation:isolate;
+    background:transparent !important;
+    border-bottom:0 !important;
+    backdrop-filter:none !important;
+    -webkit-backdrop-filter:none !important;
+  }
+  .mobile-header::before{
+    content:"";
+    position:absolute;
+    z-index:-1;
+    inset:-1px -14px -18px;
+    pointer-events:none;
+    background:linear-gradient(
+      to bottom,
+      var(--ground) 0%,
+      color-mix(in srgb,var(--ground) 94%,transparent) 28%,
+      color-mix(in srgb,var(--ground) 70%,transparent) 58%,
+      color-mix(in srgb,var(--ground) 28%,transparent) 82%,
+      transparent 100%
+    );
+    backdrop-filter:blur(30px) saturate(170%);
+    -webkit-backdrop-filter:blur(30px) saturate(170%);
+    -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 45%,rgba(0,0,0,.72) 68%,transparent 100%);
+    mask-image:linear-gradient(to bottom,#000 0%,#000 45%,rgba(0,0,0,.72) 68%,transparent 100%);
+  }
+  .mobile-header::after{
+    content:"";
+    position:absolute;
+    z-index:-1;
+    inset:0 -14px -12px;
+    pointer-events:none;
+    background:linear-gradient(to bottom,rgba(255,255,255,.035),transparent 78%);
+    opacity:.65;
+  }
+
+  /* More luminous glass during the scheduled light theme */
+  html[data-theme="light"]{
+    --glass-bg:rgba(255,255,255,.52);
+    --glass-bg-strong:rgba(255,255,255,.66);
+    --glass-line:rgba(35,44,39,.11);
+    --glass-highlight:rgba(255,255,255,.78);
+    --glass-shadow:0 18px 48px rgba(42,53,47,.11),inset 0 1px 0 rgba(255,255,255,.82);
+  }
+  html[data-theme="light"] body{
+    background:
+      radial-gradient(110% 65% at 50% -12%,color-mix(in srgb,var(--brand) 10%,transparent),transparent 62%),
+      radial-gradient(70% 50% at 105% 25%,color-mix(in srgb,var(--cyan) 8%,transparent),transparent 72%),
+      var(--ground);
+  }
+  html[data-theme="light"] .mobile-bottom-nav,
+  html[data-theme="light"] .mobile-drawer,
+  html[data-theme="light"] .mobile-head-btn,
+  html[data-theme="light"] .card,
+  html[data-theme="light"] .ledger,
+  html[data-theme="light"] .kpi,
+  html[data-theme="light"] table.mobile-card-table tbody tr{
+    box-shadow:0 16px 44px rgba(45,56,50,.10),inset 0 1px 0 rgba(255,255,255,.72);
+  }
+
+  /* Deeper contrast after 19:00 */
+  html[data-theme="dark"] body{
+    background:
+      radial-gradient(110% 65% at 50% -12%,color-mix(in srgb,var(--brand) 17%,transparent),transparent 62%),
+      radial-gradient(65% 48% at 102% 30%,color-mix(in srgb,var(--cyan) 9%,transparent),transparent 72%),
+      var(--ground);
+  }
+}
