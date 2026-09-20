@@ -106,3 +106,90 @@ button{cursor:pointer}
   .top-actions{flex-wrap:wrap;justify-content:flex-end}
   .staff-push-btn{order:3;width:100%}
 }
+
+
+/* Portal V3.1 — staff delivery form alignment */
+.work-submit-form{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  grid-template-areas:
+    "type customer"
+    "role role"
+    "date qty"
+    "note note"
+    "actions actions";
+  gap:12px 14px;
+  align-items:start;
+}
+.work-submit-form .work-customer{grid-area:customer}
+.work-submit-form .work-type{grid-area:type}
+.work-submit-form .work-role-hint{grid-area:role}
+.work-submit-form .work-qty{grid-area:qty}
+.work-submit-form .work-date{grid-area:date}
+.work-submit-form .work-note{grid-area:note}
+.work-submit-form .work-submit-actions{grid-area:actions}
+.work-submit-form .field{min-width:0}
+.work-submit-form .field label{
+  min-height:18px;
+  display:flex;
+  align-items:center;
+}
+.work-submit-form .field input,
+.work-submit-form .field select{
+  height:56px;
+  min-height:56px;
+}
+.work-submit-form .field textarea{
+  min-height:118px;
+}
+.work-submit-form .work-role-hint{
+  margin-top:-2px;
+  padding:0 2px;
+  color:var(--mute);
+  font-size:10.5px;
+  line-height:1.55;
+}
+.work-submit-form .work-role-hint b{
+  color:var(--bone);
+  font-weight:500;
+}
+.work-submit-form .work-date input{
+  direction:ltr;
+  text-align:left;
+}
+.work-submit-form .work-qty input{
+  text-align:start;
+}
+.work-submit-actions{
+  display:flex;
+  align-items:flex-start;
+  justify-content:flex-start;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.work-submit-actions .error{
+  flex:1 1 100%;
+  margin-top:0;
+}
+@media(max-width:700px){
+  .work-submit-form{
+    grid-template-columns:1fr;
+    grid-template-areas:
+      "customer"
+      "type"
+      "role"
+      "qty"
+      "date"
+      "note"
+      "actions";
+    gap:11px;
+  }
+  .work-submit-form .field input,
+  .work-submit-form .field select{
+    height:54px;
+    min-height:54px;
+  }
+  .work-submit-actions .btn{
+    width:100%;
+  }
+}
