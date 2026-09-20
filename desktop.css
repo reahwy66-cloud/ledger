@@ -838,3 +838,63 @@ input,select,textarea{border-radius:12px;background:color-mix(in srgb,var(--grou
 .portal-alert-card>span{display:grid;gap:3px;min-width:0}.portal-alert-card b{font-size:14px}.portal-alert-card small{font-size:11px;color:var(--mute);line-height:1.5}.portal-alert-card strong{flex:none;min-width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:color-mix(in srgb,var(--coral) 14%,transparent);color:var(--coral)}
 .portal-review-modal{max-width:620px}.portal-review-list{display:grid;gap:9px;margin-top:14px}.portal-review-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px;border:1px solid var(--gl);border-radius:16px;background:rgba(255,255,255,.02)}.portal-review-copy{min-width:0;display:grid;gap:4px}.portal-review-copy b{font-size:13.5px}.portal-review-copy span,.portal-review-copy small{font-size:11px;color:var(--mute);line-height:1.5}.portal-review-actions{display:flex;gap:7px;flex:none}
 }
+
+
+/* V3.9 — desktop unified notification center */
+@media(min-width:821px){
+  .mast .portal-notify-chip{
+    display:inline-flex!important;
+    position:relative;
+    min-width:44px;
+    justify-content:center;
+    color:var(--bone)!important;
+  }
+  .portal-bell-icon{display:grid;place-items:center}
+  .portal-bell-icon svg{width:18px;height:18px;fill:currentColor}
+  .notify-count{
+    min-width:20px;height:20px;display:grid;place-items:center;
+    padding:0 5px;border-radius:999px;
+    background:var(--coral);color:#fff;
+    font:700 9px/1 var(--mono);
+  }
+  .notifications-modal{
+    width:min(680px,calc(100vw - 48px));
+    max-height:min(76vh,760px);
+    overflow:auto;
+  }
+  .notification-total{
+    min-width:36px;height:36px;display:grid;place-items:center;
+    border-radius:12px;background:color-mix(in srgb,var(--coral) 13%,transparent);
+    color:var(--coral);
+  }
+  .notification-section{margin-top:20px}
+  .notification-section-title{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:10px}
+  .notification-section-title b{font-size:14px}
+  .notification-appointments{display:grid;gap:9px}
+  .notification-appointment{
+    width:100%;display:grid;grid-template-columns:74px minmax(0,1fr) 20px;gap:14px;align-items:center;
+    padding:14px;border:1px solid var(--dgl);border-radius:16px;
+    background:rgba(255,255,255,.02);color:var(--bone);text-align:start;font-family:inherit;
+    transition:transform .2s var(--dspring),background .2s ease,border-color .2s ease;
+  }
+  .notification-appointment:hover{
+    transform:translateY(-1px);
+    background:color-mix(in srgb,var(--brand) 7%,var(--dg1));
+    border-color:color-mix(in srgb,var(--brand) 22%,var(--dgl));
+  }
+  .notification-appointment.today{
+    background:color-mix(in srgb,var(--brand) 10%,var(--dg1));
+    border-color:color-mix(in srgb,var(--brand) 28%,var(--dgl));
+  }
+  .notification-date{display:grid;gap:3px;text-align:center}
+  .notification-date b{font:600 12px/1.2 var(--mono)}
+  .notification-date small{font-size:10px;color:var(--mute)}
+  .notification-copy{display:grid;gap:4px;min-width:0}
+  .notification-copy b{font-size:13.5px}
+  .notification-copy small{font-size:11px;color:var(--mute)}
+  .notification-chevron{font-size:18px;color:var(--mute)}
+  .notification-empty{
+    padding:18px 14px;text-align:center;color:var(--mute);font-size:12px;
+    border:1px dashed var(--dgl);border-radius:15px;
+  }
+}
