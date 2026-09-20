@@ -1,7 +1,47 @@
-/* رِواء ستوديو — Web Push client */
+/* رِواء ستوديو — Web Push client + mobile UI bootstrap */
 (function(){
 "use strict";
 var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
+
+/* Keep the desktop app untouched: the extra stylesheet is entirely media-query scoped. */
+(function mobileUiBootstrap(){
+  var link=document.createElement("link");
+  link.rel="stylesheet";
+  link.href="mobile.css?v=20260920";
+  document.head.appendChild(link);
+
+  function labelTables(){
+    document.querySelectorAll("table").forEach(function(table){
+      var headers=Array.from(table.querySelectorAll("thead th")).map(function(th){
+        return (th.textContent||"").trim();
+      });
+      table.querySelectorAll("tbody tr").forEach(function(row){
+        Array.from(row.children).forEach(function(cell,index){
+          if(cell.tagName!=="TD") return;
+          cell.setAttribute("data-mobile-label",headers[index]||"");
+        });
+      });
+    });
+  }
+
+  function run(){ requestAnimationFrame(labelTables); }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",run,{once:true});
+  }else{
+    run();
+  }
+
+  var host=document.getElementById("app")||document.body;
+  var queued=false;
+  new MutationObserver(function(){
+    if(queued) return;
+    queued=true;
+    requestAnimationFrame(function(){
+      queued=false;
+      labelTables();
+    });
+  }).observe(host,{childList:true,subtree:true});
+})();
 
 function b64ToBytes(value){
   var pad="=".repeat((4-value.length%4)%4);
