@@ -1970,7 +1970,7 @@ function vClient(){
       +(wp?'<button class="btn" data-act="newpay" data-id="'+c.id+'">'+t("cd.pay")+'</button>':'')
       +(amOwner()&&MODE==="cloud"?'<button class="btn" data-act="portalcode" data-kind="client" data-id="'+c.id+'" data-name="'+esc(c.name)+'">'+(LANG==="ar"?"رمز العميل":"Client code")+'</button>':'')
       +(w?'<button class="btn" data-act="editclient" data-id="'+c.id+'">'+t("cd.rename")+'</button>':'')+'</div>' 
-   +'</div>';
+   +'</div></div>';
 
   h+='<div class="kpis">'
    +kpi(st.balance>0.005?"out":"net",t(state.k),money(state.v),t("cd.stmt"))
@@ -2119,7 +2119,7 @@ function vEmployee(){
    +(wa?'<button class="btn primary" data-act="newpayout" data-id="'+e.id+'">'+t("po.add")+'</button>':'')
    +(wa?'<button class="btn" data-act="newadv" data-id="'+e.id+'">'+t("ad.take")+'</button>':'')
    +(amOwner()&&MODE==="cloud"?'<button class="btn" data-act="portalcode" data-kind="staff" data-id="'+e.id+'" data-name="'+esc(e.name)+'">'+(LANG==="ar"?"رمز البوابة":"Portal code")+'</button>':'')
-   +(w?'<button class="btn" data-act="editemp" data-id="'+e.id+'">'+t("edit")+'</button>':'')+'</div></div>';
+   +(w?'<button class="btn" data-act="editemp" data-id="'+e.id+'">'+t("edit")+'</button>':'')+'</div></div></div>';
 
   var owedAll=lg.rows.reduce(function(a,r){return a+r.payout;},0);
   var paidAll=paidTo(e.id,MONTH);
@@ -2127,7 +2127,7 @@ function vEmployee(){
   var wcE=workCounts(e.id,MONTH,e.id===calc(MONTH).rentEmp);
   h+='<div class="sec card"><span class="eyebrow">'+t("tm.work",{m:monthName(MONTH)})+'</span>'
    +'<div style="margin-top:10px">'+deliveredChips(wcE)+'</div></div>';
-  h+='<div class="kpis" style="margin-top:22px">'
+  h+='<div class="kpis">'
    +kpi("net",t("th.net"),money(cur.payout),t("emp.thismonth",{m:monthName(MONTH)}))
    +kpi("in",t("th.earned"),money(cur.earned),monthName(MONTH))
    +kpi("out",t("th.adv"),money(cur.adv),monthName(MONTH))
