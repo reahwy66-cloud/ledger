@@ -10,10 +10,14 @@ create table if not exists public.portal_access (
   kind text not null check (kind in ('staff','client')),
   entity_id text not null,
   code_hash text not null,
+  code_value text,
   active boolean not null default true,
   updated_at timestamptz not null default now(),
   unique(kind,entity_id)
 );
+
+alter table public.portal_access
+  add column if not exists code_value text;
 
 create table if not exists public.portal_sessions (
   token_hash text primary key,
@@ -35,6 +39,7 @@ language plpgsql security definer set search_path=public as $$
 declare
   code text;
   exists_ok boolean;
+  existing_id uuid;
 begin
   if not public.is_owner() then raise exception 'not_authorized'; end if;
   if p_kind not in ('staff','client') then raise exception 'bad_kind'; end if;
@@ -46,15 +51,38 @@ begin
   end if;
   if not exists_ok then raise exception 'entity_not_found'; end if;
 
+  select id, code_value
+    into existing_id, code
+  from public.portal_access
+  where kind=p_kind and entity_id=p_entity_id
+  limit 1;
+
+  -- Stable code: if this person already has one, always return the same code.
+  if existing_id is not null and code is not null and code ~ '^[0-9]{8}$' then
+    update public.portal_access
+      set active=true, updated_at=now()
+      where id=existing_id;
+    return code;
+  end if;
+
+  -- Legacy rows only had a hash, so generate one code once, persist it,
+  -- and from then on always return this same code.
   code := lpad((floor(random()*90000000)+10000000)::bigint::text,8,'0');
 
-  insert into public.portal_access(kind,entity_id,code_hash,active,updated_at)
-  values(p_kind,p_entity_id,encode(extensions.digest(code,'sha256'),'hex'),true,now())
+  insert into public.portal_access(kind,entity_id,code_hash,code_value,active,updated_at)
+  values(
+    p_kind,
+    p_entity_id,
+    encode(extensions.digest(code,'sha256'),'hex'),
+    code,
+    true,
+    now()
+  )
   on conflict(kind,entity_id) do update
-    set code_hash=excluded.code_hash,active=true,updated_at=now();
-
-  delete from public.portal_sessions
-  where access_id=(select id from public.portal_access where kind=p_kind and entity_id=p_entity_id);
+    set code_hash=excluded.code_hash,
+        code_value=excluded.code_value,
+        active=true,
+        updated_at=now();
 
   return code;
 end $$;
