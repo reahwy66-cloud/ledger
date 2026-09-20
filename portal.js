@@ -418,10 +418,12 @@ function clientArchiveSection(){
   return '<section class="card full archive-card"><div class="card-head-actions"><div><h2>أرشيف الملفات</h2><p class="sub">كل الملفات المعتمدة متاحة للمشاهدة والتحميل بأي وقت.</p></div><span class="pill">'+files.length+'</span></div>'
     +(files.length?'<div class="archive-grid">'+files.map(function(w){
       var f=w.file||{},mime=String(f.mimeType||""),preview="";
-      if(mime.indexOf("image/")===0&&f.webViewLink){
-        preview='<div class="archive-preview image"><img src="'+esc(f.thumbnailLink||"")+'" alt="'+esc(f.name||"")+'"></div>';
-      }else if(mime.indexOf("video/")===0){
-        preview='<div class="archive-preview video"><span>▶</span><small>فيديو</small></div>';
+      if(mime.indexOf("video/")===0&&f.previewUrl){
+        preview='<div class="archive-preview video embedded"><iframe src="'+esc(f.previewUrl)+'" allow="autoplay; fullscreen" allowfullscreen loading="lazy" title="'+esc(f.name||"فيديو")+'"></iframe></div>';
+      }else if(mime.indexOf("image/")===0){
+        preview='<div class="archive-preview image"><img src="'+esc(f.thumbnailLink||f.webViewLink||"")+'" alt="'+esc(f.name||"")+'" loading="lazy"></div>';
+      }else if((mime.indexOf("pdf")>=0||mime.indexOf("document")>=0)&&f.previewUrl){
+        preview='<div class="archive-preview document embedded"><iframe src="'+esc(f.previewUrl)+'" loading="lazy" title="'+esc(f.name||"ملف")+'"></iframe></div>';
       }else{
         preview='<div class="archive-preview file"><span>▤</span><small>'+esc(fileKindLabel(f))+'</small></div>';
       }
