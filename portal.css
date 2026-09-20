@@ -85,3 +85,5 @@ button{cursor:pointer}
   .card-head-actions,.pricing-head{align-items:flex-start;flex-direction:column}
   .card-head-actions .btn{width:100%}
 }
+
+.role-work-hint{display:block;margin-top:2px;color:var(--mute);font-size:10px;line-height:1.5}
