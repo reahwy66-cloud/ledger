@@ -61,6 +61,7 @@ begin
     'qty',q,
     'editorId',eid,
     'note',nullif(trim(coalesce(p_data->>'note','')),''),
+    'file',case when jsonb_typeof(p_data->'file')='object' then p_data->'file' else null end,
     'amount','',
     'charge',''
   ));
@@ -105,7 +106,7 @@ begin
     'work',coalesce((
       select jsonb_agg(jsonb_build_object('id',id) || jsonb_strip_nulls(jsonb_build_object(
         'date',data->>'date','customerId',data->>'customerId','type',data->>'type',
-        'qty',data->'qty','note',data->>'note','amount',data->'amount'
+        'qty',data->'qty','note',data->>'note','file',data->'file','amount',data->'amount'
       )) order by data->>'date' desc)
       from public.work
       where data->>'editorId'=eid
