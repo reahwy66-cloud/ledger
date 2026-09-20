@@ -1701,7 +1701,7 @@ function invoiceForm(inv,custId){
     if(inv)Object.assign(inv,v);else{v.id=uid();v.createdAt=v.updatedAt;S.invoices.push(v);}
   });
 }
-function vInvoices(){
+function vInvoicesDesktop(){
   var w=can("invoices"), rows=(S.invoices||[]).slice().sort(function(a,b){return (a.date||"")<(b.date||"")?1:-1;});
   var h='<div class="sec"><div class="rowhead"><div><h2>'+t("inv.list")+'</h2><p class="sub" style="margin:0">'+t("inv.listS")+'</p></div>'
     +(w&&S.customers.length?'<button class="btn primary" data-act="newinvoice">'+t("inv.new")+'</button>':'')+'</div>'
@@ -1716,9 +1716,23 @@ function vInvoices(){
   });
   return h+'</tbody></table></div></div></div>';
 }
+function vInvoicesMobile(){
+  var w=can("invoices"),rows=(S.invoices||[]).slice().sort(function(a,b){return (a.date||"")<(b.date||"")?1:-1;});
+  var h='<div class="sec mobile-list-page"><div class="page-heading"><div><h2>'+t("inv.list")+'</h2><p class="sub">'+t("inv.listS")+'</p></div>'
+    +(w&&S.customers.length?'<button class="icon-action" data-act="newinvoice">+</button>':'')+'</div><div class="entity-list">';
+  if(!rows.length)h+='<div class="agenda-empty">'+t("inv.empty")+'</div>';
+  rows.forEach(function(inv){
+    var c=S.customers.filter(function(x){return x.id===inv.customerId;})[0],st=invoiceState(inv),total=invoiceTotal(inv),paid=invoicePaid(inv);
+    h+='<div class="invoice-row"><div class="invoice-head"><div><b class="num">'+esc(inv.number||inv.id)+'</b><span>'+esc(c?c.name:"—")+'</span></div><span class="pill '+(st==="paid2"?"on":(st==="sent"?"amb":""))+'">'+t("inv."+st)+'</span></div>'
+      +'<div class="invoice-values"><span><small>'+t("inv.total")+'</small><b class="num">'+money(total)+'</b></span><span><small>'+t("th.paid")+'</small><b class="num pos">'+money(paid)+'</b></span></div>'
+      +'<div class="inline-actions"><button class="btn sm" data-act="printinvoice" data-id="'+inv.id+'">'+t("inv.open")+'</button>'+(w?'<button class="btn sm ghost" data-act="editinvoice" data-id="'+inv.id+'">'+t("edit")+'</button>':'')+'</div></div>';
+  });
+  return h+'</div></div>';
+}
+function vInvoices(){return isMobileUI()?vInvoicesMobile():vInvoicesDesktop();}
 
 /* ═════════════ AD FUNDING ═════════════ */
-function vFunding(){
+function vFundingDesktop(){
   var w=can("funding"), rows=(S.fundings||[]).slice().sort(function(a,b){return (a.date||"")<(b.date||"")?1:-1;});
   var h='<div class="sec"><div class="rowhead"><div><h2>'+t("fund.t")+'</h2><p class="sub" style="margin:0">'+t("fund.n")+'</p></div>'
     +(w?'<button class="btn primary" data-act="newfunding">'+t("fund.add")+'</button>':'')+'</div>'
@@ -1736,6 +1750,19 @@ function vFunding(){
   });
   return h+'</tbody></table></div></div></div>';
 }
+function vFundingMobile(){
+  var w=can("funding"),rows=(S.fundings||[]).slice().sort(function(a,b){return (a.date||"")<(b.date||"")?1:-1;});
+  var h='<div class="sec mobile-list-page"><div class="page-heading"><div><h2>'+t("fund.t")+'</h2><p class="sub">'+t("fund.n")+'</p></div>'+(w?'<button class="icon-action" data-act="newfunding">+</button>':'')+'</div><div class="entity-list">';
+  if(!rows.length)h+='<div class="agenda-empty">'+t("fund.empty")+'</div>';
+  rows.forEach(function(x){
+    var c=S.customers.filter(function(y){return y.id===x.customerId;})[0],total=fundingTotal(x),paid=fundingPaid(x),state=paid>=total-.005?"paid":(paid>0?"partial":"unpaid");
+    h+='<div class="invoice-row"><div class="invoice-head"><div><b>'+esc(c?c.name:"—")+'</b><span>'+esc(x.platform||"Meta")+' · '+esc(x.date||"")+'</span></div><span class="pill '+(state==="paid"?"on":(state==="partial"?"amb":""))+'">'+t("fund."+state)+'</span></div>'
+      +'<div class="invoice-values"><span><small>'+t("fund.total")+'</small><b class="num">'+money(total)+'</b></span><span><small>'+t("th.paid")+'</small><b class="num pos">'+money(paid)+'</b></span></div>'
+      +(w?'<div class="inline-actions"><button class="btn sm primary" data-act="payfunding" data-id="'+x.id+'">'+t("fund.pay")+'</button><button class="btn sm ghost" data-act="editfunding" data-id="'+x.id+'">'+t("edit")+'</button></div>':'')+'</div>';
+  });
+  return h+'</div></div>';
+}
+function vFunding(){return isMobileUI()?vFundingMobile():vFundingDesktop();}
 
 /* ═════════════ CLIENTS ═════════════ */
 function vClients(){
@@ -1989,7 +2016,7 @@ function vClient(){
 }
 
 /* ═════════════ TEAM ═════════════ */
-function vTeam(){
+function vTeamDesktop(){
   if(SELE) return vEmployee();
   var w=can("team"), wa=can("advances");
   var h='<div class="sec"><div class="rowhead"><div><h2>'+t("tm.t")+'</h2>'
@@ -2045,6 +2072,31 @@ function vTeam(){
   h+='<div class="note" style="margin-top:14px">'+t("part.expl")+'</div></div>';
   return h;
 }
+function vTeamMobile(){
+  if(SELE)return vEmployee();
+  var w=can("team"),wa=can("advances"),r=calc(MONTH),ownerId=r.rentEmp;
+  var h='<div class="sec mobile-list-page"><div class="page-heading"><div><h2>'+t("tm.t")+'</h2><p class="sub">'+(w?t("tm.s"):t("readonly"))+'</p></div>'
+    +'<div class="heading-actions">'+(wa?'<button class="icon-action" data-act="newadv">−</button>':'')+(w?'<button class="icon-action" data-act="newemp">+</button>':'')+'</div></div>'
+    +'<div class="entity-list">';
+  if(!S.employees.length)h+='<div class="agenda-empty">—</div>';
+  S.employees.forEach(function(e){
+    var lg=empLedger(e,MONTH).cur,wc=workCounts(e.id,MONTH,e.id===ownerId);
+    var delivered=Object.keys(wc).reduce(function(a,k){return a+(+wc[k]||0);},0);
+    h+='<button class="entity-row" data-act="openemp" data-id="'+e.id+'"><span class="entity-avatar">'+esc((e.name||"?").charAt(0))+'</span>'
+      +'<span class="entity-copy"><b>'+esc(e.name)+'</b><small>'+esc(e.role||t("sec.team"))+' · '+delivered+' '+t("th.deliv")+'</small></span>'
+      +'<span class="entity-money"><small>'+t("th.net")+'</small><b class="num '+(lg.carryOut?"neg":"")+'">'+(lg.carryOut?t("ad.owes")+" "+money(lg.carryOut):money(lg.payout))+'</b></span><span class="chev">‹</span></button>';
+  });
+  h+='</div>';
+  var pr=r.partners||[];
+  if(pr.length){
+    h+='<details class="glass-disclosure"><summary><span>'+t("draw.t")+'</span><b>'+pr.length+'</b></summary><div class="disclosure-body">';
+    pr.forEach(function(pn){var L=empLedger(pn.e,MONTH),cur=L.cur,owed=L.rows.reduce(function(a,x){return a+x.payout;},0)-paidTo(pn.e.id,MONTH);
+      h+='<div class="detail-row"><span>'+esc(pn.e.name)+' · '+pn.pct+'%</span><b class="num">'+money(Math.max(0,owed))+'</b></div>';});
+    h+='</div></details>';
+  }
+  return h+'</div>';
+}
+function vTeam(){return isMobileUI()?vTeamMobile():vTeamDesktop();}
 
 /* ══════ one person's account ══════ */
 function vEmployee(){
@@ -2144,7 +2196,7 @@ function vWork(){
 }
 
 /* ═════════════ COSTS ═════════════ */
-function vCosts(){
+function vCostsDesktop(){
   var w=can("costs"),r=calc(MONTH);
   var h='<div class="sec"><div class="rowhead"><div><h2>'+t("cs.t",{m:monthName(MONTH)})+'</h2>'
    +'<p class="sub" style="margin:0">'+(w?t("cs.s"):t("readonly"))+'</p></div>'
@@ -2162,6 +2214,17 @@ function vCosts(){
   return h+'</tbody></table></div></div>'
    +'<div class="note" style="margin-top:14px">'+t("cs.note")+'</div></div>';
 }
+function vCostsMobile(){
+  var w=can("costs"),r=calc(MONTH);
+  var h='<div class="sec mobile-list-page"><div class="page-heading"><div><h2>'+t("cs.t",{m:monthName(MONTH)})+'</h2><p class="sub">'+(w?t("cs.s"):t("readonly"))+'</p></div>'+(w?'<button class="icon-action" data-act="newcost">+</button>':'')+'</div>'
+    +'<section class="mobile-hero compact-hero"><div class="hero-label">'+t("cs.tot")+'</div><div class="hero-value num neg">−'+money(r.opex)+'</div></section><div class="entity-list">';
+  if(!r.costs.length)h+='<div class="agenda-empty">'+t("cs.none")+'</div>';
+  r.costs.forEach(function(x){
+    h+='<'+(w?'button':'div')+' class="cost-row"'+(w?' data-act="editcost" data-id="'+x.id+'"':'')+'><span class="cost-icon">−</span><span class="entity-copy"><b>'+esc(x.note||t("c."+x.category))+'</b><small>'+t("c."+x.category)+' · '+esc(x.date)+(x.recurring?' · '+t("f.repeats"):'')+'</small></span><b class="num neg">−'+money(x.amount)+'</b>'+(w?'<span class="chev">‹</span>':'')+'</'+(w?'button':'div')+'>';
+  });
+  return h+'</div><div class="note">'+t("cs.note")+'</div></div>';
+}
+function vCosts(){return isMobileUI()?vCostsMobile():vCostsDesktop();}
 
 /* ═════════════ CALENDAR ═════════════ */
 function vCalendarDesktop(){
