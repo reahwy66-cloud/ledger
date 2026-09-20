@@ -631,3 +631,30 @@ input,select,textarea{border-radius:12px;background:color-mix(in srgb,var(--grou
     min-height:0;
   }
 }
+
+@media(min-width:821px){
+.portal-code-modal .portal-code-value{
+  margin:18px 0 12px;
+  padding:17px;
+  border:1px solid var(--gl);
+  border-radius:16px;
+  background:color-mix(in srgb,var(--brand) 10%,transparent);
+  font-size:32px;
+  font-weight:600;
+  letter-spacing:.16em;
+  text-align:center;
+  direction:ltr;
+}
+.portal-code-modal .portal-link-box{
+  margin-top:14px;
+  padding:12px 13px;
+  border:1px solid var(--gl);
+  border-radius:13px;
+  background:rgba(255,255,255,.025);
+  font-size:11px;
+  color:var(--mute);
+  direction:ltr;
+  text-align:left;
+  overflow-wrap:anywhere;
+}
+}
