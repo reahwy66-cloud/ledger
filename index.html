@@ -1397,7 +1397,7 @@ function stmt(c,thru){
       });
   }
   explicit.forEach(function(inv){
-    (inv.items||[]).forEach(function(item){
+    effectiveInvoiceItems(inv).forEach(function(item){
       var amt=+item.amount||0;if(!amt)return;
       lines.push({date:inv.date||((inv.period||thru)+"-01"),desc:(inv.number?inv.number+" · ":"")+(item.description||t("inv.extra")),charge:amt,paid:0,invoiceId:inv.id});
       billed+=amt;
@@ -1678,9 +1678,26 @@ function step(a,b,amt,base,k,total){
 }
 
 /* ═════════════ INVOICES ═════════════ */
-function invoiceTotal(inv){return (inv&&inv.items||[]).reduce(function(a,x){return a+(+x.amount||0);},0);}
+function invoiceTotal(inv){return effectiveInvoiceItems(inv).reduce(function(a,x){return a+(+x.amount||0);},0);}
 function invoicePaid(inv){return S.payments.filter(function(p){return p.invoiceId===inv.id&&p.kind!=="funding";})
   .reduce(function(a,p){return a+(+p.amount||0);},0);}
+function invoiceCustomer(inv){
+  return S.customers.filter(function(c){return c.id===inv.customerId;})[0]||null;
+}
+function effectiveInvoiceItems(inv){
+  if(!inv) return [];
+  var c=invoiceCustomer(inv);
+  var paid=invoicePaid(inv);
+  var locked=inv.status==="cancelled"||inv.status==="paid"||(invoiceTotalStored(inv)>0&&paid>=invoiceTotalStored(inv)-0.005);
+  if(!c||locked) return inv.items||[];
+
+  var per=(inv.period||inv.date||MONTH).slice(0,7);
+  var keep=(inv.items||[]).filter(function(item){return !isInvoiceRootItem(item);});
+  return rootInvoiceItemsForClient(c,per).concat(keep);
+}
+function invoiceTotalStored(inv){
+  return (inv&&inv.items||[]).reduce(function(a,x){return a+(+x.amount||0);},0);
+}
 function invoiceState(inv){
   if(inv.status==="cancelled")return "cancelled";
   if(inv.status==="paid")return "paid2";
@@ -1982,6 +1999,7 @@ function vClient(){
   var c=S.customers.filter(function(x){return x.id===SEL;})[0];
   if(!c){SEL=null;return vClients();}
   var w=can("clients"), wp=can("payments");
+  syncClientOpenInvoices(c,MONTH);
   var st=stmt(c,MONTH), dm=delivered(c,MONTH), da=delivered(c,null);
   var state = st.balance>0.005 ? {k:"cd.owes",cls:"neg",v:st.balance}
             : (st.balance<-0.005 ? {k:"cd.credit",cls:"pos",v:-st.balance}
@@ -3179,7 +3197,7 @@ function printInvoice(c,invoice){
   var st;
   if(invoice){
     var ipaid=invoicePaid(invoice), itotal=invoiceTotal(invoice);
-    st={lines:(invoice.items||[]).map(function(x){return{date:invoice.date,desc:x.description,charge:+x.amount||0,paid:0};}),billed:itotal,paid:ipaid,balance:itotal-ipaid};
+    st={lines:effectiveInvoiceItems(invoice).map(function(x){return{date:invoice.date,desc:x.description,charge:+x.amount||0,paid:0};}),billed:itotal,paid:ipaid,balance:itotal-ipaid};
     S.payments.filter(function(p){return p.invoiceId===invoice.id&&p.kind!=="funding";}).forEach(function(p){st.lines.push({date:p.date,desc:t("line.pay"),charge:0,paid:+p.amount||0});});
   }else st=stmt(c,MONTH);
   var co=S.settings.company||BRAND_NAME;
@@ -3354,8 +3372,9 @@ function syncClientOpenInvoices(c,fromMonth){
     if(inv.customerId!==c.id) return;
     var per=(inv.period||inv.date||"").slice(0,7);
     if(per&&per<start) return;
-    var state=invoiceState(inv);
-    if(state==="paid2"||state==="cancelled") return;
+
+    var paid=invoicePaid(inv),storedTotal=invoiceTotalStored(inv);
+    if(inv.status==="paid"||inv.status==="cancelled"||(storedTotal>0&&paid>=storedTotal-0.005)) return;
 
     var keep=(inv.items||[]).filter(function(item){return !isInvoiceRootItem(item);});
     var root=rootInvoiceItemsForClient(c,per||start);
@@ -3378,8 +3397,7 @@ function syncClientOpenInvoices(c,fromMonth){
       designQty:+inv.designQty||0,
       designRate:+inv.designRate||0
     });
-    var after=JSON.stringify(next);
-    if(before!==after){
+    if(before!==JSON.stringify(next)){
       Object.assign(inv,next);
       inv.updatedAt=new Date().toISOString();
       inv.syncedFromClient=true;
