@@ -578,3 +578,56 @@ input,select,textarea{border-radius:12px;background:color-mix(in srgb,var(--grou
     line-height:1.6;
   }
 }
+
+
+/* V3.5 — equal-height summary columns */
+@media(min-width:821px){
+  .mobile-dashboard{
+    align-items:stretch;
+  }
+
+  .mobile-dashboard .finance-hero,
+  .mobile-dashboard .mobile-stat-grid,
+  .mobile-dashboard>.glass-disclosure,
+  .mobile-dashboard>.compact-card,
+  .mobile-dashboard>.glass-card:not(.compact-card){
+    height:100%;
+    align-self:stretch;
+  }
+
+  .mobile-dashboard .mobile-stat-grid{
+    align-self:stretch;
+    grid-auto-rows:1fr;
+  }
+
+  .mobile-dashboard .mini-stat{
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+
+  .mobile-dashboard>.glass-disclosure{
+    display:block;
+  }
+
+  .mobile-dashboard>.glass-disclosure[open]{
+    min-height:100%;
+  }
+
+  .mobile-dashboard>.compact-card{
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+  }
+
+  .mobile-dashboard>.glass-card:not(.compact-card){
+    display:flex;
+    flex-direction:column;
+  }
+
+  .mobile-dashboard>.glass-card:not(.compact-card) .summary-list{
+    flex:1 1 auto;
+    min-height:0;
+  }
+}
