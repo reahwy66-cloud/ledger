@@ -1639,7 +1639,7 @@ function vFlowMobile(){
   h+='</div></section>';
   return '<div class="mobile-dashboard">'+h+'</div>';
 }
-function vFlow(){return isMobileUI()?vFlowMobile():vFlowDesktop();}
+function vFlow(){return vFlowMobile();}
 function kpi(c,l,v,nn){return '<div class="kpi '+c+'"><span class="eyebrow">'+l+'</span><span class="v">'+v+'</span><span class="n">'+nn+'</span></div>';}
 function step(a,b,amt,base,k,total){
   var w=Math.min(100,Math.abs(amt)/base*100);
@@ -1729,7 +1729,7 @@ function vInvoicesMobile(){
   });
   return h+'</div></div>';
 }
-function vInvoices(){return isMobileUI()?vInvoicesMobile():vInvoicesDesktop();}
+function vInvoices(){return vInvoicesMobile();}
 
 /* ═════════════ AD FUNDING ═════════════ */
 function vFundingDesktop(){
@@ -1762,7 +1762,7 @@ function vFundingMobile(){
   });
   return h+'</div></div>';
 }
-function vFunding(){return isMobileUI()?vFundingMobile():vFundingDesktop();}
+function vFunding(){return vFundingMobile();}
 
 /* ═════════════ CLIENTS ═════════════ */
 function vClients(){
@@ -2096,7 +2096,7 @@ function vTeamMobile(){
   }
   return h+'</div>';
 }
-function vTeam(){return isMobileUI()?vTeamMobile():vTeamDesktop();}
+function vTeam(){return vTeamMobile();}
 
 /* ══════ one person's account ══════ */
 function vEmployee(){
@@ -2224,7 +2224,7 @@ function vCostsMobile(){
   });
   return h+'</div><div class="note">'+t("cs.note")+'</div></div>';
 }
-function vCosts(){return isMobileUI()?vCostsMobile():vCostsDesktop();}
+function vCosts(){return vCostsMobile();}
 
 /* ═════════════ CALENDAR ═════════════ */
 function vCalendarDesktop(){
@@ -2311,7 +2311,7 @@ function agendaItem(x,w){
     +'<span class="agenda-state">'+t("cal.st."+(x.status||"planned"))+'</span>'
     +'</'+(w?'button':'div')+'>';
 }
-function vCalendar(){return isMobileUI()?vCalendarMobile():vCalendarDesktop();}
+function vCalendar(){return vCalendarMobile();}
 
 /* ═════════════ OUTSIDE ═════════════ */
 function vOutside(){
@@ -2712,7 +2712,7 @@ function vLedgerMobile(){
   }
   return h+'</div>';
 }
-function vLedger(){return isMobileUI()?vLedgerMobile():(canSeeMoney()?vLedgerFull():vLedgerSafe());}
+function vLedger(){return vLedgerMobile();}
 
 
 /* ═════════════ PEOPLE ═════════════ */
@@ -2780,7 +2780,7 @@ function vUsersMobile(){
   });
   return h+'</div></section>';
 }
-function vUsers(){return isMobileUI()?vUsersMobile():vUsersDesktop();}
+function vUsers(){return vUsersMobile();}
 function userForm(u){
   var pm=normalizePerms(JSON.parse(JSON.stringify(u.perms||{})));
   var checks=function(list,keyName,sel){
@@ -2904,7 +2904,7 @@ function vSetupMobile(){
     +'</div></section></div>';
   return h;
 }
-function vSetup(){return isMobileUI()?vSetupMobile():vSetupDesktop();}
+function vSetup(){return vSetupMobile();}
 function box(eyebrow,head,sub,act,btn){
   return '<div class="card"><span class="eyebrow">'+eyebrow+'</span><h2 style="margin-top:8px">'+head+'</h2>'
    +(sub?'<p class="sub">'+sub+'</p>':'<div style="height:10px"></div>')
