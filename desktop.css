@@ -439,7 +439,7 @@ input,select,textarea{border-radius:12px;background:color-mix(in srgb,var(--grou
     -webkit-backdrop-filter:blur(16px);
     transition:transform .2s var(--dspring),background .2s ease,color .2s ease,border-color .2s ease;
   }
-  .timeline-edit:hover{
+  .timeline-edit svg{width:18px;height:18px;fill:currentColor}.timeline-edit:hover{
     color:var(--bone);
     background:color-mix(in srgb,var(--brand) 9%,var(--dg1));
     border-color:color-mix(in srgb,var(--brand) 24%,var(--dgl));
