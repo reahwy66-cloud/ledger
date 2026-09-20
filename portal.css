@@ -87,3 +87,13 @@ button{cursor:pointer}
 }
 
 .role-work-hint{display:block;margin-top:2px;color:var(--mute);font-size:10px;line-height:1.5}
+
+
+/* Portals V2.1 — package multi-type progress */
+.package-breakdown{display:grid;gap:10px;margin-top:4px}
+.package-part{display:grid;gap:6px}
+.package-part-head{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11.5px}
+.package-part-head span{color:var(--mute)}
+.package-part-head b{font-size:11.5px}
+.package-part-bar{height:8px;border-radius:999px;overflow:hidden;background:color-mix(in srgb,var(--ground) 55%,transparent);border:1px solid var(--gl)}
+.package-part-bar i{display:block;height:100%;border-radius:inherit;background:var(--brand)}
