@@ -1104,3 +1104,12 @@
       color-mix(in srgb,var(--panel) 48%,transparent);
   }
 }
+
+
+/* V2.4 — slightly lower mobile header */
+@media (max-width:820px){
+  .mobile-header{
+    padding-top:calc(env(safe-area-inset-top) + 6px);
+    height:82px;
+  }
+}
