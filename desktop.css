@@ -718,3 +718,74 @@ input,select,textarea{border-radius:12px;background:color-mix(in srgb,var(--grou
     margin-top:18px!important;
   }
 }
+
+
+/* V3.7 — universal admin view spacing */
+@media(min-width:821px){
+  .wrap>.view-stack{
+    grid-column:2;
+    grid-row:2;
+    min-width:0;
+    display:block;
+  }
+  .view-stack>*+*{
+    margin-top:24px!important;
+  }
+  .view-stack>.mobile-dashboard,
+  .view-stack>.mobile-ledger,
+  .view-stack>.mobile-agenda,
+  .view-stack>.mobile-settings,
+  .view-stack>.mobile-list-page{
+    margin-top:0!important;
+  }
+
+  /* Legacy/detail pages are sibling-based, so this guarantees real breathing room */
+  .view-stack>.sec+.kpis,
+  .view-stack>.kpis+.sec,
+  .view-stack>.sec+.sec,
+  .view-stack>.kpis+.kpis{
+    margin-top:24px!important;
+  }
+
+  .view-stack>.sec.two{
+    gap:18px;
+  }
+  .view-stack>.sec.two>.card{
+    height:100%;
+  }
+
+  .view-stack .mobile-list-page{
+    display:grid;
+    gap:24px;
+  }
+  .view-stack .mobile-list-page>*{
+    margin-top:0!important;
+  }
+
+  .view-stack .mobile-agenda{
+    display:grid;
+    gap:20px;
+  }
+  .view-stack .mobile-agenda>*{
+    margin-top:0!important;
+  }
+
+  .view-stack .mobile-settings{
+    display:grid;
+    gap:22px;
+  }
+  .view-stack .mobile-settings>*{
+    margin-top:0!important;
+  }
+
+  .view-stack .mobile-ledger{
+    row-gap:18px;
+  }
+
+  /* Cards that contain their own title/header need internal separation too */
+  .view-stack .card>.rowhead+*,
+  .view-stack .card>h2+*,
+  .view-stack .card>.section-heading+*{
+    margin-top:14px;
+  }
+}
