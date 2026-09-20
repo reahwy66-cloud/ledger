@@ -203,15 +203,48 @@ function clientPricingSection(){
   var c=DATA.customer||{},m=currentMonth(),work=(DATA.work||[]).filter(function(w){return inMonth(w.date,m);});
   var services=(DATA.salaryCharges||[]).filter(function(x){return ym(x.date||x.month)===m;});
   var h='<section class="card full pricing-card"><h2>تفاصيل التسعير</h2><p class="sub">كيف عم ينحسب حسابك لهذا الشهر.</p>';
+
   if(c.billing==="package"){
-    var vids=work.filter(function(w){return w.type==="video";});
-    var done=vids.reduce(function(a,w){return a+(+w.qty||0)},0),target=+c.videos||0;
-    var pct=target?Math.min(100,done/target*100):(done?100:0);
-    h+='<div class="pricing-head"><div><span class="pill">باقة شهرية</span><b>'+money(+c.monthlyFee||0)+' / شهر</b></div><div class="package-count"><b>'+done+'</b><span>/ '+target+' فيديو</span></div></div>'
+    var targets={
+      video:+c.videos||0,
+      post:+c.posts||0,
+      design:+c.designs||0
+    };
+    var done={video:0,post:0,design:0};
+    work.forEach(function(w){
+      if(done[w.type]!=null) done[w.type]+=(+w.qty||0);
+    });
+
+    var totalTarget=targets.video+targets.post+targets.design;
+    var totalDone=Math.min(done.video,targets.video||done.video)
+      +Math.min(done.post,targets.post||done.post)
+      +Math.min(done.design,targets.design||done.design);
+    var pct=totalTarget?Math.min(100,totalDone/totalTarget*100):(totalDone?100:0);
+
+    var packageParts=[];
+    if(targets.video) packageParts.push({key:"video",label:"فيديو",target:targets.video,done:done.video});
+    if(targets.post) packageParts.push({key:"post",label:"بوست",target:targets.post,done:done.post});
+    if(targets.design) packageParts.push({key:"design",label:"تصميم",target:targets.design,done:done.design});
+
+    h+='<div class="pricing-head"><div><span class="pill">باقة شهرية</span><b>'+money(+c.monthlyFee||0)+' / شهر</b></div>'
+      +'<div class="package-count"><b>'+totalDone+'</b><span>/ '+totalTarget+' عنصر</span></div></div>'
       +'<div class="package-progress"><i style="width:'+pct.toFixed(1)+'%"></i></div>'
-      +'<div class="package-progress-meta"><span>المنجز '+pct.toFixed(0)+'%</span><span>'+m+'</span></div>'
-      +'<div class="delivery-dates"><small>تواريخ إنجاز الفيديوهات</small><div>'
-      +(vids.length?vids.map(function(w){return '<span class="date-chip">'+esc(w.date)+' · '+esc(w.qty||1)+'×</span>'}).join(""):'<span class="mut">ما في فيديوهات معتمدة بهذا الشهر بعد.</span>')
+      +'<div class="package-progress-meta"><span>المنجز '+pct.toFixed(0)+'%</span><span>'+m+'</span></div>';
+
+    if(packageParts.length){
+      h+='<div class="package-breakdown">'
+        +packageParts.map(function(p){
+          var pp=p.target?Math.min(100,p.done/p.target*100):0;
+          return '<div class="package-part"><div class="package-part-head"><span>'+p.label+'</span><b class="num">'+p.done+' / '+p.target+'</b></div>'
+            +'<div class="package-part-bar"><i style="width:'+pp.toFixed(1)+'%"></i></div></div>';
+        }).join("")
+        +'</div>';
+    }
+
+    h+='<div class="delivery-dates"><small>تواريخ الإنجاز</small><div>'
+      +(work.length?work.filter(function(w){return ["video","post","design"].indexOf(w.type)>=0;}).map(function(w){
+        return '<span class="date-chip">'+esc(TYPES[w.type]||w.type)+' · '+esc(w.date)+' · '+esc(w.qty||1)+'×</span>';
+      }).join(""):'<span class="mut">ما في أعمال معتمدة بهذا الشهر بعد.</span>')
       +'</div></div>';
   }else if(c.billing==="per_design"){
     h+='<div class="price-lines"><div class="price-line"><span>التصميم</span><b>'+money(+c.drate||+c.rate||0)+'</b></div></div>';
@@ -219,6 +252,7 @@ function clientPricingSection(){
     h+='<div class="price-lines"><div class="price-line"><span>الفيديو</span><b>'+money(+c.rate||0)+'</b></div>'
       +((+c.drate||0)?'<div class="price-line"><span>التصميم</span><b>'+money(+c.drate||0)+'</b></div>':'')+'</div>';
   }
+
   if(services.length){
     h+='<div class="service-lines"><h3>الخدمات</h3>'
       +services.map(function(x){return '<div class="service-line"><div><b>'+esc(x.serviceName||x.description||"خدمة تشغيل")+'</b><small>'+esc(x.month||ym(x.date)||m)+'</small></div><strong>'+money(+x.amount||0)+'</strong></div>'}).join("")
