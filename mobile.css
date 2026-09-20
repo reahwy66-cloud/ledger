@@ -1,5 +1,5 @@
 /* رِواء ستوديو — mobile-only UX layer
-   Everything in this file is scoped to phone/tablet widths so desktop stays unchanged. */
+   Desktop styles are intentionally untouched. */
 
 @media (max-width: 820px) {
   html { scroll-padding-top: 76px; }
@@ -12,20 +12,15 @@
   .wrap {
     width: 100%;
     max-width: none;
-    padding: 0 16px calc(92px + env(safe-area-inset-bottom));
+    padding: 0 14px calc(96px + env(safe-area-inset-bottom));
   }
 
-  /* Header */
   .mast {
     padding: calc(14px + env(safe-area-inset-top)) 0 14px;
     gap: 14px;
   }
   .brand { width: 100%; }
-  .stamp {
-    width: 46px;
-    height: 46px;
-    border-radius: 14px;
-  }
+  .stamp { width: 46px; height: 46px; border-radius: 14px; }
   .brand h1 { font-size: 21px; }
   .brand small { font-size: 11px; margin-top: 1px; }
 
@@ -42,30 +37,16 @@
     border-radius: 14px;
     padding: 5px;
   }
-  .monthpick button {
-    width: 40px;
-    height: 36px;
-    padding: 0;
-    border-radius: 10px;
-  }
-  .monthpick .lbl {
-    min-width: 0;
-    flex: 1;
-    font-size: 12.5px;
-  }
-  .chip {
-    min-height: 46px;
-    border-radius: 14px;
-    padding: 10px 13px;
-  }
+  .monthpick button { width: 40px; height: 36px; padding: 0; border-radius: 10px; }
+  .monthpick .lbl { min-width: 0; flex: 1; font-size: 12.5px; }
+  .chip { min-height: 46px; border-radius: 14px; padding: 10px 13px; }
 
-  /* Mobile navigation — easy to swipe, large touch targets */
   .tabs {
     position: sticky;
     top: 0;
     z-index: 40;
-    margin-inline: -16px;
-    padding: 9px 16px 10px;
+    margin-inline: -14px;
+    padding: 9px 14px 10px;
     gap: 8px;
     border: 0;
     background: color-mix(in srgb, var(--ground) 92%, transparent);
@@ -91,35 +72,19 @@
     border-color: var(--brand);
   }
 
-  /* Rhythm and surfaces */
   .sec { margin-top: 24px; }
-  .rowhead {
-    align-items: flex-end;
-    margin-bottom: 14px;
-    gap: 10px;
-  }
+  .rowhead { align-items: flex-end; margin-bottom: 14px; gap: 10px; }
   h2 { font-size: 17px; }
   .sub { font-size: 13px; line-height: 1.7; margin-bottom: 14px; }
 
-  .card,
-  .ledger,
-  .kpi {
-    border-radius: 18px;
-  }
-  .card { padding: 18px 16px; }
-  .ledger-head { padding: 18px 16px 0; }
-  .fall { padding: 8px 16px 14px; }
-  .fork { padding: 0 16px 16px; }
+  .card, .ledger, .kpi { border-radius: 18px; }
+  .card { padding: 18px 14px; }
+  .ledger-head { padding: 18px 14px 0; }
+  .fall { padding: 8px 14px 14px; }
+  .fork { padding: 0 14px 14px; }
+  .two, .three, .fork { grid-template-columns: 1fr; gap: 12px; }
 
-  .two,
-  .three,
-  .fork { grid-template-columns: 1fr; gap: 12px; }
-
-  /* Summary: compact but not cramped */
-  .kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 10px;
-  }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px; }
   .kpi {
     min-height: 118px;
     padding: 16px 14px;
@@ -130,11 +95,7 @@
   .kpi .v { font-size: clamp(21px, 6vw, 27px); margin-top: 10px; }
   .kpi .n { font-size: 11.5px; line-height: 1.5; }
 
-  .step {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 7px 12px;
-    padding: 10px 0;
-  }
+  .step { grid-template-columns: minmax(0, 1fr) auto; gap: 7px 12px; padding: 10px 0; }
   .step .track {
     grid-column: 1 / -1;
     order: 3;
@@ -145,7 +106,6 @@
   .bar { border-radius: 999px; }
   .slice { border-radius: 15px; padding: 15px; }
 
-  /* Buttons and form controls — 44px+ touch targets */
   .btn {
     min-height: 44px;
     border-radius: 12px;
@@ -153,38 +113,34 @@
     font-size: 11.5px;
   }
   body[dir="rtl"] .btn { font-size: 13px; }
-  .btn.sm {
-    min-height: 38px;
-    padding: 8px 11px;
-  }
-  input,
-  select,
-  textarea {
+  .btn.sm { min-height: 38px; padding: 8px 11px; }
+
+  input, select, textarea {
     min-height: 48px;
     border-radius: 12px;
     padding: 12px 13px;
-    font-size: 16px; /* prevents iOS zoom */
+    font-size: 16px;
   }
   textarea { min-height: 104px; }
   .f { margin-bottom: 16px; }
   .f label { margin-bottom: 7px; }
-  .acts {
-    gap: 10px;
-    margin-top: 22px;
-  }
+  .acts { gap: 10px; margin-top: 22px; }
   .acts .btn { flex: 1 1 120px; }
 
-  /* Tables become readable cards on mobile instead of squeezed columns */
+  /* Real mobile cards instead of a squeezed table */
   .tbl-wrap {
-    overflow: visible;
+    overflow: visible !important;
+    width: 100%;
     margin: 0;
   }
+
   .tbl-wrap table,
-  table {
+  table.mobile-card-table {
     display: block;
     width: 100%;
   }
-  thead {
+
+  table.mobile-card-table thead {
     position: absolute !important;
     width: 1px !important;
     height: 1px !important;
@@ -192,77 +148,117 @@
     clip: rect(0 0 0 0) !important;
     white-space: nowrap !important;
   }
-  tbody {
+
+  table.mobile-card-table tbody {
     display: grid;
-    gap: 12px;
+    gap: 14px;
     width: 100%;
   }
-  tbody tr {
-    display: block;
+
+  table.mobile-card-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 18px;
     width: 100%;
-    padding: 6px 14px;
+    padding: 16px;
     border: 1px solid var(--line);
-    border-radius: 16px;
+    border-radius: 20px;
     background: var(--panel);
+    box-shadow: 0 8px 28px rgba(0,0,0,.08);
     overflow: hidden;
   }
-  tbody tr.sum {
+
+  table.mobile-card-table tbody tr.sum {
     background: var(--panel-2);
   }
-  td,
-  tbody tr.sum td {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    min-height: 46px;
-    width: 100%;
+
+  table.mobile-card-table td {
+    display: block;
+    min-width: 0;
+    min-height: 0;
+    width: auto;
     padding: 10px 0 !important;
-    border-bottom: 1px solid var(--panel-2) !important;
-    text-align: end !important;
+    border: 0 !important;
+    text-align: start !important;
     overflow-wrap: anywhere;
   }
-  tbody tr td:last-child,
-  tbody tr.sum td:last-child {
-    border-bottom: 0 !important;
-  }
-  td::before {
+
+  table.mobile-card-table td::before {
     content: attr(data-mobile-label);
-    flex: 0 0 40%;
-    max-width: 40%;
-    text-align: start;
+    display: block;
+    margin-bottom: 5px;
     color: var(--mute);
-    font-size: 12px;
+    font-size: 10.5px;
+    line-height: 1.35;
     font-weight: 500;
   }
-  td[data-mobile-label=""]::before,
-  td:not([data-mobile-label])::before {
+
+  table.mobile-card-table td[data-mobile-empty="1"] {
+    display: none !important;
+  }
+
+  table.mobile-card-table td[data-mobile-primary="1"] {
+    grid-column: 1 / -1;
+    padding-top: 0 !important;
+    padding-bottom: 14px !important;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--line) !important;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  table.mobile-card-table td[data-mobile-primary="1"]::before {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  table.mobile-card-table td[data-mobile-action="1"] {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding-top: 14px !important;
+    margin-top: 4px;
+    border-top: 1px solid var(--line) !important;
+  }
+
+  table.mobile-card-table td[data-mobile-action="1"]::before {
     display: none;
   }
-  td.r,
-  th.r { text-align: end; }
-  td .btn { margin-inline-start: auto; }
 
-  /* Calendar keeps enough width to stay usable and gets a clear swipe affordance */
+  table.mobile-card-table td[data-mobile-action="1"] .btn,
+  table.mobile-card-table td[data-mobile-action="1"] button {
+    flex: 1 1 120px;
+    margin: 0;
+  }
+
+  table.mobile-card-table .num,
+  table.mobile-card-table td.r {
+    text-align: start !important;
+  }
+
+  table.mobile-card-table .pill {
+    margin-top: 1px;
+  }
+
+  /* Single-value / narrow rows use full width instead of tiny half cells */
+  table.mobile-card-table tr[data-mobile-count="1"] td,
+  table.mobile-card-table tr[data-mobile-count="2"] td:not([data-mobile-action="1"]) {
+    grid-column: 1 / -1;
+  }
+
   .cal-scroll {
-    margin-inline: -16px;
-    padding-inline: 16px;
+    margin-inline: -14px;
+    padding-inline: 14px;
     padding-bottom: 8px;
     scrollbar-width: none;
   }
   .cal-scroll::-webkit-scrollbar { display: none; }
   .cal { min-width: 640px; gap: 7px; }
-  .day {
-    min-height: 76px;
-    border-radius: 12px;
-    padding: 7px;
-  }
+  .day { min-height: 76px; border-radius: 12px; padding: 7px; }
 
-  /* Modal becomes a familiar mobile bottom sheet */
-  .scrim {
-    align-items: flex-end;
-    padding: 18px 0 0;
-  }
+  .scrim { align-items: flex-end; padding: 18px 0 0; }
   .modal {
     max-width: none;
     max-height: min(88vh, 760px);
@@ -284,36 +280,31 @@
   }
   .modal h3 { font-size: 17px; margin-bottom: 18px; }
 
-  .note {
-    border-radius: 14px;
-    padding: 14px;
-    line-height: 1.7;
-  }
+  .note { border-radius: 14px; padding: 14px; line-height: 1.7; }
   .pill { font-size: 10px; padding: 4px 9px; }
 
-  /* Login / gate */
   .gate {
     padding: calc(20px + env(safe-area-inset-top)) 18px calc(20px + env(safe-area-inset-bottom));
   }
   .gatebox .head { margin-bottom: 22px; }
-  .rolebtn {
-    min-height: 72px;
-    border-radius: 16px;
-    padding: 16px;
-  }
+  .rolebtn { min-height: 72px; border-radius: 16px; padding: 16px; }
 }
 
 @media (max-width: 420px) {
-  .wrap { padding-inline: 14px; }
-  .tabs { margin-inline: -14px; padding-inline: 14px; }
-  .cal-scroll { margin-inline: -14px; padding-inline: 14px; }
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   .kpi { min-height: 112px; padding: 14px 12px; }
   .kpi .n { font-size: 10.8px; }
   .tools { grid-template-columns: 1fr; }
   .chip { justify-content: center; }
+
+  table.mobile-card-table tbody tr {
+    padding: 15px 14px;
+    gap: 0 14px;
+  }
 }
 
 @media (max-width: 350px) {
   .kpis { grid-template-columns: 1fr !important; }
+  table.mobile-card-table tbody tr { grid-template-columns: 1fr; }
+  table.mobile-card-table td { grid-column: 1 / -1; }
 }
