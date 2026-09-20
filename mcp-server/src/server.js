@@ -109,6 +109,56 @@ async function sendPush(payload, userId = null) {
   return { sent, failed, total: rows.length };
 }
 
+async function savePortalPushSubscription(employeeId, subscription, userAgent = '') {
+  const key = crypto.createHash('sha256').update(String(subscription.endpoint || '')).digest('hex').slice(0, 32);
+  const record = {
+    id: `portal_push_${key}`,
+    data: {
+      type: 'portal_staff_push_subscription',
+      employeeId,
+      subscription,
+      userAgent,
+      active: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    updated_at: new Date().toISOString()
+  };
+  const { error } = await db.from('notifications').upsert(record);
+  if (error) throw error;
+  return record.id;
+}
+
+async function sendPortalStaffPush(employeeId, payload) {
+  const { data, error } = await db.from('notifications').select('id,data');
+  if (error) throw error;
+  const rows = (data || []).filter(row =>
+    row.data?.type === 'portal_staff_push_subscription' &&
+    row.data?.active !== false &&
+    row.data?.employeeId === employeeId
+  );
+  let sent = 0, failed = 0;
+  for (const row of rows) {
+    try {
+      await webpush.sendNotification(row.data.subscription, JSON.stringify(payload), { TTL: 3600 });
+      sent++;
+    } catch (err) {
+      failed++;
+      if (err?.statusCode === 404 || err?.statusCode === 410) {
+        const clean = { ...row.data, active: false, updatedAt: new Date().toISOString() };
+        await db.from('notifications').upsert({ id: row.id, data: clean, updated_at: new Date().toISOString() });
+      }
+    }
+  }
+  return { sent, failed, total: rows.length };
+}
+
+async function portalEmployeeFromToken(token) {
+  const { data, error } = await db.rpc('portal_entity', { p_kind: 'staff', p_token: token });
+  if (error || !data) return null;
+  return String(data);
+}
+
 async function createScheduledPush({ title = 'رِواء ستوديو', body, dueAt, url = './', tag = 'riwa-reminder', userId = null }) {
   const when = new Date(dueAt);
   if (!Number.isFinite(when.getTime())) throw new Error('Invalid dueAt');
@@ -929,6 +979,129 @@ app.post('/push/test', async (req, res) => {
     }
   } catch (_error) {
     return res.status(500).json({ error: 'Could not send test push' });
+  }
+});
+
+app.options('/portal/push/subscribe', (_req, res) => {
+  res.set({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  }).status(204).end();
+});
+
+app.post('/portal/push/subscribe', async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const employeeId = await portalEmployeeFromToken(token);
+    if (!employeeId) return res.status(401).json({ error: 'Invalid portal session' });
+    const subscription = req.body?.subscription;
+    if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+      return res.status(400).json({ error: 'Invalid subscription' });
+    }
+    const id = await savePortalPushSubscription(employeeId, subscription, String(req.body?.userAgent || ''));
+    let testSent = false;
+    try {
+      await webpush.sendNotification(subscription, JSON.stringify({
+        title: 'رِواء ستوديو',
+        body: 'تم تفعيل تنبيهات الفريق بنجاح ✓',
+        url: './staff-portal.html',
+        tag: 'riwa-staff-push-enabled',
+        dir: 'rtl',
+        lang: 'ar'
+      }), { TTL: 300 });
+      testSent = true;
+    } catch (_e) {}
+    return res.json({ ok: true, id, testSent });
+  } catch (error) {
+    return res.status(500).json({ error: String(error?.message || 'Could not save portal subscription') });
+  }
+});
+
+app.options('/portal/submissions/review', (_req, res) => {
+  res.set({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  }).status(204).end();
+});
+
+app.post('/portal/submissions/review', async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const { data: authData, error: authError } = await db.auth.getUser(token);
+    if (authError || !authData?.user) return res.status(401).json({ error: 'Invalid token' });
+    const { data: profile, error: profileError } = await db.from('profiles').select('role,active').eq('id', authData.user.id).maybeSingle();
+    if (profileError || !profile || profile.role !== 'owner' || !profile.active) {
+      return res.status(403).json({ error: 'Owner only' });
+    }
+
+    const submissionId = String(req.body?.id || '');
+    const action = String(req.body?.action || '');
+    const note = String(req.body?.note || '');
+    if (!submissionId || !['approve','reject'].includes(action)) {
+      return res.status(400).json({ error: 'Invalid review request' });
+    }
+
+    const { data: row, error: rowError } = await db.from('portal_submissions')
+      .select('id,employee_id,data,status').eq('id', submissionId).maybeSingle();
+    if (rowError) throw rowError;
+    if (!row) return res.status(404).json({ error: 'Submission not found' });
+
+    const { data: result, error: rpcError } = await db.rpc('portal_review_submission', {
+      p_id: submissionId,
+      p_action: action,
+      p_note: note || null
+    });
+    if (rpcError) throw rpcError;
+
+    const typeNames = { video:'فيديو', post:'بوست', design:'تصميم', shoot:'تصوير', voice:'فويس', script:'سكربت', task:'مهمة' };
+    const typeName = typeNames[row.data?.type] || row.data?.type || 'عمل';
+    const qty = Number(row.data?.qty || 1);
+    const approved = action === 'approve';
+    const push = await sendPortalStaffPush(row.employee_id, {
+      title: approved ? 'تمت الموافقة على التسليم ✓' : 'تم رفض التسليم',
+      body: approved
+        ? `تمت الموافقة على ${qty} × ${typeName} وإضافته إلى رصيدك.`
+        : `تم رفض ${qty} × ${typeName}${note ? ' — ' + note : ''}`,
+      url: './staff-portal.html',
+      tag: `portal-submission-${submissionId}`,
+      dir: 'rtl',
+      lang: 'ar'
+    });
+    return res.json({ ok: true, result, push });
+  } catch (error) {
+    return res.status(500).json({ error: String(error?.message || 'Could not review submission') });
+  }
+});
+
+app.options('/appointments/delete', (_req, res) => {
+  res.set({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  }).status(204).end();
+});
+
+app.post('/appointments/delete', async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const { data: authData, error: authError } = await db.auth.getUser(token);
+    if (authError || !authData?.user) return res.status(401).json({ error: 'Invalid token' });
+    const appointmentId = String(req.body?.id || '');
+    if (!appointmentId) return res.status(400).json({ error: 'Appointment id is required' });
+    await cancelAppointmentReminders(appointmentId, 'appointment_deleted');
+    const { error } = await db.from('shoots').delete().eq('id', appointmentId);
+    if (error) throw error;
+    return res.json({ ok: true, id: appointmentId });
+  } catch (error) {
+    return res.status(500).json({ error: String(error?.message || 'Could not delete appointment') });
   }
 });
 
