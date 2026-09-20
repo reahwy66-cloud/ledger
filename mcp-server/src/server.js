@@ -1052,12 +1052,38 @@ app.post('/portal/submissions/review', async (req, res) => {
     if (rowError) throw rowError;
     if (!row) return res.status(404).json({ error: 'Submission not found' });
 
-    const { data: result, error: rpcError } = await db.rpc('portal_review_submission', {
-      p_id: submissionId,
-      p_action: action,
-      p_note: note || null
-    });
-    if (rpcError) throw rpcError;
+    let result;
+    if (row.status !== 'pending') {
+      result = { ok: true, status: row.status };
+    } else if (action === 'approve') {
+      const workId = crypto.randomUUID();
+      const workData = { ...(row.data || {}), editorId: row.employee_id };
+      const { error: workError } = await db.from('work').insert({
+        id: workId,
+        data: workData,
+        updated_at: new Date().toISOString(),
+        updated_by: authData.user.id
+      });
+      if (workError) throw workError;
+      const { error: reviewError } = await db.from('portal_submissions').update({
+        status: 'approved',
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: authData.user.id,
+        work_id: workId,
+        rejection_note: null
+      }).eq('id', submissionId);
+      if (reviewError) throw reviewError;
+      result = { ok: true, status: 'approved', workId };
+    } else {
+      const { error: reviewError } = await db.from('portal_submissions').update({
+        status: 'rejected',
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: authData.user.id,
+        rejection_note: note.trim() || null
+      }).eq('id', submissionId);
+      if (reviewError) throw reviewError;
+      result = { ok: true, status: 'rejected' };
+    }
 
     const typeNames = { video:'فيديو', post:'بوست', design:'تصميم', shoot:'تصوير', voice:'فويس', script:'سكربت', task:'مهمة' };
     const typeName = typeNames[row.data?.type] || row.data?.type || 'عمل';
