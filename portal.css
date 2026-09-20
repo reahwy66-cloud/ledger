@@ -616,3 +616,10 @@ button{cursor:pointer}
 .upload-stage{
   gap:10px;
 }
+
+/* Portal V11.2 — no iframe scrollbar */
+.drive-inline-clean{
+  overflow:hidden!important;
+  scrollbar-width:none!important;
+}
+.drive-inline-clean::-webkit-scrollbar{display:none!important}
