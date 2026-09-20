@@ -2205,6 +2205,19 @@ function vOutside(){
 
 
 /* ═════════════ MOVEMENTS ═════════════ */
+function ledgerQuickAction(act,label,icon,primary,extra){
+  var icons={
+    print:'<svg viewBox="0 0 24 24"><path d="M7 3h10v4h2a2 2 0 0 1 2 2v7h-4v5H7v-5H3V9a2 2 0 0 1 2-2h2V3Zm2 2v2h6V5H9Zm6 14v-5H9v5h6Zm3-8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/></svg>',
+    work:'<svg viewBox="0 0 24 24"><path d="M4 4h16v16H4V4Zm3 4v2h10V8H7Zm0 4v2h7v-2H7Zm0 4v2h5v-2H7Zm9.6-3.4 1.4 1.4-4.6 4.6H12v-1.4l4.6-4.6Z"/></svg>',
+    pay:'<svg viewBox="0 0 24 24"><path d="M3 6h18v12H3V6Zm2 2v2h14V8H5Zm0 5v3h6v-3H5Zm10 .5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg>',
+    fund:'<svg viewBox="0 0 24 24"><path d="M4 5h16v14H4V5Zm2 2v10h12V7H6Zm2 2h8v2H8V9Zm0 4h5v2H8v-2Z"/></svg>',
+    cost:'<svg viewBox="0 0 24 24"><path d="M12 2 3 7v2h18V7l-9-5ZM5 11v7H3v2h18v-2h-2v-7h-2v7h-4v-7h-2v7H7v-7H5Z"/></svg>',
+    advance:'<svg viewBox="0 0 24 24"><path d="M12 3v4l5-5 5 5h-3v8a5 5 0 0 1-5 5H6v-2h8a3 3 0 0 0 3-3V7h-5V3ZM2 9h8v2H2V9Zm0 4h8v2H2v-2Z"/></svg>',
+    payout:'<svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 0 1 5 5v1h3v12H4V8h3V7a5 5 0 0 1 5-5Zm3 6V7a3 3 0 0 0-6 0v1h6Zm-6 5h6v2H9v-2Z"/></svg>',
+    reimburse:'<svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 1-7.4 4.9l1.9.7A6 6 0 1 0 8 7.6V11H6V4h7v2H9.4A7.9 7.9 0 0 1 12 4Zm-1 4h2v3h3v2h-5V8Z"/></svg>'
+  };
+  return '<button class="ledger-action'+(primary?" primary":"")+'" data-act="'+act+'"'+(extra||"")+'><span class="ledger-action-icon">'+(icons[icon]||"")+'</span><span>'+label+'</span></button>';
+}
 function vLedgerFull(){
   var box=cashBox(MONTH), fu=funding(MONTH);
   var r=calc(MONTH);
@@ -2249,15 +2262,15 @@ function vLedgerFull(){
    +'</div></div>';
 
   var wp=can("payments"), wa=can("advances"), wc=can("costs"), ww=can("work");
-  h+='<div class="sec card"><div class="rowhead"><div><h2>'+t("lg.t",{m:monthName(MONTH)})+'</h2>'
-   +'<p class="sub" style="margin:0">'+t("lg.s")+'</p></div>'
-   +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
-   +'<select class="lgf" data-flt="type" style="width:auto;padding:8px 12px">'
+  h+='<div class="sec card ledger-shell"><div class="rowhead ledger-title"><div><h2>'+t("lg.t",{m:monthName(MONTH)})+'</h2>'
+   +'<p class="sub" style="margin:0">'+t("lg.s")+'</p></div></div>'
+   +'<div class="ledger-toolbar">'
+   +'<select class="lgf" data-flt="type">'
      +[["all","flt.all"],["money","lg.money"],["pay","flt.pay"],["work","flt.work"],
        ["adv","flt.adv"],["wage","flt.wage"],["cost","flt.cost"],["fund","flt.fund"]]
        .map(function(o){return '<option value="'+o[0]+'"'+(LGTYPE===o[0]?" selected":"")+'>'+t(o[1])+'</option>';}).join("")
      +'</select>'
-   +'<select class="lgf" data-flt="who" style="width:auto;padding:8px 12px">'
+   +'<select class="lgf" data-flt="who">'
      +'<option value="all"'+(LGWHO==="all"?" selected":"")+'>'+t("flt.who")+': '+t("flt.all")+'</option>'
      +(S.customers.length?'<optgroup label="'+t("sec.clients")+'">'
         +S.customers.map(function(c){return '<option value="'+c.id+'"'+(LGWHO===c.id?" selected":"")+'>'+esc(c.name)+'</option>';}).join("")
@@ -2266,16 +2279,18 @@ function vLedgerFull(){
         +S.employees.map(function(e){return '<option value="'+e.id+'"'+(LGWHO===e.id?" selected":"")+'>'+esc(e.name)+'</option>';}).join("")
         +'</optgroup>':'')
      +'</select>'
-   +((LGTYPE!=="all"||LGWHO!=="all")?'<button class="btn sm ghost" data-act="lgclear">'+t("flt.clear")+'</button>':'')
-   +'<button class="btn" data-act="print">'+t("print")+'</button>'
-   +(ww?'<button class="btn" data-act="newwork">'+t("wk.add")+'</button>':'')
-   +(wp?'<button class="btn" data-act="newpay">'+t("cd.pay")+'</button>':'')
-   +(wp?'<button class="btn" data-act="newfund">'+t("fund.add")+'</button>':'')
-   +(wc?'<button class="btn" data-act="newcost">'+t("cs.add")+'</button>':'')
-   +(wa?'<button class="btn" data-act="newadv">'+t("ad.take")+'</button>':'')
-   +(wa?'<button class="btn" data-act="newpayout">'+t("po.add")+'</button>':'')
-   +(wa&&ob.due>0.005?'<button class="btn primary" data-act="newreimb" data-id="'+rentEmp.id+'">'+t("reim.add")+'</button>':'')
-   +'</div></div><div class="tbl-wrap"><table><thead><tr>'
+   +((LGTYPE!=="all"||LGWHO!=="all")?'<button class="btn sm ghost ledger-clear" data-act="lgclear">'+t("flt.clear")+'</button>':'')
+   +'</div>'
+   +'<div class="ledger-quick-actions">'
+   +ledgerQuickAction("print",t("print"),"print",false,"")
+   +(ww?ledgerQuickAction("newwork",t("wk.add"),"work",true,""):"")
+   +(wp?ledgerQuickAction("newpay",t("cd.pay"),"pay",true,""):"")
+   +(wp?ledgerQuickAction("newfund",t("fund.add"),"fund",false,""):"")
+   +(wc?ledgerQuickAction("newcost",t("cs.add"),"cost",false,""):"")
+   +(wa?ledgerQuickAction("newadv",t("ad.take"),"advance",false,""):"")
+   +(wa?ledgerQuickAction("newpayout",t("po.add"),"payout",false,""):"")
+   +(wa&&ob.due>0.005?ledgerQuickAction("newreimb",t("reim.add"),"reimburse",true,' data-id="'+rentEmp.id+'"'):"")
+   +'</div><div class="tbl-wrap"><table><thead><tr>'
    +'<th>'+t("th.date")+'</th><th>'+t("th.action")+'</th><th>'+t("th.who")+'</th>'
    +'<th class="r">'+t("box.in")+'</th><th class="r">'+t("box.out")+'</th>'
    +'<th class="r">'+t("lg.run")+'</th><th></th></tr></thead><tbody>';
@@ -2338,12 +2353,12 @@ function vLedgerSafe(){
   }
 
   var wp=can("payments"), ww=can("work");
-  var h='<div class="sec card safe-ledger"><div class="rowhead"><div><h2>'+t("lg.t",{m:monthName(MONTH)})+'</h2>'
-    +'<p class="sub" style="margin:0">'+(LANG==="ar"?"سجل العمليات بدون مبالغ أو أرصدة.":"Activity log without amounts or balances.")+'</p></div>'
-    +'<div class="safe-actions">'
-    +(ww?'<button class="btn primary" data-act="newwork">'+t("wk.add")+'</button>':'')
-    +(wp?'<button class="btn primary" data-act="newpay">'+t("cd.pay")+'</button>':'')
-    +'</div></div>'
+  var h='<div class="sec card safe-ledger ledger-shell"><div class="rowhead ledger-title"><div><h2>'+t("lg.t",{m:monthName(MONTH)})+'</h2>'
+    +'<p class="sub" style="margin:0">'+(LANG==="ar"?"سجل العمليات بدون مبالغ أو أرصدة.":"Activity log without amounts or balances.")+'</p></div></div>'
+    +'<div class="ledger-quick-actions compact">'
+    +(ww?ledgerQuickAction("newwork",t("wk.add"),"work",true,""):"")
+    +(wp?ledgerQuickAction("newpay",t("cd.pay"),"pay",true,""):"")
+    +'</div>'
     +'<div class="ledger-filters"><select class="lgf" data-flt="type">'
     +[["all","flt.all"],["pay","flt.pay"],["work","flt.work"]].map(function(o){
       return '<option value="'+o[0]+'"'+(LGTYPE===o[0]?" selected":"")+'>'+t(o[1])+'</option>';
@@ -3165,7 +3180,18 @@ document.addEventListener("click",function(ev){
   }
   else if(act==="edituser"){var u=USERS.filter(function(x){return x.id===id;})[0];if(u)userForm(u);}
   else if(act==="signout"){(async function(){if(SB)await SB.auth.signOut();ME=null;renderAuth();})();}
-  else if(act==="theme"){S.settings.theme=(S.settings.theme==="dark")?"light":"dark";save();render();}
+  else if(act==="theme"){
+    if(window.RiwaTheme&&window.matchMedia&&window.matchMedia("(max-width: 820px)").matches){
+      var next=window.RiwaTheme.toggle();
+      S.settings.theme=next;
+      save();
+      render();
+    }else{
+      S.settings.theme=(S.settings.theme==="dark")?"light":"dark";
+      save();
+      render();
+    }
+  }
   else if(act==="mtoday"){MONTH=ymNow();render();}
   else if(act==="print") window.print();
   else if(act==="addrent"){S.settings.rentSetAside=(+S.settings.rentSetAside||0)+(+a.dataset.amt||0);save();render();}
