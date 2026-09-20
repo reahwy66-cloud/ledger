@@ -2611,14 +2611,29 @@ function ledgerTimelineRow(x,showMoney){
     +(x.note?'<small>'+esc(x.note)+'</small>':'')+'</div>'
     +(canEdit?'<button class="timeline-edit" data-act="'+x.act+'" data-id="'+x.id+'">•••</button>':'')+'</div>';
 }
+function ledgerFilterIcon(kind,active,label){
+  var icons={
+    type:'<svg viewBox="0 0 24 24"><path d="M4 5h16v2H4V5Zm3 6h10v2H7v-2Zm3 6h4v2h-4v-2Z"/></svg>',
+    who:'<svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"/></svg>',
+    reset:'<svg viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.2 3.8l1.8.9A5 5 0 1 0 9 7.2V10H7V4h6v2H9.9A6.9 6.9 0 0 1 12 5Z"/></svg>'
+  };
+  var act=kind==="type"?"lgtypefilter":kind==="who"?"lgwhofilter":"lgclear";
+  return '<button class="ledger-filter-icon'+(active?" active":"")+'" data-act="'+act+'" aria-label="'+esc(label)+'" title="'+esc(label)+'">'+icons[kind]+(active?'<i></i>':'')+'</button>';
+}
 function ledgerFilters(showMoney){
-  var types=showMoney?[["all","flt.all"],["money","lg.money"],["pay","flt.pay"],["work","flt.work"],["adv","flt.adv"],["wage","flt.wage"],["cost","flt.cost"],["fund","flt.fund"]]
-                     :[["all","flt.all"],["pay","flt.pay"],["work","flt.work"]];
-  return '<div class="ledger-toolbar"><select class="lgf" data-flt="type">'+types.map(function(o){return '<option value="'+o[0]+'"'+(LGTYPE===o[0]?" selected":"")+'>'+t(o[1])+'</option>';}).join("")+'</select>'
-    +'<select class="lgf" data-flt="who"><option value="all"'+(LGWHO==="all"?" selected":"")+'>'+t("flt.who")+': '+t("flt.all")+'</option>'
-    +(S.customers.length?'<optgroup label="'+t("sec.clients")+'">'+S.customers.map(function(c){return '<option value="'+c.id+'"'+(LGWHO===c.id?" selected":"")+'>'+esc(c.name)+'</option>';}).join("")+'</optgroup>':'')
-    +(S.employees.length?'<optgroup label="'+t("sec.team")+'">'+S.employees.map(function(e){return '<option value="'+e.id+'"'+(LGWHO===e.id?" selected":"")+'>'+esc(e.name)+'</option>';}).join("")+'</optgroup>':'')
-    +'</select>'+((LGTYPE!=="all"||LGWHO!=="all")?'<button class="filter-reset" data-act="lgclear">×</button>':'')+'</div>';
+  var typeLabel=LGTYPE==="all"?(LANG==="ar"?"نوع الحركة":"Movement type"):t(({
+    money:"lg.money",pay:"flt.pay",work:"flt.work",adv:"flt.adv",wage:"flt.wage",cost:"flt.cost",fund:"flt.fund"
+  })[LGTYPE]||"flt.all");
+  var whoLabel=LANG==="ar"?"الشخص":"Person";
+  if(LGWHO!=="all"){
+    var c=S.customers.filter(function(x){return x.id===LGWHO;})[0],e=S.employees.filter(function(x){return x.id===LGWHO;})[0];
+    whoLabel=(c&&c.name)||(e&&e.name)||whoLabel;
+  }
+  return '<div class="ledger-filter-bar"><span>'+(LANG==="ar"?"فلترة":"Filter")+'</span>'
+    +ledgerFilterIcon("type",LGTYPE!=="all",typeLabel)
+    +ledgerFilterIcon("who",LGWHO!=="all",whoLabel)
+    +((LGTYPE!=="all"||LGWHO!=="all")?ledgerFilterIcon("reset",false,LANG==="ar"?"مسح الفلاتر":"Clear filters"):"")
+    +'</div>';
 }
 function filteredLedgerRows(){
   var rows=movements(MONTH).filter(function(x){return inMonth(x.date,MONTH);});
@@ -2633,6 +2648,24 @@ function filteredLedgerRows(){
   }
   return rows.slice().reverse();
 }
+function ledgerFilterSheet(title,items,current,kind){
+  var body=items.map(function(it){
+    return '<button class="filter-option'+(String(current)===String(it[0])?" active":"")+'" data-act="lgfilterpick" data-kind="'+kind+'" data-value="'+esc(it[0])+'"><span>'+esc(it[1])+'</span>'+(String(current)===String(it[0])?'<b>✓</b>':'')+'</button>';
+  }).join("");
+  el("modalHost").innerHTML='<div class="scrim"><div class="modal filter-sheet"><div class="sheet-handle"></div><h3>'+esc(title)+'</h3><div class="filter-options">'+body+'</div></div></div>';
+}
+function ledgerTypeFilterSheet(){
+  var showMoney=canSeeMoney();
+  var types=showMoney?[["all",t("flt.all")],["money",t("lg.money")],["pay",t("flt.pay")],["work",t("flt.work")],["adv",t("flt.adv")],["wage",t("flt.wage")],["cost",t("flt.cost")],["fund",t("flt.fund")]]
+                     :[["all",t("flt.all")],["pay",t("flt.pay")],["work",t("flt.work")]];
+  ledgerFilterSheet(LANG==="ar"?"نوع الحركة":"Movement type",types,LGTYPE,"type");
+}
+function ledgerWhoFilterSheet(){
+  var items=[["all",LANG==="ar"?"الكل":"All"]];
+  S.customers.forEach(function(c){items.push([c.id,c.name]);});
+  S.employees.forEach(function(e){items.push([e.id,e.name]);});
+  ledgerFilterSheet(LANG==="ar"?"الشخص":"Person",items,LGWHO,"who");
+}
 function vLedgerMobile(){
   var showMoney=canSeeMoney(), rows=filteredLedgerRows(), box=showMoney?cashBox(MONTH):null;
   var mIn=0,mOut=0;
@@ -2645,28 +2678,29 @@ function vLedgerMobile(){
   }else{
     h+='<div class="page-heading"><div><h2>'+t("lg.t",{m:monthName(MONTH)})+'</h2><p class="sub">'+(LANG==="ar"?"العمليات المسموح لك رؤيتها، بدون أرقام مالية.":"Your permitted activity, without financial figures.")+'</p></div></div>';
   }
+
   var ww=can("work"),wp=can("payments"),wa=can("advances"),wc=can("costs");
   var rr=showMoney?calc(MONTH):null;
   var rentEmp=showMoney&&rr?S.employees.filter(function(e){return e.id===rr.rentEmp;})[0]:null;
   var ob=rentEmp?owedBack(rentEmp.id,MONTH):{due:0};
-  h+='<div class="ledger-actions-wrap">'
-    +'<div class="primary-actions">'
+
+  h+='<section class="ledger-actions-panel"><div class="section-heading"><div><h2>'+(LANG==="ar"?"تسجيل عملية":"Record action")+'</h2><p class="sub">'+(LANG==="ar"?"كل العمليات متاحة من هون مباشرة.":"All actions are available here.")+'</p></div></div>'
+    +'<div class="ledger-all-actions">'
     +(ww?ledgerQuickAction("newwork",t("wk.add"),"work",true,""):"")
     +(wp?ledgerQuickAction("newpay",t("cd.pay"),"pay",true,""):"")
-    +'</div>'
-    +(showMoney?'<div class="secondary-actions">'
-      +(wp?ledgerQuickAction("newfund",t("fund.add"),"fund",false,""):"")
-      +(wc?ledgerQuickAction("newcost",t("cs.add"),"cost",false,""):"")
-      +(wa?ledgerQuickAction("newadv",t("ad.take"),"advance",false,""):"")
-      +(wa?ledgerQuickAction("newpayout",t("po.add"),"payout",false,""):"")
-      +(wa&&ob.due>0.005?ledgerQuickAction("newreimb",t("reim.add"),"reimburse",false,' data-id="'+rentEmp.id+'"'):"")
-      +ledgerQuickAction("print",t("print"),"print",false,"")
-      +'</div>':'')
-    +'</div>'+ledgerFilters(showMoney)
+    +(showMoney&&wp?ledgerQuickAction("newfund",t("fund.add"),"fund",false,""):"")
+    +(showMoney&&wc?ledgerQuickAction("newcost",t("cs.add"),"cost",false,""):"")
+    +(showMoney&&wa?ledgerQuickAction("newadv",t("ad.take"),"advance",false,""):"")
+    +(showMoney&&wa?ledgerQuickAction("newpayout",t("po.add"),"payout",false,""):"")
+    +(showMoney&&wa&&ob.due>0.005?ledgerQuickAction("newreimb",t("reim.add"),"reimburse",false,' data-id="'+rentEmp.id+'"'):"")
+    +(showMoney?ledgerQuickAction("print",t("print"),"print",false,""):"")
+    +'</div></section>'
+    +ledgerFilters(showMoney)
     +'<section class="timeline-card"><div class="section-heading"><div><h2>'+(LANG==="ar"?"الحركات":"Activity")+'</h2><p class="sub">'+monthName(MONTH)+'</p></div></div><div class="timeline-list">';
   if(!rows.length)h+='<div class="empty">'+t("lg.none")+'</div>';
   rows.forEach(function(x){h+=ledgerTimelineRow(x,showMoney);});
   h+='</div></section>';
+
   if(showMoney){
     var bp=boxParts(MONTH);
     h+='<details class="glass-disclosure"><summary><span>'+t("box.brk")+'</span><b class="num">'+money(box.balance)+'</b></summary><div class="disclosure-body">'
@@ -3472,6 +3506,9 @@ document.addEventListener("click",function(ev){
     var ff=f(S.fundings);if(ff){var remain=Math.max(0,fundingTotal(ff)-fundingPaid(ff));payForm(null,ff.customerId,{kind:"funding",fundingId:ff.id,amount:remain.toFixed(2)});}
   }
   else if(act==="lgclear"){ LGTYPE="all"; LGWHO="all"; render(); }
+  else if(act==="lgtypefilter"){ledgerTypeFilterSheet();}
+  else if(act==="lgwhofilter"){ledgerWhoFilterSheet();}
+  else if(act==="lgfilterpick"){if(a.dataset.kind==="type")LGTYPE=a.dataset.value||"all";else LGWHO=a.dataset.value||"all";el("modalHost").innerHTML="";render();}
   else if(act==="caldayselect"){CALDAY=a.dataset.date||CALDAY;render();}
   else if(act==="userssheet"){el("modalHost").innerHTML='<div class="scrim"><div class="modal users-sheet"><div class="sheet-handle"></div>'+vUsersMobile()+'<div class="acts"><button class="btn ghost" onclick="document.getElementById(\'modalHost\').innerHTML=\'\'">'+t("cancel")+'</button></div></div></div>';}
   else if(act==="newreimb"){
