@@ -4,6 +4,7 @@
 var SUPA_URL="https://gvnpixjkcmbrdfefbamr.supabase.co";
 var SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2bnBpeGprY21icmRmZWZiYW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MDAyNDAsImV4cCI6MjEwMDQ3NjI0MH0.PPuHBLPRwFPvjMgoIWHCubDTX9at5gSgn4QKxcgsbQI";
 var KIND=document.body.getAttribute("data-portal")||"staff";
+var PORTAL_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 var SB=null,DATA=null;
 var TOKEN_KEY="riwa_portal_"+KIND+"_token";
 var TYPES={video:"فيديو",post:"بوست",design:"تصميم",shoot:"تصوير",voice:"فويس",script:"سكربت",task:"مهمة"};
@@ -32,6 +33,40 @@ function daysInMonth(m){var p=m.split("-");return new Date(+p[0],+p[1],0).getDat
 function applyTheme(){var h=new Date().getHours();document.documentElement.setAttribute("data-theme",(h>=7&&h<19)?"light":"dark")}
 function token(){try{return localStorage.getItem(TOKEN_KEY)||""}catch(e){return ""}}
 function saveToken(v){try{if(v)localStorage.setItem(TOKEN_KEY,v);else localStorage.removeItem(TOKEN_KEY)}catch(e){}}
+function b64ToBytes(value){
+  var padding="=".repeat((4-value.length%4)%4);
+  var raw=atob((value+padding).replace(/-/g,"+").replace(/_/g,"/"));
+  return Uint8Array.from(raw,function(c){return c.charCodeAt(0)});
+}
+function portalPushStatus(){
+  if(KIND!=="staff") return "off";
+  if(!("Notification" in window)||!("serviceWorker" in navigator)||!("PushManager" in window)) return "unsupported";
+  if(Notification.permission==="denied") return "denied";
+  if(Notification.permission==="granted"&&localStorage.getItem("riwa_staff_push_enabled")==="1") return "enabled";
+  return "off";
+}
+async function enablePortalPush(){
+  if(portalPushStatus()==="unsupported") throw new Error("unsupported");
+  var reg=await navigator.serviceWorker.register("sw.js");
+  await navigator.serviceWorker.ready;
+  var permission=Notification.permission;
+  if(permission!=="granted") permission=await Notification.requestPermission();
+  if(permission!=="granted") throw new Error(permission==="denied"?"denied":"not_granted");
+  var sub=await reg.pushManager.getSubscription();
+  if(!sub){
+    var cfg=await fetch(PORTAL_API+"/push/config",{cache:"no-store"}).then(function(r){if(!r.ok)throw new Error("push_config");return r.json()});
+    sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToBytes(cfg.publicKey)});
+  }
+  var res=await fetch(PORTAL_API+"/portal/push/subscribe",{
+    method:"POST",
+    headers:{"content-type":"application/json","authorization":"Bearer "+token()},
+    body:JSON.stringify({subscription:sub.toJSON(),userAgent:navigator.userAgent})
+  });
+  var data={};try{data=await res.json()}catch(e){}
+  if(!res.ok||!data.ok) throw new Error(data.error||"save_device");
+  localStorage.setItem("riwa_staff_push_enabled","1");
+  return true;
+}
 function showError(msg){var e=$("#loginError");if(e)e.textContent=msg||""}
 
 async function init(){
@@ -48,6 +83,19 @@ function bindGlobal(){
     var a=e.target.closest("[data-act]"); if(!a)return;
     var act=a.dataset.act;
     if(act==="logout") logout();
+    if(act==="staffpush"){
+      (async function(){
+        var btn=a;btn.disabled=true;
+        try{
+          await enablePortalPush();
+          btn.textContent="التنبيهات مفعّلة ✓";
+          setTimeout(function(){load()},700);
+        }catch(err){
+          var msg=String(err&&err.message||err);
+          alert(msg==="denied"?"التنبيهات محظورة من إعدادات الجهاز.":"تعذّر تفعيل التنبيهات: "+msg);
+        }finally{btn.disabled=false}
+      })();
+    }
     if(act==="theme"){
       var now=document.documentElement.getAttribute("data-theme");
       document.documentElement.setAttribute("data-theme",now==="dark"?"light":"dark");
@@ -95,7 +143,7 @@ async function logout(){
 function shell(inner,name,sub){
   document.body.innerHTML='<main class="portal"><header class="topbar">'
     +'<div class="brand"><img src="riwa-logo.png" alt=""><div><b>رِواء ستوديو</b><small>'+esc(sub||"")+'</small></div></div>'
-    +'<div class="top-actions"><button class="icon-btn" data-act="theme" aria-label="تغيير النمط">◐</button><button class="btn danger" data-act="logout">خروج</button></div>'
+    +'<div class="top-actions">'+(KIND==="staff"?'<button class="btn staff-push-btn" data-act="staffpush">'+(portalPushStatus()==="enabled"?"التنبيهات مفعّلة ✓":"تفعيل التنبيهات")+'</button>':'')+'<button class="icon-btn" data-act="theme" aria-label="تغيير النمط">◐</button><button class="btn danger" data-act="logout">خروج</button></div>'
     +'</header>'+inner+'</main>';
 }
 
@@ -155,7 +203,12 @@ function renderStaff(){
     var btn=this.querySelector("button");btn.disabled=true;btn.textContent="جاري الإرسال…";$("#workError").textContent="";
     var r=await SB.rpc("portal_staff_submit_work",{p_token:token(),p_data:payload});
     btn.disabled=false;btn.textContent="إرسال للمراجعة";
-    if(r.error){$("#workError").textContent="تعذّر إرسال التسليم للمراجعة.";return}
+    if(r.error){
+      var detail=String(r.error.message||r.error.details||r.error.hint||"unknown_error");
+      $("#workError").textContent="تعذّر إرسال التسليم للمراجعة — "+detail;
+      return;
+    }
+    btn.textContent="تم الإرسال ✓";
     await load();
   };
 }
