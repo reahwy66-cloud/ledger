@@ -261,7 +261,7 @@ function renderDeliveryWizard(e){
     +'<div class="full"><span>الملف</span><b>'+esc(d.file&&d.file.name||"—")+'</b></div>'
     +(d.note?'<div class="full"><span>ملاحظة</span><b>'+esc(d.note)+'</b></div>':'')
     +'</div>'
-    +'<div class="wizard-actions split"><button type="button" class="btn ghost" data-next="2">رجوع</button><button class="btn primary" type="submit">إرسال للمراجعة</button></div>'
+    +'<div class="wizard-actions split"><button type="button" class="btn ghost" data-next="2">رجوع</button><button class="btn primary" type="submit">رفع التسليم</button></div>'
     +'</div>'
     +'<div class="error" id="workError"></div>'
     +'</form></section>';
@@ -299,11 +299,21 @@ function bindDeliveryWizard(){
 
   function onMessage(ev){
     var data=ev.data||{};
-    if(data.type==="riwa-drive-uploaded"&&data.file){
-      var d=collect();d.file=data.file;d.step=3;saveStaffDraft(d);
+    if(typeof data==="string"){
+      try{data=JSON.parse(data)}catch(_e){}
+    }
+    if(data&&data.type==="riwa-drive-uploaded"&&data.file){
+      var d=collect();
+      d.file=data.file;
+      d.step=3;
+      saveStaffDraft(d);
       window.removeEventListener("message",onMessage);
       renderStaff();
-    }else if(data.type==="riwa-drive-upload-error"){
+      setTimeout(function(){
+        var submit=document.querySelector("#workForm button[type='submit']");
+        if(submit) submit.scrollIntoView({behavior:"smooth",block:"center"});
+      },120);
+    }else if(data&&data.type==="riwa-drive-upload-error"){
       $("#workError").textContent="تعذّر رفع الملف — "+String(data.error||"خطأ غير معروف");
     }
   }
@@ -328,7 +338,7 @@ function bindDeliveryWizard(){
       await load();
     }catch(ex){
       $("#workError").textContent="تعذّر إرسال التسليم للمراجعة — "+String(ex&&ex.message||ex);
-      btn.disabled=false;btn.textContent="إرسال للمراجعة";
+      btn.disabled=false;btn.textContent="رفع التسليم";
     }
   };
 }
