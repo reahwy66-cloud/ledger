@@ -187,7 +187,11 @@ function staffDraft(){
   }catch(e){return {}}
 }
 function saveStaffDraft(d){
-  try{localStorage.setItem(STAFF_DRAFT_KEY,JSON.stringify(d||{}))}catch(e){}
+  try{
+    var clean=Object.assign({},d||{});
+    delete clean.step;
+    localStorage.setItem(STAFF_DRAFT_KEY,JSON.stringify(clean));
+  }catch(e){}
 }
 function clearStaffDraft(){
   try{localStorage.removeItem(STAFF_DRAFT_KEY)}catch(e){}
@@ -209,7 +213,7 @@ function wizardCustomerName(id){
   return c&&c.name||"—";
 }
 function renderDeliveryWizard(e){
-  var d=staffDraft(),types=roleWorkTypes(e.role),step=Math.max(1,Math.min(3,+d.step||1));
+  var d=staffDraft(),types=roleWorkTypes(e.role),step=window.__RIWA_WIZARD_STEP|| (d.file?3:1);
   if(!d.date)d.date=today();
   if(!d.qty)d.qty=1;
   if(!d.type)d.type=types[0]||"video";
@@ -271,7 +275,6 @@ function bindDeliveryWizard(){
     var fd=new FormData(form),d=staffDraft();
     fd.forEach(function(v,k){d[k]=v});
     d.qty=+d.qty||1;
-    d.step=+d.step||1;
     saveStaffDraft(d);
     var w=$("#deliveryWizard"); if(w)w.dataset.dirty="1";
     return d;
@@ -283,7 +286,9 @@ function bindDeliveryWizard(){
     btn.onclick=function(){
       var d=collect(),next=+btn.dataset.next;
       if(next>1&&!d.customerId){$("#workError").textContent="اختَر العميل أولاً.";return}
-      d.step=next;saveStaffDraft(d);renderStaff();
+      var w=$("#deliveryWizard"); if(w)w.dataset.runtimeStep=String(next);
+      window.__RIWA_WIZARD_STEP=next;
+      renderStaff();
     };
   });
   form.querySelectorAll("[data-wstep]").forEach(function(btn){
@@ -291,7 +296,8 @@ function bindDeliveryWizard(){
       var d=collect(),next=+btn.dataset.wstep;
       if(next>1&&!d.customerId)return;
       if(next===3&&!d.file)return;
-      d.step=next;saveStaffDraft(d);renderStaff();
+      window.__RIWA_WIZARD_STEP=next;
+      renderStaff();
     };
   });
 
@@ -303,8 +309,8 @@ function bindDeliveryWizard(){
     if(data&&data.type==="riwa-drive-uploaded"&&data.file){
       var d=collect();
       d.file=data.file;
-      d.step=3;
       saveStaffDraft(d);
+      window.__RIWA_WIZARD_STEP=3;
       window.removeEventListener("message",onMessage);
       renderStaff();
       setTimeout(function(){
@@ -321,7 +327,7 @@ function bindDeliveryWizard(){
     ev.preventDefault();
     var d=collect();
     if(!d.customerId){$("#workError").textContent="اختَر العميل أولاً.";return}
-    if(!d.file){d.step=2;saveStaffDraft(d);renderStaff();return}
+    if(!d.file){window.__RIWA_WIZARD_STEP=2;renderStaff();return}
     var btn=form.querySelector('button[type="submit"]');
     btn.disabled=true;btn.textContent="جاري الإرسال…";$("#workError").textContent="";
     try{
@@ -332,6 +338,7 @@ function bindDeliveryWizard(){
       var r=await SB.rpc("portal_staff_submit_work",{p_token:token(),p_data:payload});
       if(r.error) throw new Error(String(r.error.message||r.error.details||r.error.hint||"unknown_error"));
       clearStaffDraft();
+      window.__RIWA_WIZARD_STEP=1;
       btn.textContent="تم الإرسال ✓";
       await load();
     }catch(ex){
