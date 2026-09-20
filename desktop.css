@@ -789,3 +789,44 @@ input,select,textarea{border-radius:12px;background:color-mix(in srgb,var(--grou
     margin-top:14px;
   }
 }
+
+
+/* V3.8 — structural gap, no collapsing margins */
+@media(min-width:821px){
+  .wrap>.view-stack{
+    display:flex!important;
+    flex-direction:column;
+    gap:24px;
+    align-items:stretch;
+  }
+  .view-stack>*{
+    margin-top:0!important;
+    margin-bottom:0!important;
+  }
+
+  /* Views that are self-contained keep their own internal layout */
+  .view-stack>.mobile-dashboard,
+  .view-stack>.mobile-ledger,
+  .view-stack>.mobile-agenda,
+  .view-stack>.mobile-settings,
+  .view-stack>.mobile-list-page{
+    width:100%;
+  }
+
+  /* Detail-page sections: remove legacy outer margins, gap handles spacing */
+  .view-stack>.sec,
+  .view-stack>.kpis{
+    width:100%;
+  }
+
+  /* Internal card rhythm */
+  .view-stack>.sec.card{
+    padding:22px 20px;
+  }
+  .view-stack>.sec.card>h2{
+    margin-bottom:6px;
+  }
+  .view-stack>.sec.card>.sub{
+    margin-bottom:16px;
+  }
+}
