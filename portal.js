@@ -76,6 +76,12 @@ async function init(){
   bindGlobal();
   if(token()) await load();
   else renderLogin();
+  if(KIND==="staff"){
+    setInterval(function(){
+      var a=document.activeElement,editing=a&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName);
+      if(token()&&!editing) load().catch(function(){});
+    },15000);
+  }
 }
 
 function bindGlobal(){
