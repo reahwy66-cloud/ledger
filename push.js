@@ -3,28 +3,56 @@
 "use strict";
 var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 
-/* Keep the desktop app untouched: the extra stylesheet is entirely media-query scoped. */
 (function mobileUiBootstrap(){
   var link=document.createElement("link");
   link.rel="stylesheet";
-  link.href="mobile.css?v=20260920";
+  link.href="mobile.css?v=20260920b";
   document.head.appendChild(link);
 
-  function labelTables(){
+  function prepareTables(){
     document.querySelectorAll("table").forEach(function(table){
       var headers=Array.from(table.querySelectorAll("thead th")).map(function(th){
         return (th.textContent||"").trim();
       });
-      table.querySelectorAll("tbody tr").forEach(function(row){
-        Array.from(row.children).forEach(function(cell,index){
-          if(cell.tagName!=="TD") return;
-          cell.setAttribute("data-mobile-label",headers[index]||"");
+      var rows=table.querySelectorAll("tbody tr");
+      if(!rows.length) return;
+
+      table.classList.add("mobile-card-table");
+
+      rows.forEach(function(row){
+        var cells=Array.from(row.children).filter(function(cell){return cell.tagName==="TD";});
+        var visibleCount=0;
+        var primarySet=false;
+
+        cells.forEach(function(cell,index){
+          var label=headers[index]||"";
+          var text=(cell.textContent||"").trim();
+          var hasControl=!!cell.querySelector("button,.btn,a,input,select");
+          var empty=!text && !hasControl;
+
+          cell.setAttribute("data-mobile-label",label);
+          if(empty){
+            cell.setAttribute("data-mobile-empty","1");
+            return;
+          }
+
+          visibleCount++;
+
+          if(hasControl){
+            cell.setAttribute("data-mobile-action","1");
+          }else if(!primarySet){
+            cell.setAttribute("data-mobile-primary","1");
+            primarySet=true;
+          }
         });
+
+        row.setAttribute("data-mobile-count",String(visibleCount));
       });
     });
   }
 
-  function run(){ requestAnimationFrame(labelTables); }
+  function run(){ requestAnimationFrame(prepareTables); }
+
   if(document.readyState==="loading"){
     document.addEventListener("DOMContentLoaded",run,{once:true});
   }else{
@@ -38,7 +66,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     queued=true;
     requestAnimationFrame(function(){
       queued=false;
-      labelTables();
+      prepareTables();
     });
   }).observe(host,{childList:true,subtree:true});
 })();
