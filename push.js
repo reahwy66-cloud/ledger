@@ -50,7 +50,6 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
   }
 
   function applyScheduledTheme(){
-    if(!window.matchMedia || !window.matchMedia("(max-width: 820px)").matches) return;
     var now=Date.now(), manual="", until=0;
     try{
       manual=localStorage.getItem("riwa_manual_theme")||"";
