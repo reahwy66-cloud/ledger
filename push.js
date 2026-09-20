@@ -95,6 +95,15 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
       b.innerHTML='<span class="desktop-tab-icon">'+(ICONS[k]||"")+'</span><span class="desktop-tab-label">'+label+'</span>';
     });
 
+    if(!tabs.querySelector(".desktop-notifications")){
+      var notify=document.createElement("button");
+      notify.type="button";
+      notify.className="desktop-notifications";
+      notify.setAttribute("data-act","notifications");
+      notify.innerHTML='<span class="desktop-tab-icon">'+(ICONS.notifications||"")+'</span><span class="desktop-tab-label">'+(document.documentElement.lang==="en"?"Notifications":"التنبيهات")+'</span><b class="desktop-notify-badge"></b>';
+      tabs.insertBefore(notify,tabs.firstChild);
+    }
+
     if(!tabs.querySelector(".desktop-signout")){
       var sep=document.createElement("div");
       sep.className="desktop-nav-separator";
@@ -106,6 +115,33 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
       out.setAttribute("data-act","signout");
       out.innerHTML='<span class="desktop-tab-icon">'+(ICONS.signout||"")+'</span><span class="desktop-tab-label">'+(document.documentElement.lang==="en"?"Sign out":"تسجيل الخروج")+'</span>';
       tabs.appendChild(out);
+    }
+  }
+
+  function syncNotificationControls(){
+    var mast=document.querySelector(".mast");
+    var count=(mast&&mast.querySelector(".portal-notify-chip .notify-count")||{}).textContent||"";
+    var db=document.querySelector(".desktop-notify-badge");
+    if(db){
+      db.textContent=count;
+      db.style.display=count?"grid":"none";
+    }
+
+    var old=document.querySelector(".mobile-header .mobile-quick-btn");
+    if(old){
+      old.className="mobile-head-btn mobile-notify-btn";
+      old.removeAttribute("data-tab");
+      old.setAttribute("data-act","notifications");
+      old.setAttribute("aria-label",document.documentElement.lang==="en"?"Notifications":"التنبيهات");
+      old.innerHTML=(ICONS.notifications||"")+(count?'<b class="mobile-notify-count">'+count+'</b>':'');
+    }
+    var mb=document.querySelector(".mobile-header .mobile-notify-btn");
+    if(mb && !old){
+      var badge=mb.querySelector(".mobile-notify-count");
+      if(count){
+        if(!badge){badge=document.createElement("b");badge.className="mobile-notify-count";mb.appendChild(badge);}
+        badge.textContent=count;
+      }else if(badge){badge.remove();}
     }
   }
 
@@ -375,6 +411,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     applyScheduledTheme();
     decorateDesktopTabs();
     buildMobileShell();
+    syncNotificationControls();
     prepareTables();
     prepareCalendar();
     bindGlassGestures();
