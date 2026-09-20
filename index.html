@@ -1513,7 +1513,7 @@ function render(){
    +'</div></div>'
    +'<div class="tabs" role="tablist">'+TABS.filter(function(x){return allowed.indexOf(x[0])>=0;}).map(function(x){
       return '<button role="tab" data-tab="'+x[0]+'" aria-selected="'+(TAB===x[0])+'">'+t(x[1])+'</button>';}).join("")+'</div>'
-   +'<div>'+views[TAB]()+'</div></div>';
+   +'<div class="view-stack">'+views[TAB]()+'</div></div>';
   if(TAB==="flow") requestAnimationFrame(function(){
     Array.prototype.forEach.call(document.querySelectorAll(".bar[data-w]"),function(b){b.style.width=b.dataset.w+"%";});});
 }
