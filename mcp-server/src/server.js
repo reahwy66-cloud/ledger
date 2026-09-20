@@ -159,6 +159,86 @@ async function portalEmployeeFromToken(token) {
   return String(data);
 }
 
+async function googleDriveAccessToken() {
+  const clientId = process.env.GOOGLE_DRIVE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_DRIVE_REFRESH_TOKEN;
+  if (!clientId || !clientSecret || !refreshToken) throw new Error('google_drive_not_configured');
+
+  const body = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    refresh_token: refreshToken,
+    grant_type: 'refresh_token'
+  });
+
+  const r = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body
+  });
+  const data = await r.json();
+  if (!r.ok || !data.access_token) throw new Error(data.error_description || data.error || 'google_drive_token_failed');
+  return data.access_token;
+}
+
+function driveSafeName(value) {
+  return String(value || '').replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim().slice(0, 120) || 'Untitled';
+}
+
+async function driveFindFolder(accessToken, parentId, name) {
+  const q = [
+    `name='${String(name).replace(/'/g, "\\'")}'`,
+    "mimeType='application/vnd.google-apps.folder'",
+    'trashed=false',
+    `'${parentId}' in parents`
+  ].join(' and ');
+  const url = new URL('https://www.googleapis.com/drive/v3/files');
+  url.searchParams.set('q', q);
+  url.searchParams.set('fields', 'files(id,name)');
+  url.searchParams.set('pageSize', '10');
+  const r = await fetch(url, { headers: { authorization: `Bearer ${accessToken}` } });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error?.message || 'drive_folder_lookup_failed');
+  return data.files?.[0] || null;
+}
+
+async function driveCreateFolder(accessToken, parentId, name) {
+  const r = await fetch('https://www.googleapis.com/drive/v3/files?fields=id,name', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${accessToken}`, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      name: driveSafeName(name),
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: [parentId]
+    })
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error?.message || 'drive_folder_create_failed');
+  return data;
+}
+
+async function driveEnsureFolder(accessToken, parentId, name) {
+  const safe = driveSafeName(name);
+  return (await driveFindFolder(accessToken, parentId, safe)) || driveCreateFolder(accessToken, parentId, safe);
+}
+
+async function ensureClientArchiveFolder(customer, workType, dateValue) {
+  const rootId = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
+  if (!rootId) throw new Error('google_drive_root_folder_missing');
+  const accessToken = await googleDriveAccessToken();
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(dateValue || '')) ? new Date(dateValue + 'T00:00:00Z') : new Date();
+  const year = String(date.getUTCFullYear());
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const category = ({ video:'Videos', design:'Designs', post:'Posts', shoot:'Shoots', script:'Scripts', voice:'Voice', task:'Other' })[workType] || 'Other';
+
+  const client = await driveEnsureFolder(accessToken, rootId, customer.data?.name || customer.id);
+  const yearFolder = await driveEnsureFolder(accessToken, client.id, year);
+  const monthFolder = await driveEnsureFolder(accessToken, yearFolder.id, month);
+  const typeFolder = await driveEnsureFolder(accessToken, monthFolder.id, category);
+  return { accessToken, folderId: typeFolder.id, path: [customer.data?.name || customer.id, year, month, category].join(' / ') };
+}
+
 async function createScheduledPush({ title = 'رِواء ستوديو', body, dueAt, url = './', tag = 'riwa-reminder', userId = null }) {
   const when = new Date(dueAt);
   if (!Number.isFinite(when.getTime())) throw new Error('Invalid dueAt');
@@ -980,6 +1060,93 @@ app.post('/push/test', async (req, res) => {
   } catch (_error) {
     return res.status(500).json({ error: 'Could not send test push' });
   }
+});
+
+app.options('/portal/drive/upload-session', (_req, res) => {
+  res.set({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  }).status(204).end();
+});
+
+app.post('/portal/drive/upload-session', async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  const portalToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!portalToken) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    const employeeId = await portalEmployeeFromToken(portalToken);
+    if (!employeeId) return res.status(401).json({ error: 'Invalid portal session' });
+
+    const customerId = String(req.body?.customerId || '');
+    const fileName = driveSafeName(req.body?.fileName || '');
+    const mimeType = String(req.body?.mimeType || 'application/octet-stream');
+    const size = Number(req.body?.size || 0);
+    const workType = String(req.body?.workType || 'task');
+    const date = String(req.body?.date || today());
+
+    if (!customerId || !fileName || !Number.isFinite(size) || size <= 0) {
+      return res.status(400).json({ error: 'Invalid upload request' });
+    }
+
+    const { data: customer, error: customerError } = await db.from('customers').select('id,data').eq('id', customerId).maybeSingle();
+    if (customerError) throw customerError;
+    if (!customer || customer.data?.active === false) return res.status(404).json({ error: 'Customer not found' });
+
+    const archive = await ensureClientArchiveFolder(customer, workType, date);
+    const metadata = {
+      name: fileName,
+      parents: [archive.folderId],
+      appProperties: {
+        riwaCustomerId: customerId,
+        riwaEmployeeId: employeeId,
+        riwaWorkType: workType,
+        riwaDate: date
+      }
+    };
+
+    const upload = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,name,mimeType,size,webViewLink,webContentLink,thumbnailLink', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${archive.accessToken}`,
+        'content-type': 'application/json; charset=UTF-8',
+        'x-upload-content-type': mimeType,
+        'x-upload-content-length': String(size)
+      },
+      body: JSON.stringify(metadata)
+    });
+
+    if (!upload.ok) {
+      const err = await upload.text();
+      throw new Error(err || 'drive_resumable_session_failed');
+    }
+
+    const uploadUrl = upload.headers.get('location');
+    if (!uploadUrl) throw new Error('drive_upload_location_missing');
+
+    return res.json({
+      ok: true,
+      uploadUrl,
+      archivePath: archive.path,
+      fileName,
+      mimeType,
+      size
+    });
+  } catch (error) {
+    return res.status(500).json({ error: String(error?.message || 'Could not prepare Drive upload') });
+  }
+});
+
+app.get('/drive/status', async (_req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  const configured = Boolean(
+    process.env.GOOGLE_DRIVE_CLIENT_ID &&
+    process.env.GOOGLE_DRIVE_CLIENT_SECRET &&
+    process.env.GOOGLE_DRIVE_REFRESH_TOKEN &&
+    process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID
+  );
+  return res.json({ ok: true, configured });
 });
 
 app.options('/portal/push/subscribe', (_req, res) => {
