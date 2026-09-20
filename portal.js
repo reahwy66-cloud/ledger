@@ -115,29 +115,35 @@ function renderStaff(){
   var e=DATA.employee||{},m=currentMonth(),bal=staffBalance(),monthWork=(DATA.work||[]).filter(function(w){return inMonth(w.date,m)});
   var customerMap={};(DATA.customers||[]).forEach(function(c){customerMap[c.id]=c.name});
   var delivered=monthWork.reduce(function(a,w){return a+(+w.qty||0)},0);
+  var submissions=DATA.submissions||[],pending=submissions.filter(function(x){return x.status==="pending"}).length;
+  var statusLabel={pending:"بانتظار الموافقة",approved:"تمت الموافقة",rejected:"مرفوض"};
+  var statusClass={pending:"wait",approved:"ok",rejected:"bad"};
   var inner='<section class="hero"><span class="eyebrow">'+esc(e.role||"الفريق")+'</span><h1>أهلاً، '+esc(e.name||"")+'</h1>'
     +'<div class="hero-value '+(bal&&bal.balance<0?"neg":"")+'">'+(bal?money(bal.balance):"—")+'</div>'
-    +'<div class="hero-note">'+(bal?"رصيدك الحالي لهذا الشهر":"الرصيد للشركاء بالنسبة يحتاج مراجعة الإدارة")+'</div></section>'
+    +'<div class="hero-note">'+(bal?"رصيدك الحالي من الأعمال التي تمت الموافقة عليها":"الرصيد للشركاء بالنسبة يحتاج مراجعة الإدارة")+'</div></section>'
     +'<section class="stats"><div class="stat"><small>المكتسب</small><b>'+(bal?money(bal.earned):"—")+'</b></div>'
-    +'<div class="stat"><small>المدفوع / السلف</small><b>'+(bal?money(bal.paid+bal.adv):"—")+'</b></div>'
-    +'<div class="stat"><small>تسليمات الشهر</small><b>'+delivered+'</b></div></section>'
-    +'<div class="grid"><section class="card"><h2>تسليم عمل</h2><p class="sub">سجّل أي فيديو، تصميم، بوست أو مهمة خلصتها.</p>'
+    +'<div class="stat"><small>بانتظار الموافقة</small><b>'+pending+'</b></div>'
+    +'<div class="stat"><small>التسليمات المعتمدة</small><b>'+delivered+'</b></div></section>'
+    +'<div class="grid"><section class="card"><h2>تسليم عمل</h2><p class="sub">الإرسال يروح للإدارة للمراجعة أولاً، وما بينحسب بحسابك إلا بعد الموافقة.</p>'
     +'<form class="form" id="workForm"><div class="field"><label>العميل</label><select name="customerId" required><option value="">اختر العميل</option>'
     +(DATA.customers||[]).map(function(c){return '<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>'}).join("")
     +'</select></div><div class="field"><label>نوع العمل</label><select name="type">'+Object.keys(TYPES).map(function(k){return '<option value="'+k+'">'+TYPES[k]+'</option>'}).join("")+'</select></div>'
     +'<div class="field"><label>الكمية</label><input name="qty" type="number" min="1" max="100" value="1"></div><div class="field"><label>التاريخ</label><input name="date" type="date" value="'+today()+'"></div>'
     +'<div class="field full"><label>ملاحظة</label><textarea name="note" placeholder="تفاصيل اختيارية…"></textarea></div>'
-    +'<div class="full"><button class="btn primary" type="submit">تسجيل التسليم</button><div class="error" id="workError"></div></div></form></section>'
-    +'<section class="card"><h2>آخر التسليمات</h2><p class="sub">آخر الأعمال المسجلة على حسابك.</p><div class="list">'
-    +((DATA.work||[]).length?(DATA.work||[]).slice(0,12).map(function(w){return '<div class="row"><div class="row-main"><b>'+esc(customerMap[w.customerId]||"عميل")+' · '+esc(TYPES[w.type]||w.type)+'</b><small>'+esc(w.note||"بدون ملاحظة")+'</small></div><div class="row-side"><b>'+esc(w.qty||1)+'×</b><small>'+esc(w.date||"")+'</small></div></div>'}).join(""):'<div class="empty">ما في تسليمات بعد.</div>')
+    +'<div class="full"><button class="btn primary" type="submit">إرسال للمراجعة</button><div class="error" id="workError"></div></div></form></section>'
+    +'<section class="card"><h2>طلبات التسليم</h2><p class="sub">تابع حالة الأعمال التي أرسلتها للإدارة.</p><div class="list">'
+    +(submissions.length?submissions.slice(0,14).map(function(x){return '<div class="row"><div class="row-main"><b>'+esc(customerMap[x.customerId]||"عميل")+' · '+esc(TYPES[x.type]||x.type)+'</b><small>'+esc(x.note||"")+'</small><span class="status-pill '+statusClass[x.status]+'">'+statusLabel[x.status]+'</span>'+(x.rejectionNote?'<small class="neg">'+esc(x.rejectionNote)+'</small>':'')+'</div><div class="row-side"><b>'+esc(x.qty||1)+'×</b><small>'+esc(x.date||"")+'</small></div></div>'}).join(""):'<div class="empty">ما أرسلت أي طلب بعد.</div>')
+    +'</div></section>'
+    +'<section class="card full"><h2>الأعمال المعتمدة</h2><p class="sub">هاي الأعمال دخلت بالحساب بعد موافقة الإدارة.</p><div class="list">'
+    +((DATA.work||[]).length?(DATA.work||[]).slice(0,16).map(function(w){return '<div class="row"><div class="row-main"><b>'+esc(customerMap[w.customerId]||"عميل")+' · '+esc(TYPES[w.type]||w.type)+'</b><small>'+esc(w.note||"بدون ملاحظة")+'</small></div><div class="row-side"><b>'+esc(w.qty||1)+'×</b><small>'+esc(w.date||"")+'</small></div></div>'}).join(""):'<div class="empty">ما في أعمال معتمدة بعد.</div>')
     +'</div></section></div>';
   shell(inner,e.name,DATA.company||"رِواء ستوديو");
   $("#workForm").onsubmit=async function(ev){
     ev.preventDefault();var fd=new FormData(this),payload={};fd.forEach(function(v,k){payload[k]=v});payload.qty=+payload.qty||1;
-    var btn=this.querySelector("button");btn.disabled=true;btn.textContent="جاري الحفظ…";$("#workError").textContent="";
+    var btn=this.querySelector("button");btn.disabled=true;btn.textContent="جاري الإرسال…";$("#workError").textContent="";
     var r=await SB.rpc("portal_staff_submit_work",{p_token:token(),p_data:payload});
-    btn.disabled=false;btn.textContent="تسجيل التسليم";
-    if(r.error){$("#workError").textContent="تعذّر تسجيل التسليم.";return}
+    btn.disabled=false;btn.textContent="إرسال للمراجعة";
+    if(r.error){$("#workError").textContent="تعذّر إرسال التسليم للمراجعة.";return}
     await load();
   };
 }
@@ -181,17 +187,55 @@ function clientStatement(){
 function deliveredSummary(){
   var o={};Object.keys(TYPES).forEach(function(k){o[k]=0});(DATA.work||[]).forEach(function(w){o[w.type]=(o[w.type]||0)+(+w.qty||0)});return o
 }
+function clientPricingSection(){
+  var c=DATA.customer||{},m=currentMonth(),work=(DATA.work||[]).filter(function(w){return inMonth(w.date,m);});
+  var services=(DATA.salaryCharges||[]).filter(function(x){return ym(x.date||x.month)===m;});
+  var h='<section class="card full pricing-card"><h2>تفاصيل التسعير</h2><p class="sub">كيف عم ينحسب حسابك لهذا الشهر.</p>';
+  if(c.billing==="package"){
+    var vids=work.filter(function(w){return w.type==="video";});
+    var done=vids.reduce(function(a,w){return a+(+w.qty||0)},0),target=+c.videos||0;
+    var pct=target?Math.min(100,done/target*100):(done?100:0);
+    h+='<div class="pricing-head"><div><span class="pill">باقة شهرية</span><b>'+money(+c.monthlyFee||0)+' / شهر</b></div><div class="package-count"><b>'+done+'</b><span>/ '+target+' فيديو</span></div></div>'
+      +'<div class="package-progress"><i style="width:'+pct.toFixed(1)+'%"></i></div>'
+      +'<div class="package-progress-meta"><span>المنجز '+pct.toFixed(0)+'%</span><span>'+m+'</span></div>'
+      +'<div class="delivery-dates"><small>تواريخ إنجاز الفيديوهات</small><div>'
+      +(vids.length?vids.map(function(w){return '<span class="date-chip">'+esc(w.date)+' · '+esc(w.qty||1)+'×</span>'}).join(""):'<span class="mut">ما في فيديوهات معتمدة بهذا الشهر بعد.</span>')
+      +'</div></div>';
+  }else if(c.billing==="per_design"){
+    h+='<div class="price-lines"><div class="price-line"><span>التصميم</span><b>'+money(+c.drate||+c.rate||0)+'</b></div></div>';
+  }else{
+    h+='<div class="price-lines"><div class="price-line"><span>الفيديو</span><b>'+money(+c.rate||0)+'</b></div>'
+      +((+c.drate||0)?'<div class="price-line"><span>التصميم</span><b>'+money(+c.drate||0)+'</b></div>':'')+'</div>';
+  }
+  if(services.length){
+    h+='<div class="service-lines"><h3>الخدمات</h3>'
+      +services.map(function(x){return '<div class="service-line"><div><b>'+esc(x.serviceName||x.description||"خدمة تشغيل")+'</b><small>'+esc(x.month||ym(x.date)||m)+'</small></div><strong>'+money(+x.amount||0)+'</strong></div>'}).join("")
+      +'</div>';
+  }
+  return h+'</section>';
+}
+function clientDeliverySection(){
+  var c=DATA.customer||{},work=DATA.work||[];
+  return '<section class="card"><h2>شو تسلّم</h2><p class="sub">كل الأعمال المعتمدة والمسجلة على حسابك.</p><div class="list">'
+    +(work.length?work.slice(0,40).map(function(w){
+      var rate=0,label=TYPES[w.type]||w.type;
+      if(c.billing!=="package"){
+        if(w.type==="video")rate=+c.rate||0;
+        else if(w.type==="design")rate=+c.drate||(c.billing==="per_design"?+c.rate:0)||0;
+      }
+      return '<div class="row"><div class="row-main"><b>'+esc(label)+' · '+esc(w.qty||1)+'×</b><small>'+esc(w.note||"")+'</small>'
+        +(rate?'<small class="unit-price">'+money(rate)+' لكل '+esc(label)+'</small>':'')+'</div><div class="row-side">'+(rate?'<b>'+money((+w.qty||0)*rate)+'</b>':'')+'<small>'+esc(w.date||"")+'</small></div></div>';
+    }).join(""):'<div class="empty">ما في تسليمات معتمدة بعد.</div>')+'</div></section>';
+}
 function renderClient(){
   var c=DATA.customer||{},st=clientStatement(),del=deliveredSummary(),totalDelivered=Object.keys(del).reduce(function(a,k){return a+(del[k]||0)},0);
-  var latest=(DATA.invoices||[])[0];
   var inner='<section class="hero"><span class="eyebrow">حساب العميل</span><h1>'+esc(c.name||"")+'</h1><div class="hero-value '+(st.balance>0?"neg":"pos")+'">'+money(Math.abs(st.balance))+'</div>'
     +'<div class="hero-note">'+(st.balance>0?"المبلغ المتبقي عليك":st.balance<0?"رصيد دائن إلك":"الحساب مسدّد")+'</div></section>'
-    +'<section class="stats"><div class="stat"><small>إجمالي الحساب</small><b>'+money(st.billed)+'</b></div><div class="stat"><small>المدفوع</small><b class="pos">'+money(st.paid)+'</b></div><div class="stat"><small>التسليمات</small><b>'+totalDelivered+'</b></div></section>'
-    +'<div class="grid"><section class="card"><h2>شو تسلّم</h2><p class="sub">كل الأعمال المسجلة على حسابك.</p><div class="list">'
-    +((DATA.work||[]).length?(DATA.work||[]).slice(0,30).map(function(w){return '<div class="row"><div class="row-main"><b>'+esc(TYPES[w.type]||w.type)+' · '+esc(w.qty||1)+'×</b><small>'+esc(w.note||"")+'</small></div><div class="row-side"><small>'+esc(w.date||"")+'</small></div></div>'}).join(""):'<div class="empty">ما في تسليمات بعد.</div>')+'</div></section>'
+    +'<section class="stats"><div class="stat"><small>إجمالي الحساب</small><b>'+money(st.billed)+'</b></div><div class="stat"><small>المدفوع</small><b class="pos">'+money(st.paid)+'</b></div><div class="stat"><small>التسليمات المعتمدة</small><b>'+totalDelivered+'</b></div></section>'
+    +'<div class="grid">'+clientPricingSection()+clientDeliverySection()
     +'<section class="card"><h2>التمويل</h2><p class="sub">الحملات والميزانيات المسجلة على حسابك.</p><div class="funding-grid">'
     +((DATA.fundings||[]).length?(DATA.fundings||[]).map(function(x){return '<div class="funding"><b>'+esc(x.platform||"Meta")+'</b><small>'+esc(x.date||"")+' · '+esc(x.status||"")+'</small><strong>'+money(fundingTotal(x))+'</strong><small>ميزانية '+money(+x.budget||0)+' · أتعاب '+money(fundingFee(x))+'</small></div>'}).join(""):'<div class="empty">ما في تمويل مسجل.</div>')+'</div></section>'
-    +'<section class="card full"><div style="display:flex;justify-content:space-between;gap:12px;align-items:start"><div><h2>الفواتير</h2><p class="sub">اطبع أي فاتورة مباشرة من هون.</p></div><button class="btn no-print" data-act="printstatement">طباعة كشف الحساب</button></div>'
+    +'<section class="card full"><div class="card-head-actions"><div><h2>الفواتير</h2><p class="sub">اطبع أي فاتورة مباشرة من هون.</p></div><button class="btn no-print" data-act="printstatement">طباعة كشف الحساب</button></div>'
     +'<div>'+((DATA.invoices||[]).length?(DATA.invoices||[]).map(function(inv){return '<div class="invoice-card"><div class="invoice-card-head"><div><b>'+esc(inv.number||inv.id)+'</b><small>'+esc(inv.date||inv.period||"")+' · '+esc(inv.status||"")+'</small></div><span class="invoice-total">'+money(invoiceTotal(inv))+'</span></div><div class="no-print" style="margin-top:10px"><button class="btn" data-act="printinvoice" data-id="'+esc(inv.id)+'">طباعة الفاتورة</button></div></div>'}).join(""):'<div class="empty">ما في فواتير بعد.</div>')+'</div></section></div>';
   shell(inner,c.name,DATA.company||"رِواء ستوديو");
 }
