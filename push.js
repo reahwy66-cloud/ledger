@@ -6,7 +6,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 (function mobileUiBootstrap(){
   var link=document.createElement("link");
   link.rel="stylesheet";
-  link.href="mobile.css?v=20260920-v3";
+  link.href="mobile.css?v=20260920-v31";
   document.head.appendChild(link);
 
   var ICONS={
@@ -139,7 +139,9 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     var bottom=document.createElement("nav");
     bottom.className="mobile-bottom-nav";
     bottom.setAttribute("aria-label","Primary");
-    bottom.innerHTML=main.filter(function(k){return labels[k];}).map(function(k){
+    var primary=main.filter(function(k){return labels[k];});
+    bottom.style.setProperty("--nav-count",String(Math.max(1,primary.length)));
+    bottom.innerHTML=primary.map(function(k){
       return '<button type="button" data-tab="'+k+'" class="'+(tab===k?"active":"")+'" aria-current="'+(tab===k?"page":"false")+'">'+
         (ICONS[k]||"")+'<span>'+labels[k]+'</span></button>';
     }).join("");
@@ -174,7 +176,15 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     if(tools){
       Array.from(tools.children).forEach(function(node,index){
         if(index===0 || (node.matches&&node.matches('[data-act="logout"]'))) return;
-        drawerTools.appendChild(node.cloneNode(true));
+        var clone=node.cloneNode(true);
+        if(clone.matches&&clone.matches('[data-act="theme"]')){
+          clone.classList.add("drawer-utility");
+          clone.innerHTML='<span class="drawer-util-icon">◐</span><span>'+(document.documentElement.lang==="en"?"Light / Dark":"فاتح / داكن")+'</span>';
+        }else if(clone.matches&&clone.matches('[data-act="lang"]')){
+          clone.classList.add("drawer-utility");
+          clone.innerHTML='<span class="drawer-util-icon">文</span><span>'+(document.documentElement.lang==="en"?"العربية":"English")+'</span>';
+        }
+        drawerTools.appendChild(clone);
       });
     }
 
