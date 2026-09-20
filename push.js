@@ -10,7 +10,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
   document.head.appendChild(link);
   var desktopLink=document.createElement("link");
   desktopLink.rel="stylesheet";
-  desktopLink.href="desktop.css?v=20260920-v32";
+  desktopLink.href="desktop.css?v=20260920-v33";
   document.head.appendChild(desktopLink);
 
   var ICONS={
@@ -93,6 +93,19 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
       var label=(b.textContent||"").trim();
       b.innerHTML='<span class="desktop-tab-icon">'+(ICONS[k]||"")+'</span><span class="desktop-tab-label">'+label+'</span>';
     });
+
+    if(!tabs.querySelector(".desktop-signout")){
+      var sep=document.createElement("div");
+      sep.className="desktop-nav-separator";
+      tabs.appendChild(sep);
+
+      var out=document.createElement("button");
+      out.type="button";
+      out.className="desktop-signout";
+      out.setAttribute("data-act","signout");
+      out.innerHTML='<span class="desktop-tab-icon">'+(ICONS.signout||"")+'</span><span class="desktop-tab-label">'+(document.documentElement.lang==="en"?"Sign out":"تسجيل الخروج")+'</span>';
+      tabs.appendChild(out);
+    }
   }
 
   function activeTab(){
