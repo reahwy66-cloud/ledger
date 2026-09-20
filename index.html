@@ -2199,8 +2199,8 @@ async function issuePortalCode(kind,id,name){
     return;
   }
   var code=String(r.data||"");
-  var path=kind==="staff"?"/staff":"/client";
-  var url=location.origin+path;
+  var page=kind==="staff"?"staff-portal.html":"client-portal.html";
+  var url=new URL(page,location.href).href;
   el("modalHost").innerHTML='<div class="scrim"><div class="modal portal-code-modal"><h3>'+(kind==="staff"?(LANG==="ar"?"بوابة الفريق":"Staff portal"):(LANG==="ar"?"بوابة العميل":"Client portal"))+'</h3>'
     +'<p class="sub">'+esc(name||"")+'</p><div class="portal-code-value num">'+esc(code)+'</div>'
     +'<p class="sub">'+(LANG==="ar"?"هذا الرمز يلغي أي رمز قديم لنفس الشخص.":"This code replaces any previous code for this person.")+'</p>'
