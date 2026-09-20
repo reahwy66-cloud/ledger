@@ -2203,7 +2203,7 @@ async function issuePortalCode(kind,id,name){
   var url=new URL(page,location.href).href;
   el("modalHost").innerHTML='<div class="scrim"><div class="modal portal-code-modal"><h3>'+(kind==="staff"?(LANG==="ar"?"بوابة الفريق":"Staff portal"):(LANG==="ar"?"بوابة العميل":"Client portal"))+'</h3>'
     +'<p class="sub">'+esc(name||"")+'</p><div class="portal-code-value num">'+esc(code)+'</div>'
-    +'<p class="sub">'+(LANG==="ar"?"هذا الرمز يلغي أي رمز قديم لنفس الشخص.":"This code replaces any previous code for this person.")+'</p>'
+    +'<p class="sub">'+(LANG==="ar"?"هذا رمز ثابت لهذا الشخص ويظل نفسه في كل مرة.":"This is this person’s permanent access code and stays the same.")+'</p>'
     +'<div class="portal-link-box">'+esc(url)+'</div>'
     +'<div class="acts"><button class="btn ghost" data-act="copyportal" data-code="'+esc(code)+'" data-url="'+esc(url)+'">'+(LANG==="ar"?"نسخ الرابط والرمز":"Copy link & code")+'</button>'
     +'<button class="btn primary" onclick="document.getElementById(\'modalHost\').innerHTML=\'\'">'+t("close")+'</button></div></div></div>';
