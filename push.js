@@ -26,7 +26,8 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     users:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"/></svg>',
     account:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9v-2c0-3.3 3.1-5 7-5s7 1.7 7 5v2H5Zm14-9h2v2h-2v-2Zm0 4h2v5h-2v-5Z"/></svg>',
     signout:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5v-2H5V5h5V3Zm4.6 4.6L13.2 9l2 2H8v2h7.2l-2 2 1.4 1.4L19 12l-4.4-4.4Z"/></svg>',
-    setup:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19.4 13 .1-1-.1-1 2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1L15 3.5h-4l-.4 2.6a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11l-.1 1 .1 1-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.7 1l.4 2.6h4l.4-2.6a8 8 0 0 0 1.7-1l2.4 1 2-3.4-2.2-1.5ZM13 15a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/></svg>'
+    setup:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19.4 13 .1-1-.1-1 2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1L15 3.5h-4l-.4 2.6a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11l-.1 1 .1 1-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.7 1l.4 2.6h4l.4-2.6a8 8 0 0 0 1.7-1l2.4 1 2-3.4-2.2-1.5ZM13 15a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/></svg>',
+    notifications:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.35-1.65h-4.7A2.5 2.5 0 0 0 12 22Zm7-5v-5a7 7 0 0 0-5-6.7V4a2 2 0 1 0-4 0v1.3A7 7 0 0 0 5 12v5l-2 2v1h18v-1l-2-2Zm-12 1v-6a5 5 0 0 1 10 0v6H7Z"/></svg>'
   };
 
   function scheduledTheme(now){
@@ -153,10 +154,13 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 
     var header=document.createElement("div");
     header.className="mobile-header";
+    var notifyCount=(mast.querySelector(".portal-notify-chip .notify-count")||{}).textContent||"";
     header.innerHTML=
       '<button class="mobile-head-btn mobile-menu-btn" type="button" aria-label="Menu"><span></span><span></span><span></span></button>'+
       '<div class="mobile-logo">'+(mast.querySelector(".stamp")?mast.querySelector(".stamp").outerHTML:"")+'</div>'+
-      '<button class="mobile-head-btn mobile-quick-btn" type="button" '+quickButton(tab,wrap)+' aria-label="Quick action"><span>+</span></button>';
+      '<button class="mobile-head-btn mobile-notify-btn" type="button" data-act="notifications" aria-label="'+(document.documentElement.lang==="en"?"Notifications":"التنبيهات")+'">'+
+        (ICONS.notifications||"")+(notifyCount?'<b class="mobile-notify-count">'+notifyCount+'</b>':'')+
+      '</button>';
     wrap.insertBefore(header,mast);
 
     var main=["flow","clients","ledger","calendar"];
@@ -202,7 +206,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     var tools=mast.querySelector(".tools");
     if(tools){
       Array.from(tools.children).forEach(function(node,index){
-        if(index===0 || (node.matches&&node.matches('[data-act="logout"]'))) return;
+        if(index===0 || (node.matches&&node.matches('[data-act="logout"]')) || (node.matches&&node.matches('[data-act="notifications"]'))) return;
         var clone=node.cloneNode(true);
         if(clone.matches&&clone.matches('[data-act="theme"]')){
           clone.classList.add("drawer-utility");
