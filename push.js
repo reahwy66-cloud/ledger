@@ -6,7 +6,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 (function mobileUiBootstrap(){
   var link=document.createElement("link");
   link.rel="stylesheet";
-  link.href="mobile.css?v=20260920-glass-v21";
+  link.href="mobile.css?v=20260920-glass-v22";
   document.head.appendChild(link);
 
   var ICONS={
@@ -179,6 +179,62 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     });
   }
 
+  function bindScrollHeader(){
+    if(document.documentElement.dataset.scrollHeader==="1") return;
+    document.documentElement.dataset.scrollHeader="1";
+    var lastY=Math.max(0,window.scrollY||0);
+    var ticking=false;
+    window.addEventListener("scroll",function(){
+      if(ticking) return;
+      ticking=true;
+      requestAnimationFrame(function(){
+        ticking=false;
+        var y=Math.max(0,window.scrollY||0);
+        var dy=y-lastY;
+        var header=document.querySelector(".mobile-header");
+        if(header){
+          if(y<18){
+            header.classList.remove("mobile-header-hidden");
+          }else if(dy>4){
+            header.classList.add("mobile-header-hidden");
+          }else if(dy<0){
+            header.classList.remove("mobile-header-hidden");
+          }
+        }
+        lastY=y;
+      });
+    },{passive:true});
+  }
+
+  function prepareCalendar(){
+    if(document.body.getAttribute("data-mobile-tab")!=="calendar") return;
+    document.querySelectorAll(".cal .day").forEach(function(day){
+      var old=day.querySelector(".mobile-cal-count");
+      var oldDots=day.querySelector(".mobile-cal-dots");
+      if(old) old.remove();
+      if(oldDots) oldDots.remove();
+      var evs=Array.from(day.querySelectorAll(".ev")).filter(function(ev){
+        return !ev.classList.contains("cancelled");
+      });
+      if(!evs.length) return;
+      if(evs.length<=3){
+        var dots=document.createElement("span");
+        dots.className="mobile-cal-dots";
+        for(var i=0;i<evs.length;i++){
+          var dot=document.createElement("i");
+          dots.appendChild(dot);
+        }
+        day.appendChild(dots);
+      }else{
+        var count=document.createElement("span");
+        count.className="mobile-cal-count";
+        count.textContent=String(evs.length);
+        day.appendChild(count);
+      }
+      day.setAttribute("aria-label",(day.textContent||"").trim()+" · "+evs.length);
+    });
+  }
+
   function bindGlassGestures(){
     if(document.documentElement.dataset.glassGestures==="1") return;
     document.documentElement.dataset.glassGestures="1";
@@ -218,7 +274,9 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     applyScheduledTheme();
     buildMobileShell();
     prepareTables();
+    prepareCalendar();
     bindGlassGestures();
+    bindScrollHeader();
   }
 
   function run(){requestAnimationFrame(refresh);}
