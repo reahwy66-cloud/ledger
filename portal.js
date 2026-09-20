@@ -5,6 +5,7 @@ var SUPA_URL="https://gvnpixjkcmbrdfefbamr.supabase.co";
 var SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2bnBpeGprY21icmRmZWZiYW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MDAyNDAsImV4cCI6MjEwMDQ3NjI0MH0.PPuHBLPRwFPvjMgoIWHCubDTX9at5gSgn4QKxcgsbQI";
 var KIND=document.body.getAttribute("data-portal")||"staff";
 var PORTAL_API="https://studio-ledger-mcp.reahwy66.workers.dev";
+var DRIVE_APP_URL="https://script.google.com/macros/s/AKfycby5AkO98YVGA4Lq1r0NdUm_6gTdtu6aPigPRoFad4qu3EQsPpB5M_8x3snTtGYSLEtrlQ/exec";
 var SB=null,DATA=null;
 var TOKEN_KEY="riwa_portal_"+KIND+"_token";
 var TYPES={video:"فيديو",post:"بوست",design:"تصميم",shoot:"تصوير",voice:"فويس",script:"سكربت",task:"مهمة"};
@@ -177,53 +178,43 @@ function staffBalance(){
   var paid=(DATA.payouts||[]).filter(function(x){return inMonth(x.date,m)}).reduce(function(a,x){return a+(+x.amount||0)},0);
   return {earned:earned,adv:adv,paid:paid,balance:earned-adv-paid}
 }
-async function uploadPortalFile(file,payload,onProgress){
-  if(!file) return null;
-  var prep=await fetch(PORTAL_API+"/portal/drive/upload-session",{
-    method:"POST",
-    headers:{"content-type":"application/json","authorization":"Bearer "+token()},
-    body:JSON.stringify({
-      customerId:payload.customerId,
-      workType:payload.type,
-      date:payload.date,
-      fileName:file.name,
-      mimeType:file.type||"application/octet-stream",
-      size:file.size
-    })
+function driveUploaderUrl(payload){
+  var customer=(DATA.customers||[]).filter(function(c){return c.id===payload.customerId})[0];
+  var q=new URLSearchParams({
+    mode:"upload",
+    customerId:payload.customerId||"",
+    customerName:customer&&customer.name||"Client",
+    workType:payload.type||"task",
+    date:payload.date||today()
   });
-  var session={};try{session=await prep.json()}catch(e){}
-  if(!prep.ok||!session.uploadUrl) throw new Error(session.error||"drive_prepare_failed");
+  return DRIVE_APP_URL+"?"+q.toString();
+}
+function openDriveUploader(payload,form){
+  return new Promise(function(resolve,reject){
+    var wrap=document.createElement("div");
+    wrap.className="drive-upload-overlay";
+    wrap.innerHTML='<div class="drive-upload-modal"><div class="drive-upload-head"><div><b>رفع الملف إلى Google Drive</b><small>اختر الملف وارفعه مباشرة إلى أرشيف العميل.</small></div><button type="button" class="drive-upload-close" aria-label="إغلاق">×</button></div>'
+      +'<iframe class="drive-upload-frame" src="'+esc(driveUploaderUrl(payload))+'" allow="clipboard-write"></iframe></div>';
+    document.body.appendChild(wrap);
 
-  await new Promise(function(resolve,reject){
-    var xhr=new XMLHttpRequest();
-    xhr.open("PUT",session.uploadUrl,true);
-    xhr.setRequestHeader("Content-Type",file.type||"application/octet-stream");
-    xhr.upload.onprogress=function(ev){
-      if(ev.lengthComputable&&onProgress) onProgress(Math.round(ev.loaded/ev.total*100));
-    };
-    xhr.onload=function(){
-      if(xhr.status>=200&&xhr.status<300){
-        var meta={};try{meta=JSON.parse(xhr.responseText||"{}")}catch(e){}
-        resolve(meta);
-      }else reject(new Error("drive_upload_failed_"+xhr.status));
-    };
-    xhr.onerror=function(){reject(new Error("drive_upload_network_error"))};
-    xhr.send(file);
-  }).then(function(meta){
-    session.file=meta;
+    function cleanup(){window.removeEventListener("message",onMessage);wrap.remove()}
+    function onMessage(ev){
+      var data=ev.data||{};
+      if(data.type==="riwa-drive-uploaded"&&data.file){
+        cleanup();
+        form._driveFile=data.file;
+        var status=form.querySelector("#driveFileStatus");
+        if(status) status.innerHTML='<b>'+esc(data.file.name||"تم رفع الملف")+'</b><small>'+esc(data.file.archivePath||"Google Drive")+'</small>';
+        resolve(data.file);
+      }else if(data.type==="riwa-drive-upload-error"){
+        cleanup();
+        reject(new Error(data.error||"drive_upload_failed"));
+      }
+    }
+    window.addEventListener("message",onMessage);
+    wrap.querySelector(".drive-upload-close").onclick=function(){cleanup();resolve(null)};
+    wrap.addEventListener("click",function(e){if(e.target===wrap){cleanup();resolve(null)}});
   });
-
-  var meta=session.file||{};
-  return {
-    driveFileId:meta.id||"",
-    name:meta.name||file.name,
-    mimeType:meta.mimeType||file.type||"",
-    size:+meta.size||file.size||0,
-    webViewLink:meta.webViewLink||"",
-    webContentLink:meta.webContentLink||"",
-    thumbnailLink:meta.thumbnailLink||"",
-    archivePath:session.archivePath||""
-  };
 }
 
 function fileKindLabel(file){
@@ -256,8 +247,7 @@ function renderStaff(){
     +'<div class="field work-qty"><label>الكمية</label><input name="qty" type="number" min="1" max="100" value="1"></div>'
     +'<div class="field work-date"><label>التاريخ</label><input name="date" type="date" value="'+today()+'"></div>'
     +'<div class="field full work-note"><label>ملاحظة</label><textarea name="note" placeholder="تفاصيل اختيارية…"></textarea></div>'
-    +'<div class="field full work-file"><label>الملف</label><input name="deliveryFile" type="file" accept="video/*,image/*,.pdf,.doc,.docx"><small>الفيديو أو التصميم ينرفع مباشرة إلى أرشيف العميل على Google Drive.</small></div>'
-    +'<div class="full work-upload-progress" id="workUploadProgress" hidden><span>رفع الملف</span><div><i></i></div><b>0%</b></div>'
+    +'<div class="field full work-file"><label>الملف</label><button class="btn drive-upload-btn" type="button" data-act="driveupload">رفع ملف إلى Google Drive</button><div class="drive-file-status" id="driveFileStatus"><span>ما تم رفع ملف بعد</span><small>الفيديو أو التصميم يُحفظ داخل أرشيف العميل.</small></div></div>'
     +'<div class="full work-submit-actions"><button class="btn primary" type="submit">إرسال للمراجعة</button><div class="error" id="workError"></div></div>'
     +'</form></section>'
     +'<section class="card"><h2>طلبات التسليم</h2><p class="sub">تابع حالة الأعمال التي أرسلتها للإدارة.</p><div class="list">'
@@ -267,25 +257,30 @@ function renderStaff(){
     +((DATA.work||[]).length?(DATA.work||[]).slice(0,16).map(function(w){return '<div class="row"><div class="row-main"><b>'+esc(customerMap[w.customerId]||"عميل")+' · '+esc(TYPES[w.type]||w.type)+'</b><small>'+esc(w.note||"بدون ملاحظة")+'</small></div><div class="row-side"><b>'+esc(w.qty||1)+'×</b><small>'+esc(w.date||"")+'</small></div></div>'}).join(""):'<div class="empty">ما في أعمال معتمدة بعد.</div>')
     +'</div></section></div>';
   shell(inner,e.name,DATA.company||"رِواء ستوديو");
+  var driveBtn=$("#workForm [data-act=\"driveupload\"]");
+  if(driveBtn) driveBtn.onclick=async function(){
+    var form=$("#workForm"),fd=new FormData(form),payload={};
+    fd.forEach(function(v,k){payload[k]=v});
+    if(!payload.customerId){$("#workError").textContent="اختَر العميل أولاً.";return}
+    driveBtn.disabled=true;driveBtn.textContent="فتح الرفع…";$("#workError").textContent="";
+    try{
+      await openDriveUploader(payload,form);
+    }catch(ex){
+      $("#workError").textContent="تعذّر رفع الملف — "+String(ex&&ex.message||ex);
+    }finally{
+      driveBtn.disabled=false;driveBtn.textContent="رفع ملف إلى Google Drive";
+    }
+  };
   $("#workForm").onsubmit=async function(ev){
     ev.preventDefault();
     var form=this,fd=new FormData(form),payload={};
-    fd.forEach(function(v,k){if(k!=="deliveryFile")payload[k]=v});
+    fd.forEach(function(v,k){payload[k]=v});
     payload.qty=+payload.qty||1;
-    var fileInput=form.querySelector('input[name="deliveryFile"]');
-    var file=fileInput&&fileInput.files&&fileInput.files[0]||null;
+    if(form._driveFile) payload.file=form._driveFile;
     var btn=form.querySelector('button[type="submit"]');
-    var err=$("#workError"),progress=$("#workUploadProgress");
-    btn.disabled=true;btn.textContent=file?"جاري رفع الملف…":"جاري الإرسال…";err.textContent="";
+    var err=$("#workError");
+    btn.disabled=true;btn.textContent="جاري الإرسال…";err.textContent="";
     try{
-      if(file){
-        progress.hidden=false;
-        payload.file=await uploadPortalFile(file,payload,function(pct){
-          progress.querySelector("i").style.width=pct+"%";
-          progress.querySelector("b").textContent=pct+"%";
-        });
-        btn.textContent="جاري إرسال التسليم…";
-      }
       var r=await SB.rpc("portal_staff_submit_work",{p_token:token(),p_data:payload});
       if(r.error) throw new Error(String(r.error.message||r.error.details||r.error.hint||"unknown_error"));
       btn.textContent="تم الإرسال ✓";
@@ -295,7 +290,6 @@ function renderStaff(){
       btn.textContent="إرسال للمراجعة";
     }finally{
       btn.disabled=false;
-      if(progress) setTimeout(function(){progress.hidden=true;progress.querySelector("i").style.width="0%";progress.querySelector("b").textContent="0%";},700);
     }
   };
 }
