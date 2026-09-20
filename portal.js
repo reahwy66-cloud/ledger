@@ -6,7 +6,19 @@ var SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 var KIND=document.body.getAttribute("data-portal")||"staff";
 var SB=null,DATA=null;
 var TOKEN_KEY="riwa_portal_"+KIND+"_token";
-var TYPES={video:"فيديو",post:"بوست",design:"تصميم",shoot:"تصوير",voice:"فويس",task:"مهمة"};
+var TYPES={video:"فيديو",post:"بوست",design:"تصميم",shoot:"تصوير",voice:"فويس",script:"سكربت",task:"مهمة"};
+function roleWorkTypes(role){
+  var r=String(role||"").toLowerCase().replace(/[أإآ]/g,"ا").replace(/ة/g,"ه");
+  var out=[];
+  function add(k){if(out.indexOf(k)<0)out.push(k)}
+  if(/مونتير|منتير|editor|video editor|editing/.test(r)) add("video");
+  if(/مصور|تصوير|photographer|videographer|camera/.test(r)) add("shoot");
+  if(/مصمم|جرافيك|graphic|designer|design/.test(r)) add("design");
+  if(/كاتب محتوى|كاتبه محتوى|كاتبة محتوى|content writer|copywriter|writer|سكريبت|سكربت/.test(r)) add("script");
+  if(/سوشال|social media|social/.test(r)) add("post");
+  if(/فويس|voice|vo /.test(r)) add("voice");
+  return out.length?out:Object.keys(TYPES);
+}
 
 function $(q){return document.querySelector(q)}
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]})}
@@ -127,7 +139,7 @@ function renderStaff(){
     +'<div class="grid"><section class="card"><h2>تسليم عمل</h2><p class="sub">الإرسال يروح للإدارة للمراجعة أولاً، وما بينحسب بحسابك إلا بعد الموافقة.</p>'
     +'<form class="form" id="workForm"><div class="field"><label>العميل</label><select name="customerId" required><option value="">اختر العميل</option>'
     +(DATA.customers||[]).map(function(c){return '<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>'}).join("")
-    +'</select></div><div class="field"><label>نوع العمل</label><select name="type">'+Object.keys(TYPES).map(function(k){return '<option value="'+k+'">'+TYPES[k]+'</option>'}).join("")+'</select></div>'
+    +'</select></div><div class="field"><label>نوع العمل</label><select name="type">'+roleWorkTypes(e.role).map(function(k){return '<option value="'+k+'">'+TYPES[k]+'</option>'}).join("")+'</select><small class="role-work-hint">حسب المسمى الوظيفي: '+esc(e.role||"—")+'</small></div>'
     +'<div class="field"><label>الكمية</label><input name="qty" type="number" min="1" max="100" value="1"></div><div class="field"><label>التاريخ</label><input name="date" type="date" value="'+today()+'"></div>'
     +'<div class="field full"><label>ملاحظة</label><textarea name="note" placeholder="تفاصيل اختيارية…"></textarea></div>'
     +'<div class="full"><button class="btn primary" type="submit">إرسال للمراجعة</button><div class="error" id="workError"></div></div></form></section>'
