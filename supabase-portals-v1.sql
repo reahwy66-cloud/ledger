@@ -208,7 +208,7 @@ end $$;
 
 create or replace function public.portal_client_salary_charges(p_cid text)
 returns jsonb
-language plpgsql stable security definer set search_path=public as $
+language plpgsql stable security definer set search_path=public as $portal$
 declare
   c_start text;
   e record;
@@ -257,7 +257,7 @@ begin
   end loop;
 
   return out;
-end $;
+end $portal$;
 
 create or replace function public.portal_client_snapshot(p_token text)
 returns jsonb
