@@ -330,3 +330,74 @@ button{cursor:pointer}
   display:block;
   background:#000;
 }
+
+
+/* Portal V4.1 — Apps Script Drive uploader */
+.drive-upload-btn{
+  width:100%;
+  min-height:56px;
+  justify-content:center;
+}
+.drive-file-status{
+  display:grid;
+  gap:3px;
+  margin-top:8px;
+  padding:11px 12px;
+  border:1px solid var(--gl);
+  border-radius:14px;
+  background:rgba(255,255,255,.02);
+}
+.drive-file-status b{font-size:12px}
+.drive-file-status span,.drive-file-status small{font-size:10.5px;color:var(--mute);line-height:1.5}
+.drive-upload-overlay{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:grid;
+  place-items:center;
+  padding:18px;
+  background:rgba(12,16,14,.48);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+.drive-upload-modal{
+  width:min(680px,100%);
+  height:min(620px,88vh);
+  display:grid;
+  grid-template-rows:auto 1fr;
+  overflow:hidden;
+  border:1px solid var(--gl);
+  border-radius:24px;
+  background:var(--ground);
+  box-shadow:0 24px 80px rgba(0,0,0,.25);
+}
+.drive-upload-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  padding:16px 18px;
+  border-bottom:1px solid var(--gl);
+}
+.drive-upload-head>div{display:grid;gap:4px}
+.drive-upload-head b{font-size:15px}
+.drive-upload-head small{font-size:10.5px;color:var(--mute)}
+.drive-upload-close{
+  width:38px;height:38px;
+  display:grid;place-items:center;
+  border:1px solid var(--gl);
+  border-radius:12px;
+  background:rgba(255,255,255,.04);
+  color:var(--bone);
+  font:500 24px/1 sans-serif;
+}
+.drive-upload-frame{
+  width:100%;
+  height:100%;
+  border:0;
+  background:#f7f5ef;
+}
+@media(max-width:700px){
+  .drive-upload-overlay{padding:0}
+  .drive-upload-modal{width:100%;height:100dvh;border-radius:0;border:0}
+}
