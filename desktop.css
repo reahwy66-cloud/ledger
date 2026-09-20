@@ -658,3 +658,63 @@ input,select,textarea{border-radius:12px;background:color-mix(in srgb,var(--grou
   overflow-wrap:anywhere;
 }
 }
+
+
+/* V3.6 — full admin spacing audit + filter result summary */
+@media(min-width:821px){
+  .mobile-view>.sec+.sec,
+  .mobile-view>.card+.card,
+  .mobile-view>.glass-card+.glass-card,
+  .mobile-view>.glass-disclosure+.glass-card,
+  .mobile-view>.glass-card+.glass-disclosure,
+  .mobile-view>.timeline-card+.glass-disclosure{
+    margin-top:20px!important;
+  }
+  .mobile-view .sec>.card+.card,
+  .mobile-view .sec>.glass-card+.glass-card{
+    margin-top:18px!important;
+  }
+  .mobile-view .rowhead+.card,
+  .mobile-view .page-heading+.card,
+  .mobile-view .page-heading+.entity-list,
+  .mobile-view .page-heading+.mobile-hero{
+    margin-top:18px!important;
+  }
+  .mobile-view>.sec:not(:first-child){
+    margin-top:20px;
+  }
+  .mobile-view .card>.sec:first-child{margin-top:0}
+  .mobile-view .card>.sec+.sec{margin-top:18px}
+
+  .ledger-filter-summary{
+    grid-column:1;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    margin:0;padding:13px 15px;border:1px solid var(--dgl);border-radius:16px;
+    background:color-mix(in srgb,var(--brand) 7%,var(--dg1));
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    box-shadow:0 8px 24px rgba(0,0,0,.05)
+  }
+  .ledger-filter-summary>div:first-child{min-width:0;display:grid;gap:3px}
+  .ledger-filter-summary b{font-size:13px}
+  .ledger-filter-summary small{font-size:11px;color:var(--mute)}
+  .filter-counts{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+  .filter-counts span{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;border:1px solid var(--dgl);border-radius:999px;font-size:10.5px;white-space:nowrap;background:rgba(255,255,255,.02)}
+  .filter-counts .num{font-size:11.5px}
+
+  /* Keep every detail page section visually separated */
+  body[data-mobile-tab="clients"] .mobile-view>.sec,
+  body[data-mobile-tab="team"] .mobile-view>.sec,
+  body[data-mobile-tab="invoices"] .mobile-view>.sec,
+  body[data-mobile-tab="funding"] .mobile-view>.sec,
+  body[data-mobile-tab="costs"] .mobile-view>.sec,
+  body[data-mobile-tab="calendar"] .mobile-view>.sec,
+  body[data-mobile-tab="setup"] .mobile-view>.sec{
+    margin-bottom:0;
+  }
+
+  .mobile-view details+details,
+  .mobile-view details+.card,
+  .mobile-view .card+details{
+    margin-top:18px!important;
+  }
+}
