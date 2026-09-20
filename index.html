@@ -889,6 +889,10 @@ async function pull(){
   }
   if(applyBrandDefaults()) setTimeout(save,0);
   await loadPortalPending();
+  if(canSeeMoney()&&syncAllOpenInvoiceRoots(MONTH)){
+    Store.save(S);
+    queuePush();
+  }
   setSync("cl.synced");
 }
 function queuePush(){
@@ -3338,9 +3342,14 @@ function rootInvoiceItemsForClient(c,period){
   }
   return items;
 }
+function isInvoiceRootItem(item){
+  var k=item&&item.kind||"",d=String(item&&item.description||"").toLowerCase();
+  if(["service","ads","video","design"].indexOf(k)>=0) return true;
+  return /باقة|اشتراك|package|monthly package|service \/ package/.test(d);
+}
 function syncClientOpenInvoices(c,fromMonth){
-  if(!c) return;
-  var start=fromMonth||MONTH;
+  if(!c) return false;
+  var start=fromMonth||MONTH,changed=false;
   (S.invoices||[]).forEach(function(inv){
     if(inv.customerId!==c.id) return;
     var per=(inv.period||inv.date||"").slice(0,7);
@@ -3348,21 +3357,43 @@ function syncClientOpenInvoices(c,fromMonth){
     var state=invoiceState(inv);
     if(state==="paid2"||state==="cancelled") return;
 
-    var keep=(inv.items||[]).filter(function(item){
-      return ["service","ads","video","design"].indexOf(item.kind)<0;
-    });
+    var keep=(inv.items||[]).filter(function(item){return !isInvoiceRootItem(item);});
     var root=rootInvoiceItemsForClient(c,per||start);
-    inv.items=root.concat(keep);
-    inv.serviceAmount=c.billing==="package"?Math.max(0,(+c.monthlyFee||0)-(+c.adSpend||0)):0;
-    inv.adAmount=c.billing==="package"?(+c.adSpend||0):0;
     var dm=delivered(c,per||start);
-    inv.videoQty=c.billing!=="package"?(+dm.video||0):0;
-    inv.videoRate=c.billing!=="package"?(+c.rate||0):0;
-    inv.designQty=c.billing!=="package"?(+dm.design||0):0;
-    inv.designRate=c.billing!=="package"?(+c.drate||0):0;
-    inv.updatedAt=new Date().toISOString();
-    inv.syncedFromClient=true;
+    var next={
+      items:root.concat(keep),
+      serviceAmount:c.billing==="package"?Math.max(0,(+c.monthlyFee||0)-(+c.adSpend||0)):0,
+      adAmount:c.billing==="package"?(+c.adSpend||0):0,
+      videoQty:c.billing!=="package"?(+dm.video||0):0,
+      videoRate:c.billing!=="package"?(+c.rate||0):0,
+      designQty:c.billing!=="package"?(+dm.design||0):0,
+      designRate:c.billing!=="package"?(+c.drate||0):0
+    };
+    var before=JSON.stringify({
+      items:inv.items||[],
+      serviceAmount:+inv.serviceAmount||0,
+      adAmount:+inv.adAmount||0,
+      videoQty:+inv.videoQty||0,
+      videoRate:+inv.videoRate||0,
+      designQty:+inv.designQty||0,
+      designRate:+inv.designRate||0
+    });
+    var after=JSON.stringify(next);
+    if(before!==after){
+      Object.assign(inv,next);
+      inv.updatedAt=new Date().toISOString();
+      inv.syncedFromClient=true;
+      changed=true;
+    }
   });
+  return changed;
+}
+function syncAllOpenInvoiceRoots(fromMonth){
+  var changed=false;
+  (S.customers||[]).forEach(function(c){
+    if(syncClientOpenInvoices(c,fromMonth||MONTH)) changed=true;
+  });
+  return changed;
 }
 function clientForm(c){
   form(c?t("cli.edit"):t("cli.add"),[
