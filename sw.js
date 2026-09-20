@@ -1,9 +1,9 @@
 /* رِواء ستوديو — offline shell.
    The app itself is cached so it opens without a connection.
    Live data always goes to the network; it is never served stale. */
-const CACHE = 'studio-ledger-v19-ledger-grid';
+const CACHE = 'studio-ledger-v20-desktop-v3';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
-               './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon.png', './push.js', './mobile.css'];
+               './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon.png', './push.js', './mobile.css', './desktop.css'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
