@@ -2009,7 +2009,7 @@ function vClient(){
    +'<div class="mut" style="margin-top:16px;font-size:12px">'+t("cd.all",{m:monthName(c.startMonth||MONTH)})+'</div>'
    +'<div style="margin-top:6px">'+deliveredChips(da)+'</div>'
    +(c.billing==="package"?'<div class="carve" style="margin-top:14px"><span>'+t("cd.promised")+'</span>'
-      +'<span class="num">'+c.videos+' '+t("d.video")+' · '+(c.designs!=null?c.designs:c.posts)+' '+t("d.design")+'</span></div>':'')
+      +'<span>'+[+c.videos?((+c.videos)+" "+t("d.video")):"",+c.posts?((+c.posts)+" "+t("d.post")):"",+c.designs?((+c.designs)+" "+t("d.design")):""].filter(Boolean).join(" · ")+'</span></div>':'')
    +'</div>'
    +'<div class="card"><span class="eyebrow">'+t("f.note")+'</span>'
    +'<p style="margin-top:10px;font-size:13px">'+(c.note?esc(c.note):'<span class="mut">'+t("cd.none")+'</span>')+'</p>'
@@ -3310,6 +3310,60 @@ function printInvoice(c,invoice){
   w.document.open(); w.document.write(html); w.document.close();
 }
 
+function clientPackageLabel(c){
+  var parts=[];
+  if(+c.videos) parts.push((+c.videos)+" "+t("d.video"));
+  if(+c.posts) parts.push((+c.posts)+" "+t("d.post"));
+  if(+c.designs) parts.push((+c.designs)+" "+t("d.design"));
+  return (LANG==="ar"?"الباقة الشهرية":"Monthly package")+(parts.length?" — "+parts.join(" + "):"");
+}
+function rootInvoiceItemsForClient(c,period){
+  var items=[],p=period||MONTH;
+  if(c.billing==="package"){
+    var total=+c.monthlyFee||0,ads=+c.adSpend||0;
+    var service=Math.max(0,total-ads);
+    if(service) items.push({kind:"service",description:clientPackageLabel(c),amount:service});
+    if(ads) items.push({kind:"ads",description:t("inv.ads"),amount:ads});
+  }else{
+    var dm=delivered(c,p);
+    if(c.billing==="per_design"){
+      var dq=+dm.design||0,dr=+c.drate||+c.rate||0;
+      if(dq&&dr) items.push({kind:"design",description:dq+" × "+t("d.design")+" @ "+money(dr),qty:dq,rate:dr,amount:dq*dr});
+    }else{
+      var vq=+dm.video||0,vr=+c.rate||0;
+      var dq2=+dm.design||0,dr2=+c.drate||0;
+      if(vq&&vr) items.push({kind:"video",description:vq+" × "+t("d.video")+" @ "+money(vr),qty:vq,rate:vr,amount:vq*vr});
+      if(dq2&&dr2) items.push({kind:"design",description:dq2+" × "+t("d.design")+" @ "+money(dr2),qty:dq2,rate:dr2,amount:dq2*dr2});
+    }
+  }
+  return items;
+}
+function syncClientOpenInvoices(c,fromMonth){
+  if(!c) return;
+  var start=fromMonth||MONTH;
+  (S.invoices||[]).forEach(function(inv){
+    if(inv.customerId!==c.id) return;
+    var per=(inv.period||inv.date||"").slice(0,7);
+    if(per&&per<start) return;
+    var state=invoiceState(inv);
+    if(state==="paid2"||state==="cancelled") return;
+
+    var keep=(inv.items||[]).filter(function(item){
+      return ["service","ads","video","design"].indexOf(item.kind)<0;
+    });
+    var root=rootInvoiceItemsForClient(c,per||start);
+    inv.items=root.concat(keep);
+    inv.serviceAmount=c.billing==="package"?Math.max(0,(+c.monthlyFee||0)-(+c.adSpend||0)):0;
+    inv.adAmount=c.billing==="package"?(+c.adSpend||0):0;
+    var dm=delivered(c,per||start);
+    inv.videoQty=c.billing!=="package"?(+dm.video||0):0;
+    inv.videoRate=c.billing!=="package"?(+c.rate||0):0;
+    inv.designQty=c.billing!=="package"?(+dm.design||0):0;
+    inv.designRate=c.billing!=="package"?(+c.drate||0):0;
+    inv.updatedAt=new Date().toISOString();
+    inv.syncedFromClient=true;
+  });
+}
 function clientForm(c){
   form(c?t("cli.edit"):t("cli.add"),[
     {k:"name",label:t("f.cliname")},
@@ -3332,7 +3386,10 @@ function clientForm(c){
     {k:"active",label:"",type:"check",checkLabel:t("f.activecli"),def:true}
   ],c,function(v){
     if(v===null){S.customers=S.customers.filter(function(x){return x.id!==c.id;});return;}
-    if(c) Object.assign(c,v); else {v.id=uid();S.customers.push(v);}});
+    if(c){
+      Object.assign(c,v);
+      syncClientOpenInvoices(c,MONTH);
+    } else {v.id=uid();S.customers.push(v);}});
 }
 function empForm(e){
   form(e?t("tm.edit"):t("tm.add"),[
