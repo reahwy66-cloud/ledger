@@ -6,7 +6,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 (function mobileUiBootstrap(){
   var link=document.createElement("link");
   link.rel="stylesheet";
-  link.href="mobile.css?v=20260920-ledger-actions-v26";
+  link.href="mobile.css?v=20260920-v3";
   document.head.appendChild(link);
 
   var ICONS={
@@ -146,22 +146,28 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     wrap.appendChild(bottom);
 
     var extras=Array.from(tabs.querySelectorAll("[data-tab]")).filter(function(b){return main.indexOf(b.dataset.tab)<0;});
+    var extraMap={}; extras.forEach(function(b){extraMap[b.dataset.tab]=b;});
+    function drawerTab(k){
+      var b=extraMap[k]; if(!b) return "";
+      return '<button type="button" data-tab="'+k+'" class="'+(tab===k?"active":"")+'">'+(ICONS[k]||"")+'<span>'+((b.textContent||"").trim())+'</span><i>‹</i></button>';
+    }
+    var workLinks=["team","invoices","funding","costs"].map(drawerTab).join("");
+    var appLinks=["setup"].map(drawerTab).join("");
     var drawer=document.createElement("aside");
     drawer.className="mobile-drawer";
     drawer.setAttribute("aria-hidden","true");
     drawer.innerHTML=
       '<div class="mobile-drawer-head"><div class="mobile-drawer-brand">'+
         (mast.querySelector(".stamp")?mast.querySelector(".stamp").outerHTML:"")+
-        '<div><b>'+(document.documentElement.lang==="en"?"Riwa Studio":"رِواء ستوديو")+'</b><small>'+(document.documentElement.lang==="en"?"More":"المزيد")+'</small></div></div>'+
+        '<div><b>'+(document.documentElement.lang==="en"?"Riwa Studio":"رِواء ستوديو")+'</b><small>'+(document.documentElement.lang==="en"?"Workspace":"مساحة العمل")+'</small></div></div>'+
         '<button type="button" class="mobile-drawer-close" aria-label="Close">×</button></div>'+
       '<div class="mobile-drawer-links">'+
+        (workLinks?'<div class="drawer-section-title">'+(document.documentElement.lang==="en"?"WORK":"العمل")+'</div>'+workLinks:"")+
+        '<div class="drawer-section-title">'+(document.documentElement.lang==="en"?"APP":"التطبيق")+'</div>'+
+        appLinks+
         '<button type="button" data-act="logout" class="mobile-account-entry">'+(ICONS.account||ICONS.users||"")+'<span>'+(document.documentElement.lang==="en"?"Account":"الحساب")+'</span><i>‹</i></button>'+
         '<button type="button" data-act="signout" class="mobile-signout-entry">'+(ICONS.signout||"")+'<span>'+(document.documentElement.lang==="en"?"Sign out":"تسجيل الخروج")+'</span><i>‹</i></button>'+
-        extras.map(function(b){
-          var k=b.dataset.tab;
-          return '<button type="button" data-tab="'+k+'" class="'+(tab===k?"active":"")+'">'+(ICONS[k]||"")+'<span>'+((b.textContent||"").trim())+'</span><i>‹</i></button>';
-        }).join("")+'</div>'+
-      '<div class="mobile-drawer-tools"></div>';
+      '</div><div class="mobile-drawer-tools"></div>';
 
     var drawerTools=drawer.querySelector(".mobile-drawer-tools");
     var tools=mast.querySelector(".tools");
