@@ -62,3 +62,26 @@ button{cursor:pointer}
 @media print{
   body{background:#fff;color:#111}.topbar,.no-print,.btn{display:none!important}.portal{width:100%;padding:0}.card,.hero{box-shadow:none;border:1px solid #ddd;background:#fff;backdrop-filter:none}.grid{display:block}.card{margin-top:12px}
 }
+
+
+/* Portals V2 — detailed client pricing + approval states */
+.card-head-actions{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.pricing-card{display:grid;gap:16px}
+.pricing-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;padding-top:4px}
+.pricing-head>div:first-child{display:grid;gap:8px}.pricing-head>div:first-child>b{font:600 18px/1.2 var(--mono)}
+.package-count{display:flex;align-items:baseline;gap:5px}.package-count b{font:600 24px/1 var(--mono)}.package-count span{color:var(--mute);font-size:12px}
+.package-progress{height:12px;border-radius:99px;overflow:hidden;background:color-mix(in srgb,var(--ground) 55%,transparent);border:1px solid var(--gl)}
+.package-progress i{display:block;height:100%;border-radius:inherit;background:var(--brand)}
+.package-progress-meta{display:flex;justify-content:space-between;gap:12px;color:var(--mute);font-size:10.5px}
+.delivery-dates{display:grid;gap:8px;padding-top:4px}.delivery-dates>small{color:var(--mute);font-size:10.5px}.delivery-dates>div{display:flex;flex-wrap:wrap;gap:7px}
+.date-chip{display:inline-flex;align-items:center;padding:6px 9px;border:1px solid var(--gl);border-radius:999px;background:rgba(255,255,255,.025);font-size:10.5px}
+.price-lines,.service-lines{display:grid;gap:9px}.price-line,.service-line{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid var(--gl)}.price-line:last-child,.service-line:last-child{border-bottom:0}.price-line b,.service-line strong{font:600 14px/1.2 var(--mono)}.service-lines h3{margin:4px 0 0;font-size:14px}.service-line>div{display:grid;gap:3px}.service-line small{color:var(--mute);font-size:10.5px}
+.unit-price{color:var(--green)!important}
+.status-pill{display:inline-flex;width:max-content;align-items:center;padding:4px 8px;border:1px solid var(--gl);border-radius:999px;font-size:10px;line-height:1.2;margin-top:3px}
+.status-pill.wait{color:#B49A63;background:color-mix(in srgb,#B49A63 9%,transparent)}
+.status-pill.ok{color:var(--green);background:color-mix(in srgb,var(--green) 9%,transparent)}
+.status-pill.bad{color:var(--coral);background:color-mix(in srgb,var(--coral) 9%,transparent)}
+@media(max-width:700px){
+  .card-head-actions,.pricing-head{align-items:flex-start;flex-direction:column}
+  .card-head-actions .btn{width:100%}
+}
