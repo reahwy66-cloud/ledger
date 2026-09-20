@@ -46,3 +46,33 @@ Never commit or screenshot a Supabase secret key. If one is exposed, revoke it a
 ## Appointment notifications
 
 Without `NOTIFICATION_WEBHOOK_URL`, requested notifications remain safely queued in the `notifications` table. Point the webhook at your WhatsApp, email, SMS, Make, Zapier, or n8n workflow to deliver them. The payload includes the recipient, client, appointment title, date and time.
+
+
+## Google Drive client archive
+
+The staff portal can upload delivery files directly to Google Drive using a resumable upload session. The large file does not pass through Supabase, GitHub Pages, or the MCP server. Supabase stores only delivery metadata and the Drive file ID.
+
+Required Cloudflare Worker secrets/variables:
+
+- `GOOGLE_DRIVE_CLIENT_ID`
+- `GOOGLE_DRIVE_CLIENT_SECRET`
+- `GOOGLE_DRIVE_REFRESH_TOKEN`
+- `GOOGLE_DRIVE_ROOT_FOLDER_ID`
+
+For a personal Google / Google One account, use OAuth credentials for the same Google account that owns the storage. The refresh token must include the `https://www.googleapis.com/auth/drive` scope.
+
+Recommended root structure is created automatically below `GOOGLE_DRIVE_ROOT_FOLDER_ID`:
+
+`Client Name / YYYY / MM / Videos|Designs|Posts|Shoots|Scripts|Voice|Other`
+
+Workflow:
+
+1. Staff selects a customer and delivery type, then chooses a file.
+2. The backend creates the correct customer/month/type folders and returns a Google resumable upload session.
+3. The browser uploads the file directly to Google Drive.
+4. The staff submission is saved as pending with Drive metadata.
+5. Before approval the Drive file remains private.
+6. On owner approval, the backend makes the approved file readable by link, stores preview/download metadata on the work record, and sends the staff approval notification.
+7. The client portal archive shows only approved work files.
+
+After enabling this feature, run `supabase-drive-archive-v1.sql` in the same Supabase project used by the app.
