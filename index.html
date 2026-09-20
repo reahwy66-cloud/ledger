@@ -1968,6 +1968,7 @@ function vClient(){
       +(can("invoices")?'<button class="btn primary" data-act="newinvoice" data-id="'+c.id+'">'+t("cd.invoice")+'</button>':'')
       +'<button class="btn" data-act="invoice" data-id="'+c.id+'">'+t("cd.preview")+'</button>'
       +(wp?'<button class="btn" data-act="newpay" data-id="'+c.id+'">'+t("cd.pay")+'</button>':'')
+      +(amOwner()&&MODE==="cloud"?'<button class="btn" data-act="portalcode" data-kind="client" data-id="'+c.id+'" data-name="'+esc(c.name)+'">'+(LANG==="ar"?"رمز العميل":"Client code")+'</button>':'')
       +(w?'<button class="btn" data-act="editclient" data-id="'+c.id+'">'+t("cd.rename")+'</button>':'')+'</div>' 
    +'</div>';
 
@@ -2117,6 +2118,7 @@ function vEmployee(){
    +'<button class="btn" data-act="print">'+t("print")+'</button>'
    +(wa?'<button class="btn primary" data-act="newpayout" data-id="'+e.id+'">'+t("po.add")+'</button>':'')
    +(wa?'<button class="btn" data-act="newadv" data-id="'+e.id+'">'+t("ad.take")+'</button>':'')
+   +(amOwner()&&MODE==="cloud"?'<button class="btn" data-act="portalcode" data-kind="staff" data-id="'+e.id+'" data-name="'+esc(e.name)+'">'+(LANG==="ar"?"رمز البوابة":"Portal code")+'</button>':'')
    +(w?'<button class="btn" data-act="editemp" data-id="'+e.id+'">'+t("edit")+'</button>':'')+'</div></div>';
 
   var owedAll=lg.rows.reduce(function(a,r){return a+r.payout;},0);
@@ -2164,6 +2166,27 @@ function vEmployee(){
   return h+'</tbody></table></div></div>';
 }
 
+async function issuePortalCode(kind,id,name){
+  if(!SB||!amOwner()) return;
+  var r=await SB.rpc("portal_issue_code",{p_kind:kind,p_entity_id:id});
+  if(r.error){
+    alert((LANG==="ar"?"تعذّر إنشاء الرمز. تأكد من تطبيق supabase-portals-v1.sql.\n":"Could not generate code. Apply supabase-portals-v1.sql first.\n")+(r.error.message||""));
+    return;
+  }
+  var code=String(r.data||"");
+  var path=kind==="staff"?"/staff":"/client";
+  var url=location.origin+path;
+  el("modalHost").innerHTML='<div class="scrim"><div class="modal portal-code-modal"><h3>'+(kind==="staff"?(LANG==="ar"?"بوابة الفريق":"Staff portal"):(LANG==="ar"?"بوابة العميل":"Client portal"))+'</h3>'
+    +'<p class="sub">'+esc(name||"")+'</p><div class="portal-code-value num">'+esc(code)+'</div>'
+    +'<p class="sub">'+(LANG==="ar"?"هذا الرمز يلغي أي رمز قديم لنفس الشخص.":"This code replaces any previous code for this person.")+'</p>'
+    +'<div class="portal-link-box">'+esc(url)+'</div>'
+    +'<div class="acts"><button class="btn ghost" data-act="copyportal" data-code="'+esc(code)+'" data-url="'+esc(url)+'">'+(LANG==="ar"?"نسخ الرابط والرمز":"Copy link & code")+'</button>'
+    +'<button class="btn primary" onclick="document.getElementById(\'modalHost\').innerHTML=\'\'">'+t("close")+'</button></div></div></div>';
+}
+async function copyPortalAccess(code,url){
+  var txt=url+"\n"+(LANG==="ar"?"رمز الدخول: ":"Access code: ")+code;
+  try{await navigator.clipboard.writeText(txt);}catch(e){}
+}
 /* ═════════════ WORK ═════════════ */
 function vWork(){
   var w=can("work");
@@ -3522,6 +3545,8 @@ document.addEventListener("click",function(ev){
   else if(act==="payfunding"){
     var ff=f(S.fundings);if(ff){var remain=Math.max(0,fundingTotal(ff)-fundingPaid(ff));payForm(null,ff.customerId,{kind:"funding",fundingId:ff.id,amount:remain.toFixed(2)});}
   }
+  else if(act==="portalcode"){issuePortalCode(a.dataset.kind,a.dataset.id,a.dataset.name||"");}
+  else if(act==="copyportal"){copyPortalAccess(a.dataset.code||"",a.dataset.url||"");}
   else if(act==="lgclear"){ LGTYPE="all"; LGWHO="all"; render(); }
   else if(act==="lgtypefilter"){ledgerTypeFilterSheet();}
   else if(act==="lgwhofilter"){ledgerWhoFilterSheet();}
