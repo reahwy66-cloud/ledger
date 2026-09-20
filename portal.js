@@ -248,9 +248,7 @@ function renderDeliveryWizard(e){
     +(d.file?'<div class="uploaded-file-card"><div><b>'+esc(d.file.name||"تم رفع الملف")+'</b><small>'+esc(d.file.archivePath||"Google Drive")+'</small></div><span>تم الرفع ✓</span></div>':'')
     +(iframeSrc?'<iframe class="drive-inline-frame drive-inline-clean" id="driveInlineFrame" src="'+esc(iframeSrc)+'" allow="clipboard-write"></iframe>':'<div class="wizard-warning">ارجع للخطوة الأولى واختر العميل.</div>')
     +'</div>'
-    +'<div class="wizard-actions split"><button type="button" class="btn ghost" data-next="1">رجوع</button>'
-    +(d.file?'<button type="button" class="btn primary" data-next="3">التالي: إتمام العمل</button>':'<button type="button" class="btn primary" disabled>ارفع الملف أولاً</button>')
-    +'</div></div>';
+    +'<div class="wizard-actions split upload-step-actions"><button type="button" class="btn ghost" data-next="1">رجوع</button></div></div>';
 
   html+='<div class="wizard-panel '+(step===3?'active':'')+'" data-panel="3">'
     +'<div class="review-card">'
