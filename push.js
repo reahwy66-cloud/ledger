@@ -28,8 +28,13 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     return b&&b.dataset.tab||"flow";
   }
 
-  function quickAction(tab){
-    return ({clients:"newclient",team:"newemp",ledger:"newwork",calendar:"newshoot"})[tab]||"newshoot";
+  function quickButton(tab,wrap){
+    var map={clients:"newclient",team:"newemp",ledger:"newwork",calendar:"newshoot"};
+    var act=map[tab];
+    if(act && wrap.querySelector('[data-act="'+act+'"]')){
+      return 'data-act="'+act+'"';
+    }
+    return 'data-tab="calendar"';
   }
 
   function closeDrawer(){
@@ -45,6 +50,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     var tabs=wrap&&wrap.querySelector(":scope > .tabs");
     var mast=wrap&&wrap.querySelector(":scope > .mast");
     if(!wrap||!tabs||!mast) return;
+    if(wrap.querySelector(":scope > .mobile-header")) return;
 
     var tab=activeTab();
     document.body.setAttribute("data-mobile-tab",tab);
@@ -63,7 +69,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     header.innerHTML=
       '<button class="mobile-head-btn mobile-menu-btn" type="button" aria-label="Menu"><span></span><span></span><span></span></button>'+
       '<div class="mobile-logo">'+(mast.querySelector(".stamp")?mast.querySelector(".stamp").outerHTML:"")+'</div>'+
-      '<button class="mobile-head-btn mobile-quick-btn" type="button" data-act="'+quickAction(tab)+'" aria-label="Quick add"><span>+</span></button>';
+      '<button class="mobile-head-btn mobile-quick-btn" type="button" '+quickButton(tab,wrap)+' aria-label="Quick action"><span>+</span></button>';
     wrap.insertBefore(header,mast);
 
     var main=["flow","clients","ledger","calendar"];
