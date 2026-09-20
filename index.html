@@ -236,13 +236,35 @@ code{background:var(--ground);border:1px solid var(--line);border-radius:5px;pad
   .card,.ledger,.kpi{border-color:#ccc;break-inside:avoid}
   .wrap{max-width:none;padding:0}
 }
+
+/* Admin work archive */
+.admin-archive-page{display:grid;gap:18px}
+.admin-archive-page>.page-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.admin-archive-folders{display:grid;gap:14px}
+.admin-archive-folder{border:1px solid var(--line);border-radius:18px;background:var(--panel);overflow:hidden}
+.admin-archive-folder>summary{list-style:none;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:16px 18px;cursor:pointer}
+.admin-archive-folder>summary::-webkit-details-marker{display:none}
+.admin-folder-icon{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:var(--panel-2);color:var(--brand);font-size:19px}
+.admin-folder-copy{display:grid;gap:2px;min-width:0}.admin-folder-copy b{font-size:15px}.admin-folder-copy small{font-size:11.5px;color:var(--mute)}
+.admin-archive-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:0 16px 16px;border-top:1px solid var(--line)}
+.admin-archive-item{overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--panel-2);margin-top:14px}
+.admin-archive-media{position:relative;aspect-ratio:16/9;display:grid;place-items:center;overflow:hidden;background:#111713}
+.admin-archive-media img{width:100%;height:100%;object-fit:cover;display:block}
+.admin-archive-play{position:absolute;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.88);color:#18201c;font-size:20px;padding-inline-start:3px;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.admin-archive-fileicon{font-size:30px;color:var(--mute)}
+.admin-archive-meta{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:12px}.admin-archive-meta>div:first-child{display:grid;gap:3px;min-width:0}.admin-archive-meta b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.admin-archive-meta small{font-size:10.5px;color:var(--mute)}
+.admin-archive-actions{display:flex;gap:6px;flex:none}
+.admin-archive-viewer{width:min(980px,94vw);max-width:none}.admin-archive-viewer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.admin-archive-viewer-head h3{margin:0}.admin-archive-viewer-body{margin-top:14px;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#0d120f}.admin-archive-viewer-body iframe,.admin-archive-viewer-body img{width:100%;height:100%;border:0;display:block;object-fit:contain}
+@media(max-width:900px){.admin-archive-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.admin-archive-grid{grid-template-columns:1fr}.admin-archive-meta{flex-direction:column}.admin-archive-actions{width:100%}.admin-archive-actions .btn{flex:1}.admin-archive-page>.page-heading{align-items:flex-start}}
+
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 </style>
 <div id="app"></div>
 <div id="modalHost"></div>
 
-<script src="push.js?v=20260920-v45" defer></script>
+<script src="push.js?v=20260920-v46" defer></script>
 <script>
 (function(){
 "use strict";
@@ -500,7 +522,7 @@ ar:{
  unlock:"دخول", cancel:"إلغاء", save:"حفظ", del:"حذف", edit:"تعديل", add:"إضافة",
  "tab.flow":"الملخّص","tab.clients":"العملاء","tab.team":"الفريق","tab.work":"سجل الأعمال",
  "tab.costs":"المصروفات","tab.calendar":"المواعيد","tab.invoices":"الفواتير","tab.funding":"التمويل","tab.outside":"خارج الشركة","tab.setup":"الإعدادات",
- "tab.users":"المستخدمون","tab.ledger":"السجل",
+ "tab.users":"المستخدمون","tab.ledger":"السجل","tab.archive":"أرشيف الأعمال",
  "part.none":"لا يوجد شركاء بنسب بعد. أضف شريكاً من تبويب الفريق واختر «حصة من الربح».",
  "part.warn":"مجموع نسب الشركاء {n}% وليس 100%. الأرقام ستبقى خاطئة حتى تُصحَّح.",
  "part.rent":"من يتحمّل الإيجار من حصته",
@@ -739,11 +761,11 @@ function t(k,a){
 
 /* ═════════════ roles ═════════════ */
 var PERM={
-  owner:      {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar","setup"],edit:["clients","invoices","funding","team","work","costs","calendar","setup","payments","advances"],finance:true,personal:true},
+  owner:      {tabs:["flow","ledger","clients","archive","invoices","funding","team","costs","calendar","setup"],edit:["clients","invoices","funding","team","work","costs","calendar","setup","payments","advances"],finance:true,personal:true},
   manager:    {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["work","calendar"],finance:true,personal:false},
   accountant: {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["clients","invoices","funding","work","costs","payments"],finance:true,personal:false}
 };
-var FULL={tabs:["flow","ledger","clients","invoices","funding","team","work","costs","calendar","setup"],
+var FULL={tabs:["flow","ledger","clients","archive","invoices","funding","team","work","costs","calendar","setup"],
           edit:["clients","invoices","funding","team","work","costs","calendar","payments","advances","setup"],finance:true,personal:true};
 var SEC_TABS=["flow","ledger","clients","invoices","funding","team","costs","calendar","setup"];
 var SEC_EDIT=["work","payments","calendar","clients","team","invoices","funding","costs","advances","setup"];
@@ -1513,7 +1535,7 @@ function renderSetup(){
    +'</div></div>';
 }
 /* ═════════════ shell ═════════════ */
-var TABS=[["flow","tab.flow"],["ledger","tab.ledger"],["clients","tab.clients"],["invoices","tab.invoices"],["funding","tab.funding"],["team","tab.team"],
+var TABS=[["flow","tab.flow"],["ledger","tab.ledger"],["clients","tab.clients"],["archive","tab.archive"],["invoices","tab.invoices"],["funding","tab.funding"],["team","tab.team"],
           ["costs","tab.costs"],["calendar","tab.calendar"],["setup","tab.setup"]];
 function render(){
   clearCalc();
@@ -1523,7 +1545,7 @@ function render(){
   var allowed=myTabs();
   if(!allowed.length){renderWait();return;}
   if(allowed.indexOf(TAB)<0) TAB=allowed[0];
-  var views={flow:vFlow,ledger:vLedger,clients:vClients,invoices:vInvoices,funding:vFunding,team:vTeam,costs:vCosts,calendar:vCalendar,setup:vSetup};
+  var views={flow:vFlow,ledger:vLedger,clients:vClients,archive:vArchive,invoices:vInvoices,funding:vFunding,team:vTeam,costs:vCosts,calendar:vCalendar,setup:vSetup};
   el("app").innerHTML='<div class="wrap"><div class="mast">'
    +'<div class="brand">'+stampHTML()+'<div>'+(S.settings.company?'<h1>'+esc(S.settings.company)+'</h1>':'')+'<small>'+t("tagline")+'</small></div></div>'
    +'<div class="tools">'
@@ -2340,6 +2362,75 @@ async function reviewPortalSubmission(id,action){
   render();
   if(PENDING_PORTAL.length) portalInbox(); else el("modalHost").innerHTML="";
 }
+/* ═════════════ ARCHIVE ═════════════ */
+function adminArchiveThumb(f){
+  if(f&&f.thumbnailLink) return f.thumbnailLink;
+  return f&&f.driveFileId?"https://drive.google.com/thumbnail?id="+encodeURIComponent(f.driveFileId)+"&sz=w1200":"";
+}
+function adminArchivePreview(w){
+  var f=w.file||{}, mime=String(f.mimeType||""), thumb=adminArchiveThumb(f), isVideo=w.type==="video"||mime.indexOf("video/")===0;
+  var media=isVideo
+    ?'<div class="admin-archive-media video">'+(thumb?'<img src="'+esc(thumb)+'" alt="" loading="lazy">':'')+'<span class="admin-archive-play">▶</span></div>'
+    :'<div class="admin-archive-media image">'+(thumb?'<img src="'+esc(thumb)+'" alt="" loading="lazy">':'<span class="admin-archive-fileicon">▧</span>')+'</div>';
+  return '<article class="admin-archive-item">'+media
+    +'<div class="admin-archive-meta"><div><b>'+esc(f.name||t("d."+w.type))+'</b><small>'+esc(w.date||"")+' · '+esc(t("d."+w.type))+'</small></div>'
+    +'<div class="admin-archive-actions">'
+    +'<button class="btn sm" data-act="adminarchiveview" data-id="'+esc(w.id)+'">'+(LANG==="ar"?"مشاهدة":"View")+'</button>'
+    +(f.webContentLink?'<a class="btn sm primary" href="'+esc(f.webContentLink)+'" target="_blank" rel="noopener">'+(LANG==="ar"?"تحميل":"Download")+'</a>':'')
+    +'</div></div></article>';
+}
+function vArchive(){
+  if(!amOwner()) return '<div class="sec card"><div class="empty">'+(LANG==="ar"?"هذه الصفحة للمالك فقط.":"Owner only.")+'</div></div>';
+  var rows=(S.work||[]).filter(function(w){
+    return w.file&&w.file.driveFileId&&["video","design","post"].indexOf(w.type)>=0;
+  }).sort(function(a,b){return String(a.date||"")<String(b.date||"")?1:-1;});
+  var groups={};
+  rows.forEach(function(w){(groups[w.customerId]||(groups[w.customerId]=[])).push(w);});
+  var customers=(S.customers||[]).filter(function(c){return groups[c.id]&&groups[c.id].length;});
+
+  var h='<section class="sec admin-archive-page"><div class="page-heading"><div><h2>'+(LANG==="ar"?"أرشيف الأعمال":"Work archive")+'</h2>'
+    +'<p class="sub">'+(LANG==="ar"?"فيديوهات وتصاميم العملاء المعتمدة، مرتبة كفولدرات وجاهزة للعرض على أي عميل.":"Approved client videos and designs, organized into folders and ready to showcase.")+'</p></div>'
+    +'<span class="pill">'+rows.length+'</span></div>';
+
+  if(!customers.length){
+    return h+'<div class="card"><div class="empty">'+(LANG==="ar"?"ما في ملفات معتمدة بالأرشيف بعد.":"No approved archive files yet.")+'</div></div></section>';
+  }
+
+  h+='<div class="admin-archive-folders">';
+  customers.forEach(function(c,idx){
+    var items=groups[c.id]||[];
+    var vids=items.filter(function(w){return w.type==="video";}).length;
+    var designs=items.length-vids;
+    h+='<details class="admin-archive-folder"'+(idx===0?' open':'')+'>'
+      +'<summary><span class="admin-folder-icon">▰</span><span class="admin-folder-copy"><b>'+esc(c.name)+'</b>'
+      +'<small>'+vids+' '+(LANG==="ar"?"فيديو":"videos")+' · '+designs+' '+(LANG==="ar"?"تصميم/بوست":"designs/posts")+'</small></span>'
+      +'<span class="pill">'+items.length+'</span></summary>'
+      +'<div class="admin-archive-grid">'+items.map(adminArchivePreview).join("")+'</div></details>';
+  });
+  return h+'</div></section>';
+}
+function openAdminArchiveItem(id){
+  var w=(S.work||[]).filter(function(x){return x.id===id;})[0];
+  if(!w||!w.file)return;
+  var f=w.file||{},mime=String(f.mimeType||""),isVideo=w.type==="video"||mime.indexOf("video/")===0;
+  var body="";
+  if(isVideo&&f.previewUrl){
+    body='<iframe src="'+esc(f.previewUrl)+'" allow="autoplay; fullscreen" allowfullscreen></iframe>';
+  }else if(mime.indexOf("image/")===0||w.type==="design"||w.type==="post"){
+    body='<img src="'+esc(adminArchiveThumb(f))+'" alt="'+esc(f.name||"")+'">';
+  }else if(f.previewUrl){
+    body='<iframe src="'+esc(f.previewUrl)+'"></iframe>';
+  }else{
+    body='<div class="empty">'+(LANG==="ar"?"المعاينة غير متاحة.":"Preview unavailable.")+'</div>';
+  }
+  el("modalHost").innerHTML='<div class="scrim admin-archive-scrim"><div class="modal admin-archive-viewer">'
+    +'<div class="admin-archive-viewer-head"><div><h3>'+esc(f.name||"ملف")+'</h3><p class="sub">'+esc(w.date||"")+' · '+esc(t("d."+w.type))+'</p></div>'
+    +'<button class="btn ghost" onclick="document.getElementById(\'modalHost\').innerHTML=\'\'">×</button></div>'
+    +'<div class="admin-archive-viewer-body">'+body+'</div>'
+    +'<div class="acts">'+(f.webViewLink?'<a class="btn ghost" href="'+esc(f.webViewLink)+'" target="_blank" rel="noopener">'+(LANG==="ar"?"فتح في Drive":"Open in Drive")+'</a>':'')
+    +(f.webContentLink?'<a class="btn primary" href="'+esc(f.webContentLink)+'" target="_blank" rel="noopener">'+(LANG==="ar"?"تحميل":"Download")+'</a>':'')+'</div></div></div>';
+}
+
 /* ═════════════ WORK ═════════════ */
 function vWork(){
   var w=can("work");
@@ -3805,6 +3896,7 @@ document.addEventListener("click",function(ev){
     var ff=f(S.fundings);if(ff){var remain=Math.max(0,fundingTotal(ff)-fundingPaid(ff));payForm(null,ff.customerId,{kind:"funding",fundingId:ff.id,amount:remain.toFixed(2)});}
   }
   else if(act==="notifications"){notificationsCenter();}
+  else if(act==="adminarchiveview"){openAdminArchiveItem(id);}
   else if(act==="portalinbox"){notificationsCenter();}
   else if(act==="notifdone"){resolveAppointmentNotification(id,"done");}
   else if(act==="notifcancel"){resolveAppointmentNotification(id,"cancel");}
