@@ -2645,11 +2645,23 @@ function vLedgerMobile(){
   }else{
     h+='<div class="page-heading"><div><h2>'+t("lg.t",{m:monthName(MONTH)})+'</h2><p class="sub">'+(LANG==="ar"?"العمليات المسموح لك رؤيتها، بدون أرقام مالية.":"Your permitted activity, without financial figures.")+'</p></div></div>';
   }
-  var ww=can("work"),wp=can("payments");
-  h+='<div class="primary-actions">'
+  var ww=can("work"),wp=can("payments"),wa=can("advances"),wc=can("costs");
+  var rr=showMoney?calc(MONTH):null;
+  var rentEmp=showMoney&&rr?S.employees.filter(function(e){return e.id===rr.rentEmp;})[0]:null;
+  var ob=rentEmp?owedBack(rentEmp.id,MONTH):{due:0};
+  h+='<div class="ledger-actions-wrap">'
+    +'<div class="primary-actions">'
     +(ww?ledgerQuickAction("newwork",t("wk.add"),"work",true,""):"")
     +(wp?ledgerQuickAction("newpay",t("cd.pay"),"pay",true,""):"")
-    +(showMoney?ledgerQuickAction("ledgermore",LANG==="ar"?"المزيد":"More","fund",false,""):"")
+    +'</div>'
+    +(showMoney?'<div class="secondary-actions">'
+      +(wp?ledgerQuickAction("newfund",t("fund.add"),"fund",false,""):"")
+      +(wc?ledgerQuickAction("newcost",t("cs.add"),"cost",false,""):"")
+      +(wa?ledgerQuickAction("newadv",t("ad.take"),"advance",false,""):"")
+      +(wa?ledgerQuickAction("newpayout",t("po.add"),"payout",false,""):"")
+      +(wa&&ob.due>0.005?ledgerQuickAction("newreimb",t("reim.add"),"reimburse",false,' data-id="'+rentEmp.id+'"'):"")
+      +ledgerQuickAction("print",t("print"),"print",false,"")
+      +'</div>':'')
     +'</div>'+ledgerFilters(showMoney)
     +'<section class="timeline-card"><div class="section-heading"><div><h2>'+(LANG==="ar"?"الحركات":"Activity")+'</h2><p class="sub">'+monthName(MONTH)+'</p></div></div><div class="timeline-list">';
   if(!rows.length)h+='<div class="empty">'+t("lg.none")+'</div>';
@@ -2668,18 +2680,7 @@ function vLedgerMobile(){
 }
 function vLedger(){return isMobileUI()?vLedgerMobile():(canSeeMoney()?vLedgerFull():vLedgerSafe());}
 
-function ledgerMoreSheet(){
-  var r=calc(MONTH), rentEmp=S.employees.filter(function(e){return e.id===r.rentEmp;})[0], ob=rentEmp?owedBack(rentEmp.id,MONTH):{due:0};
-  var wa=can("advances"),wc=can("costs"),wp=can("payments");
-  var items=''
-    +ledgerQuickAction("print",t("print"),"print",false,"")
-    +(wp?ledgerQuickAction("newfund",t("fund.add"),"fund",false,""):"")
-    +(wc?ledgerQuickAction("newcost",t("cs.add"),"cost",false,""):"")
-    +(wa?ledgerQuickAction("newadv",t("ad.take"),"advance",false,""):"")
-    +(wa?ledgerQuickAction("newpayout",t("po.add"),"payout",false,""):"")
-    +(wa&&ob.due>0.005?ledgerQuickAction("newreimb",t("reim.add"),"reimburse",true,' data-id="'+rentEmp.id+'"'):"");
-  el("modalHost").innerHTML='<div class="scrim"><div class="modal action-sheet"><div class="sheet-handle"></div><h3>'+(LANG==="ar"?"عمليات أخرى":"More actions")+'</h3><div class="ledger-quick-actions sheet-actions">'+items+'</div></div></div>';
-}
+
 /* ═════════════ PEOPLE ═════════════ */
 var USERS=[];
 async function loadUsers(){
@@ -3472,7 +3473,6 @@ document.addEventListener("click",function(ev){
   }
   else if(act==="lgclear"){ LGTYPE="all"; LGWHO="all"; render(); }
   else if(act==="caldayselect"){CALDAY=a.dataset.date||CALDAY;render();}
-  else if(act==="ledgermore"){ledgerMoreSheet();}
   else if(act==="userssheet"){el("modalHost").innerHTML='<div class="scrim"><div class="modal users-sheet"><div class="sheet-handle"></div>'+vUsersMobile()+'<div class="acts"><button class="btn ghost" onclick="document.getElementById(\'modalHost\').innerHTML=\'\'">'+t("cancel")+'</button></div></div></div>';}
   else if(act==="newreimb"){
     var em2=S.employees.filter(function(x){return x.id===id;})[0];
