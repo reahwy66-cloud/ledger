@@ -177,6 +177,62 @@ function staffBalance(){
   var paid=(DATA.payouts||[]).filter(function(x){return inMonth(x.date,m)}).reduce(function(a,x){return a+(+x.amount||0)},0);
   return {earned:earned,adv:adv,paid:paid,balance:earned-adv-paid}
 }
+async function uploadPortalFile(file,payload,onProgress){
+  if(!file) return null;
+  var prep=await fetch(PORTAL_API+"/portal/drive/upload-session",{
+    method:"POST",
+    headers:{"content-type":"application/json","authorization":"Bearer "+token()},
+    body:JSON.stringify({
+      customerId:payload.customerId,
+      workType:payload.type,
+      date:payload.date,
+      fileName:file.name,
+      mimeType:file.type||"application/octet-stream",
+      size:file.size
+    })
+  });
+  var session={};try{session=await prep.json()}catch(e){}
+  if(!prep.ok||!session.uploadUrl) throw new Error(session.error||"drive_prepare_failed");
+
+  await new Promise(function(resolve,reject){
+    var xhr=new XMLHttpRequest();
+    xhr.open("PUT",session.uploadUrl,true);
+    xhr.setRequestHeader("Content-Type",file.type||"application/octet-stream");
+    xhr.upload.onprogress=function(ev){
+      if(ev.lengthComputable&&onProgress) onProgress(Math.round(ev.loaded/ev.total*100));
+    };
+    xhr.onload=function(){
+      if(xhr.status>=200&&xhr.status<300){
+        var meta={};try{meta=JSON.parse(xhr.responseText||"{}")}catch(e){}
+        resolve(meta);
+      }else reject(new Error("drive_upload_failed_"+xhr.status));
+    };
+    xhr.onerror=function(){reject(new Error("drive_upload_network_error"))};
+    xhr.send(file);
+  }).then(function(meta){
+    session.file=meta;
+  });
+
+  var meta=session.file||{};
+  return {
+    driveFileId:meta.id||"",
+    name:meta.name||file.name,
+    mimeType:meta.mimeType||file.type||"",
+    size:+meta.size||file.size||0,
+    webViewLink:meta.webViewLink||"",
+    webContentLink:meta.webContentLink||"",
+    thumbnailLink:meta.thumbnailLink||"",
+    archivePath:session.archivePath||""
+  };
+}
+
+function fileKindLabel(file){
+  var mime=String(file&&file.mimeType||"");
+  if(mime.indexOf("video/")===0) return "فيديو";
+  if(mime.indexOf("image/")===0) return "تصميم";
+  if(mime.indexOf("pdf")>=0) return "PDF";
+  return "ملف";
+}
 function renderStaff(){
   var e=DATA.employee||{},m=currentMonth(),bal=staffBalance(),monthWork=(DATA.work||[]).filter(function(w){return inMonth(w.date,m)});
   var customerMap={};(DATA.customers||[]).forEach(function(c){customerMap[c.id]=c.name});
@@ -200,6 +256,8 @@ function renderStaff(){
     +'<div class="field work-qty"><label>الكمية</label><input name="qty" type="number" min="1" max="100" value="1"></div>'
     +'<div class="field work-date"><label>التاريخ</label><input name="date" type="date" value="'+today()+'"></div>'
     +'<div class="field full work-note"><label>ملاحظة</label><textarea name="note" placeholder="تفاصيل اختيارية…"></textarea></div>'
+    +'<div class="field full work-file"><label>الملف</label><input name="deliveryFile" type="file" accept="video/*,image/*,.pdf,.doc,.docx"><small>الفيديو أو التصميم ينرفع مباشرة إلى أرشيف العميل على Google Drive.</small></div>'
+    +'<div class="full work-upload-progress" id="workUploadProgress" hidden><span>رفع الملف</span><div><i></i></div><b>0%</b></div>'
     +'<div class="full work-submit-actions"><button class="btn primary" type="submit">إرسال للمراجعة</button><div class="error" id="workError"></div></div>'
     +'</form></section>'
     +'<section class="card"><h2>طلبات التسليم</h2><p class="sub">تابع حالة الأعمال التي أرسلتها للإدارة.</p><div class="list">'
@@ -210,17 +268,35 @@ function renderStaff(){
     +'</div></section></div>';
   shell(inner,e.name,DATA.company||"رِواء ستوديو");
   $("#workForm").onsubmit=async function(ev){
-    ev.preventDefault();var fd=new FormData(this),payload={};fd.forEach(function(v,k){payload[k]=v});payload.qty=+payload.qty||1;
-    var btn=this.querySelector("button");btn.disabled=true;btn.textContent="جاري الإرسال…";$("#workError").textContent="";
-    var r=await SB.rpc("portal_staff_submit_work",{p_token:token(),p_data:payload});
-    btn.disabled=false;btn.textContent="إرسال للمراجعة";
-    if(r.error){
-      var detail=String(r.error.message||r.error.details||r.error.hint||"unknown_error");
-      $("#workError").textContent="تعذّر إرسال التسليم للمراجعة — "+detail;
-      return;
+    ev.preventDefault();
+    var form=this,fd=new FormData(form),payload={};
+    fd.forEach(function(v,k){if(k!=="deliveryFile")payload[k]=v});
+    payload.qty=+payload.qty||1;
+    var fileInput=form.querySelector('input[name="deliveryFile"]');
+    var file=fileInput&&fileInput.files&&fileInput.files[0]||null;
+    var btn=form.querySelector('button[type="submit"]');
+    var err=$("#workError"),progress=$("#workUploadProgress");
+    btn.disabled=true;btn.textContent=file?"جاري رفع الملف…":"جاري الإرسال…";err.textContent="";
+    try{
+      if(file){
+        progress.hidden=false;
+        payload.file=await uploadPortalFile(file,payload,function(pct){
+          progress.querySelector("i").style.width=pct+"%";
+          progress.querySelector("b").textContent=pct+"%";
+        });
+        btn.textContent="جاري إرسال التسليم…";
+      }
+      var r=await SB.rpc("portal_staff_submit_work",{p_token:token(),p_data:payload});
+      if(r.error) throw new Error(String(r.error.message||r.error.details||r.error.hint||"unknown_error"));
+      btn.textContent="تم الإرسال ✓";
+      await load();
+    }catch(ex){
+      err.textContent="تعذّر إرسال التسليم للمراجعة — "+String(ex&&ex.message||ex);
+      btn.textContent="إرسال للمراجعة";
+    }finally{
+      btn.disabled=false;
+      if(progress) setTimeout(function(){progress.hidden=true;progress.querySelector("i").style.width="0%";progress.querySelector("b").textContent="0%";},700);
     }
-    btn.textContent="تم الإرسال ✓";
-    await load();
   };
 }
 
@@ -337,12 +413,30 @@ function clientDeliverySection(){
         +(rate?'<small class="unit-price">'+money(rate)+' لكل '+esc(label)+'</small>':'')+'</div><div class="row-side">'+(rate?'<b>'+money((+w.qty||0)*rate)+'</b>':'')+'<small>'+esc(w.date||"")+'</small></div></div>';
     }).join(""):'<div class="empty">ما في تسليمات معتمدة بعد.</div>')+'</div></section>';
 }
+function clientArchiveSection(){
+  var files=(DATA.work||[]).filter(function(w){return w.file&&w.file.driveFileId;});
+  return '<section class="card full archive-card"><div class="card-head-actions"><div><h2>أرشيف الملفات</h2><p class="sub">كل الملفات المعتمدة متاحة للمشاهدة والتحميل بأي وقت.</p></div><span class="pill">'+files.length+'</span></div>'
+    +(files.length?'<div class="archive-grid">'+files.map(function(w){
+      var f=w.file||{},mime=String(f.mimeType||""),preview="";
+      if(mime.indexOf("image/")===0&&f.webViewLink){
+        preview='<div class="archive-preview image"><img src="'+esc(f.thumbnailLink||"")+'" alt="'+esc(f.name||"")+'"></div>';
+      }else if(mime.indexOf("video/")===0){
+        preview='<div class="archive-preview video"><span>▶</span><small>فيديو</small></div>';
+      }else{
+        preview='<div class="archive-preview file"><span>▤</span><small>'+esc(fileKindLabel(f))+'</small></div>';
+      }
+      return '<article class="archive-item">'+preview+'<div class="archive-meta"><div><b>'+esc(f.name||"ملف")+'</b><small>'+esc([TYPES[w.type]||w.type,w.date].filter(Boolean).join(" · "))+'</small></div>'
+        +'<div class="archive-actions">'+(f.webViewLink?'<a class="btn" href="'+esc(f.webViewLink)+'" target="_blank" rel="noopener">مشاهدة</a>':'')
+        +(f.webContentLink?'<a class="btn primary" href="'+esc(f.webContentLink)+'" target="_blank" rel="noopener">تحميل</a>':'')+'</div></div></article>';
+    }).join("")+'</div>':'<div class="empty">ما في ملفات معتمدة بالأرشيف بعد.</div>')
+    +'</section>';
+}
 function renderClient(){
   var c=DATA.customer||{},st=clientStatement(),del=deliveredSummary(),totalDelivered=Object.keys(del).reduce(function(a,k){return a+(del[k]||0)},0);
   var inner='<section class="hero"><span class="eyebrow">حساب العميل</span><h1>'+esc(c.name||"")+'</h1><div class="hero-value '+(st.balance>0?"neg":"pos")+'">'+money(Math.abs(st.balance))+'</div>'
     +'<div class="hero-note">'+(st.balance>0?"المبلغ المتبقي عليك":st.balance<0?"رصيد دائن إلك":"الحساب مسدّد")+'</div></section>'
     +'<section class="stats"><div class="stat"><small>إجمالي الحساب</small><b>'+money(st.billed)+'</b></div><div class="stat"><small>المدفوع</small><b class="pos">'+money(st.paid)+'</b></div><div class="stat"><small>التسليمات المعتمدة</small><b>'+totalDelivered+'</b></div></section>'
-    +'<div class="grid">'+clientPricingSection()+clientDeliverySection()
+    +'<div class="grid">'+clientPricingSection()+clientDeliverySection()+clientArchiveSection()
     +'<section class="card"><h2>التمويل</h2><p class="sub">الحملات والميزانيات المسجلة على حسابك.</p><div class="funding-grid">'
     +((DATA.fundings||[]).length?(DATA.fundings||[]).map(function(x){return '<div class="funding"><b>'+esc(x.platform||"Meta")+'</b><small>'+esc(x.date||"")+' · '+esc(x.status||"")+'</small><strong>'+money(fundingTotal(x))+'</strong><small>ميزانية '+money(+x.budget||0)+' · أتعاب '+money(fundingFee(x))+'</small></div>'}).join(""):'<div class="empty">ما في تمويل مسجل.</div>')+'</div></section>'
     +'<section class="card full"><div class="card-head-actions"><div><h2>الفواتير</h2><p class="sub">اطبع أي فاتورة مباشرة من هون.</p></div><button class="btn no-print" data-act="printstatement">طباعة كشف الحساب</button></div>'
