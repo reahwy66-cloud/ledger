@@ -603,3 +603,16 @@ button{cursor:pointer}
 }
 
 .drive-upload-overlay{display:none!important}
+
+
+/* Portal V11.1 — cleaner embedded Drive step */
+.drive-inline-clean{
+  height:330px;
+  border:0;
+  border-radius:24px;
+  background:transparent;
+  box-shadow:none;
+}
+.upload-stage{
+  gap:10px;
+}
