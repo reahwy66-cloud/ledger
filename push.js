@@ -6,7 +6,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 (function mobileUiBootstrap(){
   var link=document.createElement("link");
   link.rel="stylesheet";
-  link.href="mobile.css?v=20260920c";
+  link.href="mobile.css?v=20260920-glass-v2";
   document.head.appendChild(link);
 
   var ICONS={
@@ -54,6 +54,8 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 
     var tab=activeTab();
     document.body.setAttribute("data-mobile-tab",tab);
+    var view=tabs.nextElementSibling;
+    if(view) view.classList.add("mobile-view");
 
     var old=wrap.querySelector(":scope > .mobile-header");
     if(old) old.remove();
@@ -169,9 +171,45 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     });
   }
 
+  function bindGlassGestures(){
+    if(document.documentElement.dataset.glassGestures==="1") return;
+    document.documentElement.dataset.glassGestures="1";
+
+    var startX=0,startY=0,tracking=false,edgeOpen=false,drawerStart=false;
+
+    document.addEventListener("pointerdown",function(e){
+      if(e.pointerType==="mouse"&&e.button!==0) return;
+      var drawer=document.querySelector(".mobile-drawer");
+      var rtl=document.body.dir==="rtl";
+      var edge=22;
+      startX=e.clientX;startY=e.clientY;tracking=true;
+      edgeOpen=rtl?(startX>=window.innerWidth-edge):(startX<=edge);
+      drawerStart=!!(drawer&&drawer.classList.contains("open")&&drawer.contains(e.target));
+    },{passive:true});
+
+    document.addEventListener("pointerup",function(e){
+      if(!tracking) return;
+      tracking=false;
+      var dx=e.clientX-startX,dy=e.clientY-startY;
+      if(Math.abs(dx)<55||Math.abs(dx)<Math.abs(dy)*1.15) return;
+      var rtl=document.body.dir==="rtl";
+      var drawer=document.querySelector(".mobile-drawer");
+      var scrim=document.querySelector(".mobile-drawer-scrim");
+      if(edgeOpen && drawer && ((rtl&&dx<0)||(!rtl&&dx>0))){
+        drawer.classList.add("open");
+        if(scrim)scrim.classList.add("open");
+        drawer.setAttribute("aria-hidden","false");
+        document.body.classList.add("mobile-menu-open");
+      }else if(drawerStart && drawer && ((rtl&&dx>0)||(!rtl&&dx<0))){
+        closeDrawer();
+      }
+    },{passive:true});
+  }
+
   function refresh(){
     buildMobileShell();
     prepareTables();
+    bindGlassGestures();
   }
 
   function run(){requestAnimationFrame(refresh);}
