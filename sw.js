@@ -1,9 +1,9 @@
 /* رِواء ستوديو — offline shell.
    The app itself is cached so it opens without a connection.
    Live data always goes to the network; it is never served stale. */
-const CACHE = 'studio-ledger-v25-summary-heights';
+const CACHE = 'studio-ledger-v26-portals';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
-               './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon.png', './push.js', './mobile.css', './desktop.css'];
+               './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon.png', './push.js', './mobile.css', './desktop.css', './staff-portal.html', './client-portal.html', './portal.css', './portal.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -31,7 +31,12 @@ self.addEventListener('fetch', e => {
         }
         return res;
       })
-      .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
+      .catch(() => caches.match(e.request).then(r => {
+        if (r) return r;
+        if (url.pathname === '/staff' || url.pathname.endsWith('/staff-portal.html')) return caches.match('./staff-portal.html');
+        if (url.pathname === '/client' || url.pathname.endsWith('/client-portal.html')) return caches.match('./client-portal.html');
+        return caches.match('./index.html');
+      }))
   );
 });
 
