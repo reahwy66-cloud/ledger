@@ -898,3 +898,29 @@ input,select,textarea{border-radius:12px;background:color-mix(in srgb,var(--grou
     border:1px dashed var(--dgl);border-radius:15px;
   }
 }
+
+
+/* V3.10 — guaranteed sidebar notifications */
+@media(min-width:821px){
+  .tabs .desktop-notifications{
+    position:relative;
+    color:var(--bone);
+    background:color-mix(in srgb,var(--brand) 8%,transparent);
+    border-color:color-mix(in srgb,var(--brand) 18%,var(--dgl));
+  }
+  .tabs .desktop-notifications:hover{
+    background:color-mix(in srgb,var(--brand) 13%,transparent);
+    border-color:color-mix(in srgb,var(--brand) 28%,var(--dgl));
+  }
+  .desktop-notify-badge{
+    position:absolute;
+    inset-inline-end:9px;
+    top:50%;
+    transform:translateY(-50%);
+    min-width:20px;height:20px;
+    display:none;place-items:center;
+    padding:0 5px;border-radius:999px;
+    background:var(--coral);color:#fff;
+    font:700 9px/1 var(--mono);
+  }
+}
