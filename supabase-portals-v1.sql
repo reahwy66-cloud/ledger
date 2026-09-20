@@ -2,7 +2,8 @@
 -- Staff portal + Client portal with numeric access codes and server-side sessions.
 -- Apply once in Supabase SQL Editor. Safe to run repeatedly.
 
-create extension if not exists pgcrypto;
+create schema if not exists extensions;
+create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists public.portal_access (
   id uuid primary key default gen_random_uuid(),
@@ -48,7 +49,7 @@ begin
   code := lpad((floor(random()*90000000)+10000000)::bigint::text,8,'0');
 
   insert into public.portal_access(kind,entity_id,code_hash,active,updated_at)
-  values(p_kind,p_entity_id,encode(digest(code,'sha256'),'hex'),true,now())
+  values(p_kind,p_entity_id,encode(extensions.digest(code,'sha256'),'hex'),true,now())
   on conflict(kind,entity_id) do update
     set code_hash=excluded.code_hash,active=true,updated_at=now();
 
@@ -74,7 +75,7 @@ begin
   from public.portal_access
   where kind=p_kind
     and active
-    and code_hash=encode(digest(p_code,'sha256'),'hex')
+    and code_hash=encode(extensions.digest(p_code,'sha256'),'hex')
   limit 1;
 
   if a.id is null then raise exception 'invalid_code'; end if;
@@ -88,10 +89,10 @@ begin
   end if;
   if not coalesce(is_active_entity,false) then raise exception 'inactive'; end if;
 
-  token := encode(gen_random_bytes(32),'hex');
+  token := encode(extensions.gen_random_bytes(32),'hex');
   delete from public.portal_sessions where expires_at<now();
   insert into public.portal_sessions(token_hash,access_id,expires_at)
-  values(encode(digest(token,'sha256'),'hex'),a.id,now()+interval '30 days');
+  values(encode(extensions.digest(token,'sha256'),'hex'),a.id,now()+interval '30 days');
 
   return jsonb_build_object(
     'token',token,
@@ -111,7 +112,7 @@ language sql stable security definer set search_path=public as $$
   where a.kind=p_kind
     and a.active
     and s.expires_at>now()
-    and s.token_hash=encode(digest(p_token,'sha256'),'hex')
+    and s.token_hash=encode(extensions.digest(p_token,'sha256'),'hex')
   limit 1
 $$;
 
@@ -119,7 +120,7 @@ create or replace function public.portal_logout(p_token text)
 returns void
 language sql security definer set search_path=public as $$
   delete from public.portal_sessions
-  where token_hash=encode(digest(p_token,'sha256'),'hex')
+  where token_hash=encode(extensions.digest(p_token,'sha256'),'hex')
 $$;
 
 create or replace function public.portal_staff_snapshot(p_token text)
