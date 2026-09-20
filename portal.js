@@ -173,7 +173,7 @@ function clientStatement(){
   });
   explicit.forEach(function(inv){(inv.items||[]).forEach(function(i){var a=+i.amount||0;if(a){billed+=a;lines.push({date:inv.date||((inv.period||thru)+"-01"),desc:(inv.number?inv.number+" · ":"")+(i.description||"بند فاتورة"),charge:a,paid:0})}})});
   (DATA.fundings||[]).filter(function(x){return x.status!=="cancelled"&&ym(x.date)<=thru&&!invoicedMonth(ym(x.date))}).forEach(function(x){var a=fundingTotal(x);billed+=a;lines.push({date:x.date,desc:"تمويل "+(x.platform||"Meta"),charge:a,paid:0})});
-  (DATA.salaryShares||[]).forEach(function(e){var m=(e.startDate||((c.startMonth||thru)+"-01")).slice(0,7),stop=e.endDate&&e.endDate.slice(0,7)<thru?e.endDate.slice(0,7):thru,g=0;while(m<=stop&&g++<120){if(!invoicedMonth(m)){var a=salaryMonthly(e,m)*(+e.sharedPct||0)/100;if(a){billed+=a;lines.push({date:(e.startDate&&e.startDate.slice(0,7)===m?e.startDate:m+"-01"),desc:"حصة "+e.name,charge:a,paid:0})}}m=addMonth(m,1)}});
+  (DATA.salaryCharges||[]).forEach(function(x){var a=+x.amount||0;if(a&&!invoicedMonth(ym(x.date))){billed+=a;lines.push({date:x.date,desc:x.description||"حصة تشغيل",charge:a,paid:0})}});
   (DATA.payments||[]).filter(function(x){return ym(x.date)<=thru}).forEach(function(x){var a=+x.amount||0;paid+=a;lines.push({date:x.date,desc:"دفعة"+(x.note?" — "+x.note:""),charge:0,paid:a})});
   lines.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0});var run=0;lines.forEach(function(l){run+=l.charge-l.paid;l.run=run});
   return {lines:lines,billed:billed,paid:paid,balance:billed-paid}
