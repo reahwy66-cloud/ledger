@@ -11,7 +11,7 @@ create table if not exists public.profiles (
   name        text,
   role        text not null default 'staff',   -- 'owner' | 'staff'
   active      boolean not null default false,  -- owner switches this on
-  perms       jsonb  not null default '{"tabs":[],"edit":[],"personal":false}'::jsonb,
+  perms       jsonb  not null default '{"tabs":[],"edit":[],"finance":false,"personal":false}'::jsonb,
   created_at  timestamptz not null default now()
 );
 
@@ -29,10 +29,11 @@ begin
     case when n = 0 then 'owner' else 'staff' end,
     n = 0,
     case when n = 0
-      then '{"tabs":["flow","ledger","clients","invoices","funding","team","work","costs","calendar","outside","users","setup"],
-              "edit":["clients","invoices","funding","team","work","costs","calendar","payments","advances","outside","setup","users"],
+      then '{"tabs":["flow","ledger","clients","invoices","funding","team","work","costs","calendar","setup"],
+              "edit":["clients","invoices","funding","team","work","costs","calendar","payments","advances","setup"],
+              "finance":true,
               "personal":true}'::jsonb
-      else '{"tabs":[],"edit":[],"personal":false}'::jsonb
+      else '{"tabs":[],"edit":[],"finance":false,"personal":false}'::jsonb
     end
   );
   return new;
@@ -64,12 +65,20 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 create or replace function public.sees_personal() returns boolean
-language sql stable security definer set search_path = public as $$
+language sql stable security definer set search_path = public as $
   select public.is_owner() or exists (
     select 1 from public.profiles
     where id = auth.uid() and active and (perms->>'personal')::boolean is true
   );
-$$;
+$;
+
+create or replace function public.can_see_finance() returns boolean
+language sql stable security definer set search_path = public as $
+  select public.is_owner() or exists (
+    select 1 from public.profiles
+    where id = auth.uid() and active and coalesce((perms->>'finance')::boolean,false) is true
+  );
+$;
 
 -- ── 3. the data ─────────────────────────────────────────────────
 -- One shape for every collection: an id, a JSON body, a timestamp.
