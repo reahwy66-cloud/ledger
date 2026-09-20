@@ -3467,7 +3467,24 @@ document.addEventListener("change",function(ev){
   var fl=ev.target.closest&&ev.target.closest(".lgf");
   if(fl){ if(fl.dataset.flt==="type") LGTYPE=fl.value; else LGWHO=fl.value; render(); }
 });
+document.addEventListener("keydown",function(ev){
+  if(ev.key==="Escape"){
+    var host=el("modalHost");
+    if(host&&host.innerHTML){
+      host.innerHTML="";
+    }
+  }
+});
 document.addEventListener("click",function(ev){
+  /* Any modal / bottom sheet closes when the user taps the blurred backdrop.
+     Only the backdrop itself closes it; clicks inside the sheet remain untouched. */
+  if(ev.target.classList&&ev.target.classList.contains("scrim")){
+    var host=el("modalHost");
+    if(host&&host.contains(ev.target)){
+      host.innerHTML="";
+      return;
+    }
+  }
   var lb=ev.target.closest("[data-lang]");
   if(lb){LANG=lb.dataset.lang;S.settings.lang=LANG;save();if(ROLE||ME)render();else if(SB)renderAuth();else renderSetup();return;}
   var tb=ev.target.closest("[data-tab]");
