@@ -10,7 +10,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
   document.head.appendChild(link);
   var desktopLink=document.createElement("link");
   desktopLink.rel="stylesheet";
-  desktopLink.href="desktop.css?v=20260920-v33";
+  desktopLink.href="desktop.css?v=20260920-v34";
   document.head.appendChild(desktopLink);
 
   var ICONS={
