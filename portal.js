@@ -113,6 +113,7 @@ function bindGlobal(){
       if(inv) printInvoice(inv);
     }
     if(act==="printstatement"&&KIND==="client") printStatement();
+    if(act==="archivevideo"&&KIND==="client") openArchiveVideo(a.dataset.url||"",a.dataset.name||"فيديو");
   });
 }
 
@@ -237,8 +238,8 @@ function renderDeliveryWizard(e){
 
   html+='<div class="wizard-panel '+(step===1?'active':'')+'" data-panel="1">'
     +'<div class="wizard-grid">'
-    +'<div class="field"><label>العميل</label><select name="customerId" required>'+customerOpts+'</select></div>'
-    +'<div class="field"><label>نوع العمل</label><select name="type">'+typeOpts+'</select><small>حسب المسمى الوظيفي: '+esc(e.role||"—")+'</small></div>'
+    +'<div class="field wizard-equal-field"><label>العميل</label><select name="customerId" required>'+customerOpts+'</select><small class="field-hint-spacer">&nbsp;</small></div>'
+    +'<div class="field wizard-equal-field"><label>نوع العمل</label><select name="type">'+typeOpts+'</select><small>حسب المسمى الوظيفي: '+esc(e.role||"—")+'</small></div>'
     +'<div class="field"><label>الكمية</label><input name="qty" type="number" min="1" max="100" value="'+esc(d.qty||1)+'"></div>'
     +'<div class="field"><label>التاريخ</label><input name="date" type="date" value="'+esc(d.date||today())+'"></div>'
     +'<div class="field full"><label>ملاحظة</label><textarea name="note" placeholder="تفاصيل اختيارية…">'+esc(d.note||"")+'</textarea></div>'
@@ -500,7 +501,11 @@ function clientArchiveSection(){
     +(files.length?'<div class="archive-grid">'+files.map(function(w){
       var f=w.file||{},mime=String(f.mimeType||""),preview="";
       if(mime.indexOf("video/")===0&&f.previewUrl){
-        preview='<div class="archive-preview video embedded"><iframe src="'+esc(f.previewUrl)+'" allow="autoplay; fullscreen" allowfullscreen loading="lazy" title="'+esc(f.name||"فيديو")+'"></iframe></div>';
+        var thumb=f.thumbnailLink||('https://drive.google.com/thumbnail?id='+encodeURIComponent(f.driveFileId)+'&sz=w1600');
+        preview='<button type="button" class="archive-preview video video-poster" data-act="archivevideo" data-url="'+esc(f.previewUrl)+'" data-name="'+esc(f.name||"فيديو")+'">'
+          +'<img src="'+esc(thumb)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+          +'<span class="video-poster-shade"></span><span class="video-play">▶</span>'
+          +'<small>تشغيل الفيديو</small></button>';
       }else if(mime.indexOf("image/")===0){
         preview='<div class="archive-preview image"><img src="'+esc(f.thumbnailLink||f.webViewLink||"")+'" alt="'+esc(f.name||"")+'" loading="lazy"></div>';
       }else if((mime.indexOf("pdf")>=0||mime.indexOf("document")>=0)&&f.previewUrl){
@@ -513,6 +518,17 @@ function clientArchiveSection(){
         +(f.webContentLink?'<a class="btn primary" href="'+esc(f.webContentLink)+'" target="_blank" rel="noopener">تحميل</a>':'')+'</div></div></article>';
     }).join("")+'</div>':'<div class="empty">ما في ملفات معتمدة بالأرشيف بعد.</div>')
     +'</section>';
+}
+function openArchiveVideo(url,name){
+  var old=document.querySelector(".archive-viewer-overlay");if(old)old.remove();
+  var wrap=document.createElement("div");
+  wrap.className="archive-viewer-overlay";
+  wrap.innerHTML='<div class="archive-viewer-modal"><div class="archive-viewer-head"><div><b>'+esc(name||"فيديو")+'</b><small>المشاهدة من أرشيف رِواء ستوديو</small></div><button type="button" class="archive-viewer-close">×</button></div>'
+    +'<div class="archive-viewer-body"><iframe src="'+esc(url)+'" allow="autoplay; fullscreen" allowfullscreen></iframe></div></div>';
+  document.body.appendChild(wrap);
+  function close(){wrap.remove()}
+  wrap.querySelector(".archive-viewer-close").onclick=close;
+  wrap.addEventListener("click",function(e){if(e.target===wrap)close()});
 }
 function renderClient(){
   var c=DATA.customer||{},st=clientStatement(),del=deliveredSummary(),totalDelivered=Object.keys(del).reduce(function(a,k){return a+(del[k]||0)},0);
