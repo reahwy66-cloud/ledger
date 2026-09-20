@@ -6,16 +6,17 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 (function mobileUiBootstrap(){
   var link=document.createElement("link");
   link.rel="stylesheet";
-  link.href="mobile.css?v=20260920-v45";
+  link.href="mobile.css?v=20260920-v46";
   document.head.appendChild(link);
   var desktopLink=document.createElement("link");
   desktopLink.rel="stylesheet";
-  desktopLink.href="desktop.css?v=20260920-v45";
+  desktopLink.href="desktop.css?v=20260920-v46";
   document.head.appendChild(desktopLink);
 
   var ICONS={
     flow:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-12h6V4h-6v4Z"/></svg>',
     clients:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM8 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm8 1c-3.3 0-6 1.8-6 4v3h12v-3c0-2.2-2.7-4-6-4ZM8 14c-3.3 0-6 1.5-6 3.5V20h6v-3c0-1.1.5-2.1 1.4-3H8Z"/></svg>',
+    archive:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2H3V5Zm0 6h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8Zm7 2v6l5-3-5-3Z"/></svg>',
     ledger:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 5h10V6H7v2Zm0 5h4v-2H7v2Zm6 0h4v-2h-4v2Zm-6 5h4v-2H7v2Zm6 0h4v-2h-4v2Z"/></svg>',
     calendar:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v3h6V2h2v3h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2V2Zm12 8H5v9h14v-9ZM7 12h3v3H7v-3Z"/></svg>',
     invoices:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15l-3-2-3 2-3-2-3 2-3-2-3 2V4a2 2 0 0 1 2-2h2Zm8 2v4h4l-4-4ZM6 11v2h10v-2H6Zm0 4v2h8v-2H6Z"/></svg>',
@@ -220,7 +221,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
       var b=extraMap[k]; if(!b) return "";
       return '<button type="button" data-tab="'+k+'" class="'+(tab===k?"active":"")+'">'+(ICONS[k]||"")+'<span>'+((b.textContent||"").trim())+'</span><i>‹</i></button>';
     }
-    var workLinks=["team","invoices","funding","costs"].map(drawerTab).join("");
+    var workLinks=["archive","team","invoices","funding","costs"].map(drawerTab).join("");
     var appLinks=["setup"].map(drawerTab).join("");
     var drawer=document.createElement("aside");
     drawer.className="mobile-drawer";
