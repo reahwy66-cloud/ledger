@@ -1601,7 +1601,7 @@ function vFlowMobile(){
     +'<div class="mini-stat"><span>'+t("k.due")+'</span><b class="num">'+money(due.sum)+'</b><small>'+t("k.due.n",{n:due.count})+'</small></div>'
     +'</section>';
 
-  h+='<details class="glass-disclosure"><summary><span>'+(LANG==="ar"?"تفاصيل الصندوق":"Cash details")+'</span><b class="num">'+money(box.balance)+'</b></summary>'
+  h+='<details class="glass-disclosure"'+(isMobileUI()?'':' open')+'><summary><span>'+(LANG==="ar"?"تفاصيل الصندوق":"Cash details")+'</span><b class="num">'+money(box.balance)+'</b></summary>'
     +'<div class="disclosure-body">'
     +'<div class="detail-row"><span>'+t("box.pre")+'</span><b class="num">'+money(wages.before)+'</b></div>'
     +'<div class="detail-row"><span>'+t("box.post")+'</span><b class="num">'+money(wages.after)+'</b></div>'
