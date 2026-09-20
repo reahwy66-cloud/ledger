@@ -3584,7 +3584,7 @@ document.addEventListener("click",function(ev){
   else if(act==="edituser"){var u=USERS.filter(function(x){return x.id===id;})[0];if(u)userForm(u);}
   else if(act==="signout"){(async function(){if(SB)await SB.auth.signOut();ME=null;renderAuth();})();}
   else if(act==="theme"){
-    if(window.RiwaTheme&&window.matchMedia&&window.matchMedia("(max-width: 820px)").matches){
+    if(window.RiwaTheme){
       var next=window.RiwaTheme.toggle();
       S.settings.theme=next;
       save();
