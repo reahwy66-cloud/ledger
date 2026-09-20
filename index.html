@@ -2237,7 +2237,7 @@ async function copyPortalAccess(code,url){
 function notificationAppointments(){
   var today=todayISO();
   return (S.shoots||[]).filter(function(x){
-    return x.status!=="cancelled" && (x.date||"")>=today;
+    return x.status!=="cancelled" && x.status!=="done" && (x.date||"")>=today;
   }).slice().sort(function(a,b){
     var ak=(a.date||"")+" "+(a.time||"99:99");
     var bk=(b.date||"")+" "+(b.time||"99:99");
@@ -2270,10 +2270,15 @@ function notificationsCenter(){
   var appointmentHtml=appts.length?appts.map(function(x){
     var c=S.customers.filter(function(z){return z.id===x.customerId;})[0];
     var e=S.employees.filter(function(z){return z.id===x.employeeId;})[0];
-    return '<button class="notification-appointment'+(x.date===today?" today":"")+'" data-act="notifcalendar" data-date="'+esc(x.date||"")+'">'
+    return '<div class="notification-appointment'+(x.date===today?" today":"")+'">'
+      +'<button class="notification-main" data-act="notifcalendar" data-date="'+esc(x.date||"")+'">'
       +'<span class="notification-date"><b>'+esc(x.time||"—")+'</b><small>'+(x.date===today?(LANG==="ar"?"اليوم":"Today"):esc(x.date||""))+'</small></span>'
       +'<span class="notification-copy"><b>'+esc(x.title||appointmentKindLabel(x.kind))+'</b><small>'+esc([appointmentKindLabel(x.kind),c&&c.name,e&&e.name].filter(Boolean).join(" · "))+'</small></span>'
-      +'<span class="notification-chevron">‹</span></button>';
+      +'<span class="notification-chevron">‹</span></button>'
+      +'<div class="notification-actions">'
+      +'<button class="btn sm primary" data-act="notifdone" data-id="'+esc(x.id)+'">'+(LANG==="ar"?"تم":"Done")+'</button>'
+      +'<button class="btn sm ghost danger" data-act="notifcancel" data-id="'+esc(x.id)+'">'+(LANG==="ar"?"إلغاء":"Cancel")+'</button>'
+      +'</div></div>';
   }).join(""):'<div class="notification-empty">'+(LANG==="ar"?"ما في مواعيد قادمة.":"No upcoming appointments.")+'</div>';
 
   el("modalHost").innerHTML='<div class="scrim"><div class="modal notifications-modal"><div class="sheet-handle"></div>'
@@ -2282,6 +2287,27 @@ function notificationsCenter(){
     +(amOwner()?'<section class="notification-section"><div class="notification-section-title"><b>'+(LANG==="ar"?"طلبات الفريق":"Team submissions")+'</b><span class="pill">'+pending.length+'</span></div><div class="portal-review-list">'+pendingHtml+'</div></section>':'')
     +'<section class="notification-section"><div class="notification-section-title"><b>'+(LANG==="ar"?"المواعيد القادمة":"Upcoming appointments")+'</b><span class="pill">'+appts.length+'</span></div><div class="notification-appointments">'+appointmentHtml+'</div></section>'
     +'</div></div>';
+}
+async function resolveAppointmentNotification(id,action){
+  var appt=(S.shoots||[]).filter(function(x){return x.id===id;})[0];
+  if(!appt) return notificationsCenter();
+
+  if(action==="cancel"){
+    var ok=window.confirm(LANG==="ar"?"إلغاء هذا الموعد وحذفه نهائياً؟":"Cancel and permanently delete this appointment?");
+    if(!ok) return;
+    var cloudRow=cloudRowFor(id);
+    S.shoots=S.shoots.filter(function(x){return x.id!==id;});
+    Store.save(S);
+    clearCalc();
+    if(cloudRow) await deleteCloudRow(cloudRow);
+  }else{
+    appt.status="done";
+    appt.completedAt=new Date().toISOString();
+    save();
+  }
+
+  render();
+  notificationsCenter();
 }
 function portalTypeName(k){
   var ar={video:"فيديو",post:"بوست",design:"تصميم",shoot:"تصوير",voice:"فويس",script:"سكربت",task:"مهمة"};
@@ -3780,6 +3806,8 @@ document.addEventListener("click",function(ev){
   }
   else if(act==="notifications"){notificationsCenter();}
   else if(act==="portalinbox"){notificationsCenter();}
+  else if(act==="notifdone"){resolveAppointmentNotification(id,"done");}
+  else if(act==="notifcancel"){resolveAppointmentNotification(id,"cancel");}
   else if(act==="notifcalendar"){
     CALDAY=a.dataset.date||todayISO();
     TAB="calendar";
