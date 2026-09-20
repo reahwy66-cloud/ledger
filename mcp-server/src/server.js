@@ -223,6 +223,40 @@ async function driveEnsureFolder(accessToken, parentId, name) {
   return (await driveFindFolder(accessToken, parentId, safe)) || driveCreateFolder(accessToken, parentId, safe);
 }
 
+async function drivePublishFile(fileId) {
+  if (!fileId) return null;
+  const accessToken = await googleDriveAccessToken();
+
+  // Make approved archive files readable by link; before approval they remain private.
+  const perm = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}/permissions?supportsAllDrives=true`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${accessToken}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ type: 'anyone', role: 'reader', allowFileDiscovery: false })
+  });
+  if (!perm.ok && perm.status !== 409) {
+    const err = await perm.text();
+    throw new Error(err || 'drive_permission_failed');
+  }
+
+  const metaUrl = new URL(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`);
+  metaUrl.searchParams.set('fields', 'id,name,mimeType,size,webViewLink,webContentLink,thumbnailLink');
+  metaUrl.searchParams.set('supportsAllDrives', 'true');
+  const metaRes = await fetch(metaUrl, { headers: { authorization: `Bearer ${accessToken}` } });
+  const meta = await metaRes.json();
+  if (!metaRes.ok) throw new Error(meta.error?.message || 'drive_metadata_failed');
+
+  return {
+    driveFileId: meta.id,
+    name: meta.name,
+    mimeType: meta.mimeType || '',
+    size: Number(meta.size || 0),
+    webViewLink: meta.webViewLink || `https://drive.google.com/file/d/${meta.id}/view`,
+    webContentLink: meta.webContentLink || `https://drive.google.com/uc?export=download&id=${meta.id}`,
+    thumbnailLink: meta.thumbnailLink || '',
+    previewUrl: `https://drive.google.com/file/d/${meta.id}/preview`
+  };
+}
+
 async function ensureClientArchiveFolder(customer, workType, dateValue) {
   const rootId = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
   if (!rootId) throw new Error('google_drive_root_folder_missing');
@@ -1224,7 +1258,19 @@ app.post('/portal/submissions/review', async (req, res) => {
       result = { ok: true, status: row.status };
     } else if (action === 'approve') {
       const workId = crypto.randomUUID();
-      const workData = { ...(row.data || {}), editorId: row.employee_id };
+      let workData = { ...(row.data || {}), editorId: row.employee_id };
+      const driveFileId = workData.file?.driveFileId;
+      if (driveFileId) {
+        const published = await drivePublishFile(driveFileId);
+        workData = {
+          ...workData,
+          file: {
+            ...(workData.file || {}),
+            ...(published || {}),
+            approvedAt: new Date().toISOString()
+          }
+        };
+      }
       const { error: workError } = await db.from('work').insert({
         id: workId,
         data: workData,
