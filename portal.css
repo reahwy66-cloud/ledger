@@ -97,3 +97,12 @@ button{cursor:pointer}
 .package-part-head b{font-size:11.5px}
 .package-part-bar{height:8px;border-radius:999px;overflow:hidden;background:color-mix(in srgb,var(--ground) 55%,transparent);border:1px solid var(--gl)}
 .package-part-bar i{display:block;height:100%;border-radius:inherit;background:var(--brand)}
+
+
+/* Portal V3 — staff push */
+.staff-push-btn{white-space:nowrap}
+.staff-push-btn[data-act="staffpush"]{display:inline-flex;align-items:center;justify-content:center}
+@media(max-width:700px){
+  .top-actions{flex-wrap:wrap;justify-content:flex-end}
+  .staff-push-btn{order:3;width:100%}
+}
