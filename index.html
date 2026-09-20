@@ -1523,7 +1523,7 @@ function render(){
   el("app").innerHTML='<div class="wrap"><div class="mast">'
    +'<div class="brand">'+stampHTML()+'<div>'+(S.settings.company?'<h1>'+esc(S.settings.company)+'</h1>':'')+'<small>'+t("tagline")+'</small></div></div>'
    +'<div class="tools">'
-   +(amOwner()&&PENDING_PORTAL.length?'<button class="chip portal-notify-chip" data-act="portalinbox" title="'+(LANG==="ar"?"طلبات تسليم بانتظار الموافقة":"Pending delivery approvals")+'"><span class="portal-bell">●</span><b class="num">'+PENDING_PORTAL.length+'</b></button>':'')
+   +'<button class="chip portal-notify-chip" data-act="notifications" title="'+(LANG==="ar"?"التنبيهات":"Notifications")+'"><span class="portal-bell-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.35-1.65h-4.7A2.5 2.5 0 0 0 12 22Zm7-5v-5a7 7 0 0 0-5-6.7V4a2 2 0 1 0-4 0v1.3A7 7 0 0 0 5 12v5l-2 2v1h18v-1l-2-2Zm-12 1v-6a5 5 0 0 1 10 0v6H7Z"/></svg></span>'+(notificationAttentionCount()?'<b class="notify-count num">'+notificationAttentionCount()+'</b>':'')+'</button>'
    +'<button class="chip" data-act="logout" title="'+t("switchRole")+'"><span class="dot '+(amOwner()?"owner":"manager")+'"></span>'
    +esc(MODE==="cloud"?((ME&&(ME.name||ME.email))||""):t("role."+ROLE))
    +(MODE==="cloud"?' <span id="syncDot" class="mut" style="font-size:10.5px">'+(SYNC?t(SYNC):"")+'</span>':'')+'</button>'
@@ -1610,7 +1610,7 @@ function vFlowMobile(){
   var r=calc(MONTH), box=cashBox(MONTH), due=totalDue(MONTH), wages=boxAroundWages(MONTH);
   var h=greeting();
   if(amOwner()&&PENDING_PORTAL.length){
-    h+='<button class="portal-alert-card" data-act="portalinbox"><span><b>'+(LANG==="ar"?"طلبات تسليم جديدة":"New delivery requests")+'</b><small>'+(LANG==="ar"?"بانتظار موافقتك قبل ما تدخل بالحساب":"Waiting for your approval before entering the ledger")+'</small></span><strong class="num">'+PENDING_PORTAL.length+'</strong></button>';
+    h+='<button class="portal-alert-card" data-act="notifications"><span><b>'+(LANG==="ar"?"طلبات تسليم جديدة":"New delivery requests")+'</b><small>'+(LANG==="ar"?"بانتظار موافقتك قبل ما تدخل بالحساب":"Waiting for your approval before entering the ledger")+'</small></span><strong class="num">'+PENDING_PORTAL.length+'</strong></button>';
   }
   h+='<section class="mobile-hero finance-hero">'
     +'<div class="hero-top"><span class="eyebrow">'+monthName(MONTH)+'</span><span class="hero-status">'+t("box.t")+'</span></div>'
@@ -2211,6 +2211,55 @@ async function issuePortalCode(kind,id,name){
 async function copyPortalAccess(code,url){
   var txt=url+"\n"+(LANG==="ar"?"رمز الدخول: ":"Access code: ")+code;
   try{await navigator.clipboard.writeText(txt);}catch(e){}
+}
+function notificationAppointments(){
+  var today=todayISO();
+  return (S.shoots||[]).filter(function(x){
+    return x.status!=="cancelled" && (x.date||"")>=today;
+  }).slice().sort(function(a,b){
+    var ak=(a.date||"")+" "+(a.time||"99:99");
+    var bk=(b.date||"")+" "+(b.time||"99:99");
+    return ak<bk?-1:ak>bk?1:0;
+  });
+}
+function notificationAttentionCount(){
+  var today=todayISO();
+  var appts=notificationAppointments().filter(function(x){return x.date===today;}).length;
+  return (amOwner()?PENDING_PORTAL.length:0)+appts;
+}
+function appointmentKindLabel(k){
+  var ar={meeting:"اجتماع",shoot:"تصوير",call:"مكالمة",delivery:"تسليم",other:"موعد"};
+  var en={meeting:"Meeting",shoot:"Shoot",call:"Call",delivery:"Delivery",other:"Appointment"};
+  return (LANG==="ar"?ar:en)[k]||k||"";
+}
+function notificationsCenter(){
+  var pending=amOwner()?(PENDING_PORTAL||[]):[];
+  var appts=notificationAppointments().slice(0,12);
+  var today=todayISO();
+
+  var pendingHtml=pending.length?pending.map(function(x){
+    return '<div class="portal-review-row"><div class="portal-review-copy"><b>'+esc(x.employeeName||"—")+' · '+esc(x.customerName||"—")+'</b>'
+      +'<span>'+esc(portalTypeName(x.type))+' · '+n(x.qty||1)+'× · '+esc(x.date||"")+'</span>'
+      +(x.note?'<small>'+esc(x.note)+'</small>':'')+'</div>'
+      +'<div class="portal-review-actions"><button class="btn sm primary" data-act="portalapprove" data-id="'+esc(x.id)+'">'+(LANG==="ar"?"موافقة":"Approve")+'</button>'
+      +'<button class="btn sm ghost" data-act="portalreject" data-id="'+esc(x.id)+'">'+(LANG==="ar"?"رفض":"Reject")+'</button></div></div>';
+  }).join(""):'<div class="notification-empty">'+(LANG==="ar"?"ما في تسليمات بانتظار الموافقة.":"No pending deliveries.")+'</div>';
+
+  var appointmentHtml=appts.length?appts.map(function(x){
+    var c=S.customers.filter(function(z){return z.id===x.customerId;})[0];
+    var e=S.employees.filter(function(z){return z.id===x.employeeId;})[0];
+    return '<button class="notification-appointment'+(x.date===today?" today":"")+'" data-act="notifcalendar" data-date="'+esc(x.date||"")+'">'
+      +'<span class="notification-date"><b>'+esc(x.time||"—")+'</b><small>'+(x.date===today?(LANG==="ar"?"اليوم":"Today"):esc(x.date||""))+'</small></span>'
+      +'<span class="notification-copy"><b>'+esc(x.title||appointmentKindLabel(x.kind))+'</b><small>'+esc([appointmentKindLabel(x.kind),c&&c.name,e&&e.name].filter(Boolean).join(" · "))+'</small></span>'
+      +'<span class="notification-chevron">‹</span></button>';
+  }).join(""):'<div class="notification-empty">'+(LANG==="ar"?"ما في مواعيد قادمة.":"No upcoming appointments.")+'</div>';
+
+  el("modalHost").innerHTML='<div class="scrim"><div class="modal notifications-modal"><div class="sheet-handle"></div>'
+    +'<div class="section-heading"><div><h3>'+(LANG==="ar"?"التنبيهات":"Notifications")+'</h3><p class="sub">'+(LANG==="ar"?"المواعيد وطلبات الفريق بمكان واحد.":"Appointments and team approvals in one place.")+'</p></div>'
+    +(notificationAttentionCount()?'<span class="notification-total num">'+notificationAttentionCount()+'</span>':'')+'</div>'
+    +(amOwner()?'<section class="notification-section"><div class="notification-section-title"><b>'+(LANG==="ar"?"طلبات الفريق":"Team submissions")+'</b><span class="pill">'+pending.length+'</span></div><div class="portal-review-list">'+pendingHtml+'</div></section>':'')
+    +'<section class="notification-section"><div class="notification-section-title"><b>'+(LANG==="ar"?"المواعيد القادمة":"Upcoming appointments")+'</b><span class="pill">'+appts.length+'</span></div><div class="notification-appointments">'+appointmentHtml+'</div></section>'
+    +'</div></div>';
 }
 function portalTypeName(k){
   var ar={video:"فيديو",post:"بوست",design:"تصميم",shoot:"تصوير",voice:"فويس",script:"سكربت",task:"مهمة"};
@@ -3623,7 +3672,14 @@ document.addEventListener("click",function(ev){
   else if(act==="payfunding"){
     var ff=f(S.fundings);if(ff){var remain=Math.max(0,fundingTotal(ff)-fundingPaid(ff));payForm(null,ff.customerId,{kind:"funding",fundingId:ff.id,amount:remain.toFixed(2)});}
   }
-  else if(act==="portalinbox"){portalInbox();}
+  else if(act==="notifications"){notificationsCenter();}
+  else if(act==="portalinbox"){notificationsCenter();}
+  else if(act==="notifcalendar"){
+    CALDAY=a.dataset.date||todayISO();
+    TAB="calendar";
+    el("modalHost").innerHTML="";
+    render();
+  }
   else if(act==="portalapprove"){reviewPortalSubmission(id,"approve");}
   else if(act==="portalreject"){reviewPortalSubmission(id,"reject");}
   else if(act==="portalcode"){issuePortalCode(a.dataset.kind,a.dataset.id,a.dataset.name||"");}
