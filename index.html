@@ -438,7 +438,7 @@ en:{
  "tm.note":"Partners on a percentage share the profit once company costs are covered, instead of taking a salary. Their percentages should total 100%.",
  "wk.t":"Work log — {m}","wk.s":"Every delivery logged pays an editor and bills a client at the same time.",
  "wk.add":"Log a delivery","wk.edit":"Edit delivery","wk.none":"Nothing logged for {m} yet.","wk.inpack":"in package",
- "d.video":"Video","d.post":"Post","d.design":"Design","d.task":"Task","d.shoot":"Photo shoot","d.voice":"Voice recording",
+ "d.video":"Video","d.post":"Post","d.design":"Design","d.script":"Script","d.task":"Task","d.shoot":"Photo shoot","d.voice":"Voice recording",
  "cs.t":"Running costs — {m}","cs.s":"These come off before the profit is split, so the manager carries his share of them.",
  "cs.add":"Add cost","cs.edit":"Edit cost","cs.none":"Nothing recorded for this month.","cs.tot":"Total",
  "cs.note":"Rent is not listed here; it comes out of the owner's share.",
@@ -1212,7 +1212,7 @@ function workCounts(empId,m,isOwner){
   var w=S.work.filter(function(x){
     return inMonth(x.date,m)&&(x.editorId===empId||(isOwner&&!x.editorId));});
   var o={};
-  ["video","post","design","shoot","voice","task"].forEach(function(k){
+  ["video","post","design","shoot","voice","script","task"].forEach(function(k){
     o[k]=w.filter(function(x){return x.type===k;}).reduce(function(a,x){return a+(+x.qty||0);},0);});
   return o;
 }
@@ -2213,8 +2213,8 @@ async function copyPortalAccess(code,url){
   try{await navigator.clipboard.writeText(txt);}catch(e){}
 }
 function portalTypeName(k){
-  var ar={video:"فيديو",post:"بوست",design:"تصميم",shoot:"تصوير",voice:"فويس",task:"مهمة"};
-  var en={video:"Video",post:"Post",design:"Design",shoot:"Shoot",voice:"Voice",task:"Task"};
+  var ar={video:"فيديو",post:"بوست",design:"تصميم",shoot:"تصوير",voice:"فويس",script:"سكربت",task:"مهمة"};
+  var en={video:"Video",post:"Post",design:"Design",shoot:"Shoot",voice:"Voice",script:"Script",task:"Task"};
   return (LANG==="ar"?ar:en)[k]||k||"—";
 }
 function portalInbox(){
@@ -2756,10 +2756,10 @@ function ledgerPersonFilterSheet(){
 function ledgerFilterSummary(rows){
   if(LGCUSTOMER==="all"&&LGPERSON==="all") return "";
   var work=rows.filter(function(x){return x.kind==="work";});
-  var counts={video:0,post:0,design:0,shoot:0,voice:0,task:0};
+  var counts={video:0,post:0,design:0,shoot:0,voice:0,script:0,task:0};
   work.forEach(function(x){counts[x.workType||"task"]=(counts[x.workType||"task"]||0)+(+x.qty||0);});
   var parts=[];
-  [["video","فيديو","videos"],["design","تصميم","designs"],["post","بوست","posts"],["shoot","تصوير","shoots"],["voice","فويس","voice"],["task","مهمة","tasks"]].forEach(function(a){
+  [["video","فيديو","videos"],["design","تصميم","designs"],["post","بوست","posts"],["shoot","تصوير","shoots"],["voice","فويس","voice"],["script","سكربت","scripts"],["task","مهمة","tasks"]].forEach(function(a){
     if(counts[a[0]]) parts.push('<span><b class="num">'+counts[a[0]]+'</b> '+(LANG==="ar"?a[1]:a[2])+'</span>');
   });
   var c=S.customers.filter(function(x){return x.id===LGCUSTOMER;})[0];
@@ -3305,7 +3305,7 @@ function workForm(w){
   var fields=[
     {k:"date",label:t("f.date"),type:"date",def:todayISO()},
     {k:"customerId",label:t("f.client"),type:"select",options:S.customers.map(function(c){return [c.id,c.name];})},
-    {k:"type",label:t("f.delivered"),type:"select",options:[["video",t("d.video")],["post",t("d.post")],["design",t("d.design")],["shoot",t("d.shoot")],["voice",t("d.voice")],["task",t("d.task")]]},
+    {k:"type",label:t("f.delivered"),type:"select",options:[["video",t("d.video")],["post",t("d.post")],["design",t("d.design")],["shoot",t("d.shoot")],["voice",t("d.voice")],["script",t("d.script")],["task",t("d.task")]]},
     {k:"qty",label:t("f.howmany"),type:"number",def:1},
     {k:"editorId",label:t("f.whodid"),type:"select",options:[["",t("wk.mine")]].concat(S.employees.filter(function(e){return e.payType!=="percent";}).map(function(e){return [e.id,e.name];}))}
   ];
