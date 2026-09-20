@@ -6,8 +6,12 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 (function mobileUiBootstrap(){
   var link=document.createElement("link");
   link.rel="stylesheet";
-  link.href="mobile.css?v=20260920-v32";
+  link.href="mobile.css?v=20260920-v33";
   document.head.appendChild(link);
+  var desktopLink=document.createElement("link");
+  desktopLink.rel="stylesheet";
+  desktopLink.href="desktop.css?v=20260920-v31";
+  document.head.appendChild(desktopLink);
 
   var ICONS={
     flow:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-12h6V4h-6v4Z"/></svg>',
@@ -80,6 +84,17 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     return next;
   }
   window.RiwaTheme={toggle:toggleManualTheme,apply:applyScheduledTheme};
+
+  function decorateDesktopTabs(){
+    var tabs=document.querySelector(".tabs");
+    if(!tabs) return;
+    Array.from(tabs.querySelectorAll("[data-tab]")).forEach(function(b){
+      if(b.querySelector(".desktop-tab-icon")) return;
+      var k=b.dataset.tab;
+      var label=(b.textContent||"").trim();
+      b.innerHTML='<span class="desktop-tab-icon">'+(ICONS[k]||"")+'</span><span class="desktop-tab-label">'+label+'</span>';
+    });
+  }
 
   function activeTab(){
     var b=document.querySelector(".tabs [aria-selected=true]");
@@ -342,6 +357,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 
   function refresh(){
     applyScheduledTheme();
+    decorateDesktopTabs();
     buildMobileShell();
     prepareTables();
     prepareCalendar();
