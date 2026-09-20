@@ -739,30 +739,42 @@ function t(k,a){
 
 /* ═════════════ roles ═════════════ */
 var PERM={
-  owner:      {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar","setup"],edit:["clients","invoices","funding","team","work","costs","calendar","setup","payments","advances"],personal:true},
-  manager:    {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["work","calendar"],personal:false},
-  accountant: {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["clients","invoices","funding","work","costs","payments"],personal:false}
+  owner:      {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar","setup"],edit:["clients","invoices","funding","team","work","costs","calendar","setup","payments","advances"],finance:true,personal:true},
+  manager:    {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["work","calendar"],finance:true,personal:false},
+  accountant: {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["clients","invoices","funding","work","costs","payments"],finance:true,personal:false}
 };
 var FULL={tabs:["flow","ledger","clients","invoices","funding","team","work","costs","calendar","setup"],
-          edit:["clients","invoices","funding","team","work","costs","calendar","payments","advances","setup"],personal:true};
+          edit:["clients","invoices","funding","team","work","costs","calendar","payments","advances","setup"],finance:true,personal:true};
 var SEC_TABS=["flow","ledger","clients","invoices","funding","team","costs","calendar","setup"];
-var SEC_EDIT=["clients","invoices","funding","team","work","costs","calendar","payments","advances","setup"];
+var SEC_EDIT=["work","payments","calendar","clients","team","invoices","funding","costs","advances","setup"];
+var SAFE_TABS=["ledger","calendar"];
+var FINANCE_TABS=["flow","clients","invoices","funding","team","costs"];
+var FINANCE_EDITS=["clients","team","invoices","funding","costs","advances","setup"];
 var PRESETS={
-  manager:{tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["work","calendar"],personal:false},
-  acct:{tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["clients","invoices","funding","work","costs","payments"],personal:false},
-  view:{tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:[],personal:false},
-  none:{tabs:[],edit:[],personal:false}
+  manager:{tabs:["ledger","calendar"],edit:["work","calendar"],finance:false,personal:false},
+  acct:{tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["clients","invoices","funding","work","costs","payments"],finance:true,personal:false},
+  view:{tabs:["ledger","calendar"],edit:[],finance:false,personal:false},
+  none:{tabs:[],edit:[],finance:false,personal:false}
 };
 var MODE="local";      // "local" | "cloud"
 var ROLE=null;         // local mode
 var ME=null;           // cloud mode profile
+function normalizePerms(p){
+  p=p||{};
+  return {tabs:p.tabs||[],edit:p.edit||[],finance:!!p.finance,personal:!!p.personal};
+}
 function myPerms(){
-  if(MODE==="cloud") return (ME&&ME.role==="owner")?FULL:((ME&&ME.perms)||{tabs:[],edit:[],personal:false});
-  return PERM[ROLE]||{tabs:[],edit:[],personal:false};
+  if(MODE==="cloud") return (ME&&ME.role==="owner")?FULL:normalizePerms(ME&&ME.perms);
+  return normalizePerms(PERM[ROLE]);
 }
 function can(sec){return (myPerms().edit||[]).indexOf(sec)>=0;}
+function canSeeMoney(){return amOwner()||!!myPerms().finance;}
 function sees(){return !!myPerms().personal;}
-function myTabs(){return myPerms().tabs||[];}
+function myTabs(){
+  var p=myPerms(), tabs=p.tabs||[];
+  if(canSeeMoney()) return tabs;
+  return tabs.filter(function(k){return FINANCE_TABS.indexOf(k)<0;});
+}
 function amOwner(){return MODE==="cloud"?(ME&&ME.role==="owner"):(ROLE==="owner");}
 
 /* ═════════════ storage ═════════════ */
@@ -921,7 +933,7 @@ async function loadProfile(){
   var u=(await SB.auth.getUser()).data.user;
   if(!u) return null;
   var r=await SB.from("profiles").select("*").eq("id",u.id).maybeSingle();
-  if(r.error||!r.data) return {id:u.id,email:u.email,name:u.email,role:"staff",active:false,perms:{tabs:[],edit:[],personal:false}};
+  if(r.error||!r.data) return {id:u.id,email:u.email,name:u.email,role:"staff",active:false,perms:{tabs:[],edit:[],finance:false,personal:false}};
   return r.data;
 }
 
@@ -2193,7 +2205,7 @@ function vOutside(){
 
 
 /* ═════════════ MOVEMENTS ═════════════ */
-function vLedger(){
+function vLedgerFull(){
   var box=cashBox(MONTH), fu=funding(MONTH);
   var r=calc(MONTH);
   var rows=box.rows.filter(function(x){return inMonth(x.date,MONTH);});
@@ -2307,6 +2319,56 @@ function vLedger(){
   return h+'</div>';
 }
 
+function vLedgerSafe(){
+  var r=calc(MONTH);
+  var rows=movements(MONTH).filter(function(x){return inMonth(x.date,MONTH);});
+  if(LGTYPE!=="all"){
+    if(LGTYPE==="money") rows=rows.filter(function(x){return x.kind!=="work";});
+    else rows=rows.filter(function(x){
+      if(LGTYPE==="wage") return x.kind==="out"||x.kind==="reim";
+      if(LGTYPE==="fund") return x.kind==="fund"||x.kind==="fundspend";
+      return x.kind===LGTYPE;
+    });
+  }
+  if(LGWHO!=="all"){
+    var cust=S.customers.filter(function(c){return c.id===LGWHO;})[0];
+    var emp=S.employees.filter(function(e){return e.id===LGWHO;})[0];
+    if(cust) rows=rows.filter(function(x){return x.who===cust.name;});
+    else if(emp) rows=rows.filter(function(x){return x.who===emp.name||x.kind==="work";});
+  }
+
+  var wp=can("payments"), ww=can("work");
+  var h='<div class="sec card safe-ledger"><div class="rowhead"><div><h2>'+t("lg.t",{m:monthName(MONTH)})+'</h2>'
+    +'<p class="sub" style="margin:0">'+(LANG==="ar"?"سجل العمليات بدون مبالغ أو أرصدة.":"Activity log without amounts or balances.")+'</p></div>'
+    +'<div class="safe-actions">'
+    +(ww?'<button class="btn primary" data-act="newwork">'+t("wk.add")+'</button>':'')
+    +(wp?'<button class="btn primary" data-act="newpay">'+t("cd.pay")+'</button>':'')
+    +'</div></div>'
+    +'<div class="ledger-filters"><select class="lgf" data-flt="type">'
+    +[["all","flt.all"],["pay","flt.pay"],["work","flt.work"]].map(function(o){
+      return '<option value="'+o[0]+'"'+(LGTYPE===o[0]?" selected":"")+'>'+t(o[1])+'</option>';
+    }).join("")+'</select>'
+    +'<select class="lgf" data-flt="who"><option value="all">'+t("flt.who")+': '+t("flt.all")+'</option>'
+    +(S.customers.length?'<optgroup label="'+t("sec.clients")+'">'+S.customers.map(function(c){return '<option value="'+c.id+'"'+(LGWHO===c.id?" selected":"")+'>'+esc(c.name)+'</option>';}).join("")+'</optgroup>':'')
+    +(S.employees.length?'<optgroup label="'+t("sec.team")+'">'+S.employees.map(function(e){return '<option value="'+e.id+'"'+(LGWHO===e.id?" selected":"")+'>'+esc(e.name)+'</option>';}).join("")+'</optgroup>':'')
+    +'</select></div>'
+    +'<div class="tbl-wrap"><table><thead><tr><th>'+t("th.date")+'</th><th>'+t("th.action")+'</th><th>'+t("th.who")+'</th><th></th></tr></thead><tbody>';
+  if(!rows.length) h+='<tr><td colspan="4" class="empty">'+t("lg.none")+'</td></tr>';
+  rows.forEach(function(x){
+    var lbl={pay:"lg.pay",cost:"lg.cost",fundspend:"fund.spent",adv:"lg.adv",out:"lg.out",work:"lg.work",fund:"lg.fund",reim:"lg.reim",trans:"lg.trans"}[x.kind]||"lg.pay";
+    var pill={pay:"on",cost:"",fundspend:"",adv:"cy",out:"amb",work:"",fund:"cy",reim:"amb",trans:"on"}[x.kind]||"";
+    var editAllowed=x.kind==="work"&&can("work");
+    h+='<tr><td>'+n(esc(x.date))+'</td>'
+      +'<td><span class="pill '+pill+'">'+t(lbl)+'</span></td>'
+      +'<td><b>'+esc(x.who)+'</b>'+(x.note?'<div class="mut">'+esc(x.note)+'</div>':'')+'</td>'
+      +'<td class="r">'+(editAllowed?'<button class="btn sm ghost" data-act="'+x.act+'" data-id="'+x.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
+  });
+  return h+'</tbody></table></div></div>';
+}
+function vLedger(){
+  return canSeeMoney()?vLedgerFull():vLedgerSafe();
+}
+
 /* ═════════════ PEOPLE ═════════════ */
 var USERS=[];
 async function loadUsers(){
@@ -2314,74 +2376,94 @@ async function loadUsers(){
   var r=await SB.from("profiles").select("*").order("created_at");
   if(!r.error){USERS=r.data;render();}
 }
+function permLabel(k){
+  var mapAr={flow:"الملخص",ledger:"السجل",clients:"العملاء",invoices:"الفواتير",funding:"التمويل",team:"الفريق",costs:"المصروفات",calendar:"المواعيد",setup:"الإعدادات",
+    work:"إضافة وتعديل التسليمات",payments:"إضافة دفعات العملاء",advances:"السلف والدفعات للفريق"};
+  var mapEn={flow:"Summary",ledger:"Ledger",clients:"Clients",invoices:"Invoices",funding:"Ad funding",team:"Team",costs:"Costs",calendar:"Appointments",setup:"Settings",
+    work:"Add / edit deliveries",payments:"Add client payments",advances:"Team advances & payouts"};
+  return (LANG==="ar"?mapAr:mapEn)[k]||t("sec."+k);
+}
 function vUsers(){
   if(MODE!=="cloud"){
     return '<div class="sec card"><h2>'+t("us.t")+'</h2><p class="sub">'+t("cl.offS")+'</p>'
       +'<button class="btn primary" data-act="cloudon">'+t("cl.connect")+'</button></div>';
   }
   if(!USERS.length) loadUsers();
-  var h='<div class="sec"><div class="rowhead"><div><h2>'+t("us.t")+'</h2>'
-   +'<p class="sub" style="margin:0">'+t("us.s")+'</p></div></div>'
+  var h='<div class="sec"><div class="rowhead"><div><h2>'+(LANG==="ar"?"المستخدمون":"Users")+'</h2>'
+   +'<p class="sub" style="margin:0">'+(LANG==="ar"?"حدّد ما الذي يستطيع كل مستخدم رؤيته وما الذي يستطيع تنفيذه.":"Choose exactly what each user can see and do.")+'</p></div></div>'
    +'<div class="card"><div class="tbl-wrap"><table><thead><tr><th>'+t("th.name")+'</th>'
-   +'<th>'+t("th.status")+'</th><th>'+t("us.canSee")+'</th><th>'+t("us.personal")+'</th><th></th></tr></thead><tbody>';
+   +'<th>'+t("th.status")+'</th><th>'+(LANG==="ar"?"الوصول":"Access")+'</th><th>'+(LANG==="ar"?"الأرقام":"Numbers")+'</th><th></th></tr></thead><tbody>';
   if(!USERS.length) h+='<tr><td colspan="5" class="empty">'+t("us.none")+'</td></tr>';
   USERS.forEach(function(u){
     var own=u.role==="owner";
-    var pm=own?FULL:(u.perms||{tabs:[],edit:[],personal:false});
+    var pm=own?FULL:normalizePerms(u.perms);
     var nTabs=(pm.tabs||[]).length;
     h+='<tr><td><b>'+esc(u.name||u.email)+'</b><div class="mut" style="font-size:11.5px">'+esc(u.email||"")+'</div></td>'
-     +'<td><span class="pill '+(own?"amb":(u.active?"on":""))+'">'
-       +(own?t("us.owner"):(u.active?t("us.active"):t("us.pending")))+'</span></td>'
-     +'<td>'+(own?'<span class="mut">'+t("sec.setup")+' + '+t("sec.flow")+'…</span>'
-        :'<span class="num">'+nTabs+'</span> <span class="mut" style="font-size:11.5px">/ '+SEC_TABS.length+'</span>')+'</td>'
-     +'<td>'+((own||pm.personal)?'<span class="pill on">'+t("st.active")+'</span>':'<span class="pill">'+t("us.off")+'</span>')+'</td>'
+     +'<td><span class="pill '+(own?"amb":(u.active?"on":""))+'">'+(own?t("us.owner"):(u.active?t("us.active"):t("us.pending")))+'</span></td>'
+     +'<td><span class="num">'+(own?SEC_TABS.length:nTabs)+'</span> <span class="mut">/ '+SEC_TABS.length+'</span></td>'
+     +'<td>'+(own||pm.finance?'<span class="pill on">'+(LANG==="ar"?"مسموح":"Allowed")+'</span>':'<span class="pill">'+(LANG==="ar"?"مخفيّة":"Hidden")+'</span>')+'</td>'
      +'<td class="r">'+(own?'<span class="mut" style="font-size:11.5px">'+t("us.ownerLock")+'</span>'
         :'<button class="btn sm ghost" data-act="edituser" data-id="'+u.id+'">'+t("edit")+'</button>')+'</td></tr>';
   });
   return h+'</tbody></table></div></div></div>';
 }
 function userForm(u){
-  var pm=JSON.parse(JSON.stringify(u.perms||{tabs:[],edit:[],personal:false}));
-  var box=function(list,keyName,sel){
-    return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-top:4px">'
+  var pm=normalizePerms(JSON.parse(JSON.stringify(u.perms||{})));
+  var checks=function(list,keyName,sel){
+    return '<div class="perm-grid">'
       +list.map(function(k){
         var on=(sel||[]).indexOf(k)>=0;
-        return '<label class="chk" style="cursor:pointer"><input type="checkbox" data-grp="'+keyName+'" value="'+k+'"'+(on?" checked":"")+'>'
-          +'<span style="font-size:13px">'+t("sec."+k)+'</span></label>';}).join("")
+        var fin=FINANCE_TABS.indexOf(k)>=0||FINANCE_EDITS.indexOf(k)>=0;
+        return '<label class="perm-check'+(fin?" needs-finance":"")+'"><input type="checkbox" data-grp="'+keyName+'" value="'+k+'"'+(on?" checked":"")+'>'
+          +'<span>'+esc(permLabel(k))+'</span></label>';}).join("")
       +'</div>';
   };
-  var body='<div class="f"><label>'+t("us.presets")+'</label>'
-    +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
-    +[["manager","us.p.manager"],["acct","us.p.acct"],["view","us.p.view"],["none","us.p.none"]].map(function(x){
-       return '<button type="button" class="btn sm" data-preset="'+x[0]+'">'+t(x[1])+'</button>';}).join("")
+  var body='<div class="f"><label>'+(LANG==="ar"?"قالب سريع":"Quick preset")+'</label>'
+    +'<div class="perm-presets">'
+    +[["manager",LANG==="ar"?"تشغيل فقط":"Operations"],["acct",LANG==="ar"?"محاسب":"Accountant"],["view",LANG==="ar"?"عرض فقط":"View only"],["none",LANG==="ar"?"لا شيء":"Nothing"]].map(function(x){
+       return '<button type="button" class="btn sm" data-preset="'+x[0]+'">'+x[1]+'</button>';}).join("")
     +'</div></div>'
-    +'<div class="f"><label>'+t("us.canSee")+'</label>'+box(SEC_TABS,"tabs",pm.tabs)+'</div>'
-    +'<div class="f"><label>'+t("us.canEdit")+'</label>'+box(SEC_EDIT,"edit",pm.edit)+'</div>'
-    +'<div class="f"><label class="chk" style="cursor:pointer"><input type="checkbox" id="pPersonal"'+(pm.personal?" checked":"")+'>'
-      +'<span style="font-size:13px">'+t("us.personal")+'</span></label>'
-      +'<div class="hint">'+t("us.personalH")+'</div></div>'
-    +'<div class="f"><label class="chk" style="cursor:pointer"><input type="checkbox" id="pActive"'+(u.active?" checked":"")+'>'
-      +'<span style="font-size:13px">'+t("us.on")+'</span></label></div>';
+    +'<div class="permission-money"><label class="perm-switch"><input type="checkbox" id="pFinance"'+(pm.finance?" checked":"")+'>'
+      +'<span><b>'+(LANG==="ar"?"رؤية الأرقام المالية والصندوق":"See financial numbers and cash box")+'</b>'
+      +'<small>'+(LANG==="ar"?"إذا كانت مطفأة، يستطيع المستخدم العمل على السجل بدون رؤية المبالغ أو الرصيد.":"When off, the user can work in the ledger without seeing amounts or balances.")+'</small></span></label></div>'
+    +'<div class="f"><label>'+(LANG==="ar"?"الصفحات التي يستطيع فتحها":"Pages they can open")+'</label>'+checks(SEC_TABS,"tabs",pm.tabs)+'</div>'
+    +'<div class="f"><label>'+(LANG==="ar"?"الإجراءات التي يستطيع تنفيذها":"Actions they can perform")+'</label>'+checks(SEC_EDIT,"edit",pm.edit)+'</div>'
+    +'<div class="f"><label class="perm-switch"><input type="checkbox" id="pActive"'+(u.active?" checked":"")+'>'
+      +'<span><b>'+t("us.on")+'</b></span></label></div>';
 
-  el("modalHost").innerHTML='<div class="scrim"><div class="modal" role="dialog" aria-modal="true">'
+  el("modalHost").innerHTML='<div class="scrim"><div class="modal permission-modal" role="dialog" aria-modal="true">'
     +'<h3>'+esc(t("us.edit",{n:u.name||u.email}))+'</h3>'+body
     +'<div class="acts"><button class="btn ghost" id="uCancel">'+t("cancel")+'</button>'
     +'<button class="btn primary" id="uSave">'+t("save")+'</button></div></div></div>';
   var host=el("modalHost").querySelector(".modal");
+
+  function enforceFinance(){
+    var finance=el("pFinance").checked;
+    Array.prototype.forEach.call(host.querySelectorAll(".needs-finance input"),function(cb){
+      cb.disabled=!finance;
+      if(!finance) cb.checked=false;
+    });
+  }
+  el("pFinance").addEventListener("change",enforceFinance);
+  enforceFinance();
+
   host.addEventListener("click",function(e){
     var pb=e.target.closest("[data-preset]");
     if(pb){
       var pr=PRESETS[pb.dataset.preset];
+      el("pFinance").checked=!!pr.finance;
       Array.prototype.forEach.call(host.querySelectorAll('[data-grp]'),function(cb){
-        cb.checked=(pr[cb.dataset.grp]||[]).indexOf(cb.value)>=0;});
-      el("pPersonal").checked=!!pr.personal;
+        cb.checked=(pr[cb.dataset.grp]||[]).indexOf(cb.value)>=0;
+      });
+      enforceFinance();
     }
   });
   el("uCancel").onclick=function(){el("modalHost").innerHTML="";};
   el("uSave").onclick=async function(){
-    var out={tabs:[],edit:[],personal:el("pPersonal").checked};
+    var out={tabs:[],edit:[],finance:el("pFinance").checked,personal:false};
     Array.prototype.forEach.call(host.querySelectorAll('[data-grp]'),function(cb){
-      if(cb.checked) out[cb.dataset.grp].push(cb.value);});
+      if(cb.checked&&!cb.disabled) out[cb.dataset.grp].push(cb.value);
+    });
     el("uSave").disabled=true;
     var r=await SB.from("profiles").update({perms:out,active:el("pActive").checked}).eq("id",u.id);
     el("modalHost").innerHTML="";
@@ -2719,20 +2801,22 @@ function empForm(e){
 });
 }
 function workForm(w){
-  form(w?t("wk.edit"):t("wk.add"),[
+  var fields=[
     {k:"date",label:t("f.date"),type:"date",def:todayISO()},
     {k:"customerId",label:t("f.client"),type:"select",options:S.customers.map(function(c){return [c.id,c.name];})},
     {k:"type",label:t("f.delivered"),type:"select",options:[["video",t("d.video")],["post",t("d.post")],["design",t("d.design")],["shoot",t("d.shoot")],["voice",t("d.voice")],["task",t("d.task")]]},
     {k:"qty",label:t("f.howmany"),type:"number",def:1},
-    {k:"editorId",label:t("f.whodid"),type:"select",options:[["",(function(){
-        var ow=S.employees.filter(function(x){return x.id===calc(MONTH).rentEmp;})[0];
-        return ow?t("wk.mineN",{n:ow.name}):t("wk.mine");})()]].concat(S.employees.filter(function(e){return e.payType!=="percent";}).map(function(e){return [e.id,e.name];}))},
-    {k:"amount",label:t("f.override"),type:"number",step:"0.01",hint:t("f.overrideH")},
-    {k:"charge",label:t("f.clientcharge"),type:"number",step:"0.01",hint:t("f.clientchargeH")},
-    {k:"note",label:t("f.note"),type:"textarea"}
-  ],w,function(v){
+    {k:"editorId",label:t("f.whodid"),type:"select",options:[["",t("wk.mine")]].concat(S.employees.filter(function(e){return e.payType!=="percent";}).map(function(e){return [e.id,e.name];}))}
+  ];
+  if(canSeeMoney()){
+    fields.push({k:"amount",label:t("f.override"),type:"number",step:"0.01",hint:t("f.overrideH")});
+    fields.push({k:"charge",label:t("f.clientcharge"),type:"number",step:"0.01",hint:t("f.clientchargeH")});
+  }
+  fields.push({k:"note",label:t("f.note"),type:"textarea"});
+  form(w?t("wk.edit"):t("wk.add"),fields,w,function(v){
     if(v===null){S.work=S.work.filter(function(x){return x.id!==w.id;});return;}
-    if(w) Object.assign(w,v); else {v.id=uid();S.work.push(v);}});
+    if(w) Object.assign(w,v); else {v.id=uid();S.work.push(v);}
+  });
 }
 function fundingForm(x){
   form(x?t("fund.edit"):t("fund.add"),[
@@ -2871,6 +2955,20 @@ function advForm(a,empId){
 }
 function payForm(pay,custId,defaults){
   defaults=defaults||{};
+  if(!canSeeMoney()){
+    form(pay?t("pm.edit"):t("pm.add"),[
+      {k:"date",label:t("f.date"),type:"date",def:todayISO()},
+      {k:"customerId",label:t("f.client"),type:"select",options:S.customers.map(function(c){return [c.id,c.name];}),def:custId||""},
+      {k:"amount",label:t("f.amountpaid"),type:"number",step:"0.01",def:defaults.amount||""},
+      {k:"method",label:t("f.method"),type:"select",options:[["cash",t("m.cash")],["bank",t("m.bank")],["other",t("m.other")]]},
+      {k:"note",label:t("f.note"),type:"textarea"}
+    ],pay,function(v){
+      if(v===null) return;
+      v.kind="payment";
+      if(pay) Object.assign(pay,v); else {v.id=uid();S.payments.push(v);}
+    });
+    return;
+  }
   form(pay?t("pm.edit"):t("pm.add"),[
     {k:"date",label:t("f.date"),type:"date",def:todayISO()},
     {k:"customerId",label:t("f.client"),type:"select",options:S.customers.map(function(c){return [c.id,c.name];}),def:custId||""},
@@ -2882,7 +2980,8 @@ function payForm(pay,custId,defaults){
     {k:"note",label:t("f.note"),type:"textarea"}
   ],pay,function(v){
     if(v===null){S.payments=S.payments.filter(function(x){return x.id!==pay.id;});return;}
-    if(pay) Object.assign(pay,v); else {v.id=uid();S.payments.push(v);}});
+    if(pay) Object.assign(pay,v); else {v.id=uid();S.payments.push(v);}
+  });
 }
 function osAdvForm(x){
   form(x?t("edit"):t("osa.add"),[
