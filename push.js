@@ -21,16 +21,65 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     outside:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7h-2V6.4l-8.3 8.3-1.4-1.4L17.6 5H14V3ZM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/></svg>',
     users:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"/></svg>',
     account:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9v-2c0-3.3 3.1-5 7-5s7 1.7 7 5v2H5Zm14-9h2v2h-2v-2Zm0 4h2v5h-2v-5Z"/></svg>',
+    signout:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5v-2H5V5h5V3Zm4.6 4.6L13.2 9l2 2H8v2h7.2l-2 2 1.4 1.4L19 12l-4.4-4.4Z"/></svg>',
     setup:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19.4 13 .1-1-.1-1 2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1L15 3.5h-4l-.4 2.6a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11l-.1 1 .1 1-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.7 1l.4 2.6h4l.4-2.6a8 8 0 0 0 1.7-1l2.4 1 2-3.4-2.2-1.5ZM13 15a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/></svg>'
   };
 
+  function scheduledTheme(now){
+    now=now||new Date();
+    var h=now.getHours();
+    return (h>=7&&h<19)?"light":"dark";
+  }
+
+  function nextThemeBoundary(now){
+    now=now||new Date();
+    var next=new Date(now);
+    if(now.getHours()<7){
+      next.setHours(7,0,0,0);
+    }else if(now.getHours()<19){
+      next.setHours(19,0,0,0);
+    }else{
+      next.setDate(next.getDate()+1);
+      next.setHours(7,0,0,0);
+    }
+    return next.getTime();
+  }
+
   function applyScheduledTheme(){
     if(!window.matchMedia || !window.matchMedia("(max-width: 820px)").matches) return;
-    var h=new Date().getHours();
-    var th=(h>=7&&h<19)?"light":"dark";
+    var now=Date.now(), manual="", until=0;
+    try{
+      manual=localStorage.getItem("riwa_manual_theme")||"";
+      until=+(localStorage.getItem("riwa_manual_theme_until")||0);
+    }catch(_e){}
+    if(manual && until>now){
+      document.documentElement.setAttribute("data-theme",manual);
+      document.documentElement.setAttribute("data-auto-theme","manual");
+      return;
+    }
+    if(manual||until){
+      try{
+        localStorage.removeItem("riwa_manual_theme");
+        localStorage.removeItem("riwa_manual_theme_until");
+      }catch(_e){}
+    }
+    var th=scheduledTheme(new Date(now));
     document.documentElement.setAttribute("data-theme",th);
     document.documentElement.setAttribute("data-auto-theme",th);
   }
+
+  function toggleManualTheme(){
+    var current=document.documentElement.getAttribute("data-theme")||scheduledTheme();
+    var next=current==="dark"?"light":"dark";
+    try{
+      localStorage.setItem("riwa_manual_theme",next);
+      localStorage.setItem("riwa_manual_theme_until",String(nextThemeBoundary(new Date())));
+    }catch(_e){}
+    document.documentElement.setAttribute("data-theme",next);
+    document.documentElement.setAttribute("data-auto-theme","manual");
+    return next;
+  }
+  window.RiwaTheme={toggle:toggleManualTheme,apply:applyScheduledTheme};
 
   function activeTab(){
     var b=document.querySelector(".tabs [aria-selected=true]");
@@ -107,6 +156,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
         '<button type="button" class="mobile-drawer-close" aria-label="Close">×</button></div>'+
       '<div class="mobile-drawer-links">'+
         '<button type="button" data-act="logout" class="mobile-account-entry">'+(ICONS.account||ICONS.users||"")+'<span>'+(document.documentElement.lang==="en"?"Account":"الحساب")+'</span><i>‹</i></button>'+
+        '<button type="button" data-act="signout" class="mobile-signout-entry">'+(ICONS.signout||"")+'<span>'+(document.documentElement.lang==="en"?"Sign out":"تسجيل الخروج")+'</span><i>‹</i></button>'+
         extras.map(function(b){
           var k=b.dataset.tab;
           return '<button type="button" data-tab="'+k+'" class="'+(tab===k?"active":"")+'">'+(ICONS[k]||"")+'<span>'+((b.textContent||"").trim())+'</span><i>‹</i></button>';
@@ -139,7 +189,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     drawer.querySelector(".mobile-drawer-close").onclick=closeDrawer;
     scrim.onclick=closeDrawer;
     drawer.addEventListener("click",function(e){
-      if(e.target.closest("[data-tab]")||e.target.closest(".mobile-account-entry")) setTimeout(closeDrawer,0);
+      if(e.target.closest("[data-tab]")||e.target.closest(".mobile-account-entry")||e.target.closest(".mobile-signout-entry")) setTimeout(closeDrawer,0);
     });
   }
 
