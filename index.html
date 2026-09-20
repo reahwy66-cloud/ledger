@@ -739,14 +739,14 @@ function t(k,a){
 
 /* ═════════════ roles ═════════════ */
 var PERM={
-  owner:      {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar","outside","setup"],edit:["clients","invoices","funding","team","work","costs","calendar","outside","setup","payments","advances"],personal:true},
+  owner:      {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar","setup"],edit:["clients","invoices","funding","team","work","costs","calendar","setup","payments","advances"],personal:true},
   manager:    {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["work","calendar"],personal:false},
   accountant: {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["clients","invoices","funding","work","costs","payments"],personal:false}
 };
-var FULL={tabs:["flow","ledger","clients","invoices","funding","team","work","costs","calendar","outside","users","setup"],
-          edit:["clients","invoices","funding","team","work","costs","calendar","payments","advances","outside","setup","users"],personal:true};
-var SEC_TABS=["flow","ledger","clients","invoices","funding","team","costs","calendar","outside","users","setup"];
-var SEC_EDIT=["clients","invoices","funding","team","work","costs","calendar","payments","advances","outside","setup","users"];
+var FULL={tabs:["flow","ledger","clients","invoices","funding","team","work","costs","calendar","setup"],
+          edit:["clients","invoices","funding","team","work","costs","calendar","payments","advances","setup"],personal:true};
+var SEC_TABS=["flow","ledger","clients","invoices","funding","team","costs","calendar","setup"];
+var SEC_EDIT=["clients","invoices","funding","team","work","costs","calendar","payments","advances","setup"];
 var PRESETS={
   manager:{tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["work","calendar"],personal:false},
   acct:{tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["clients","invoices","funding","work","costs","payments"],personal:false},
@@ -1417,8 +1417,7 @@ function renderSetup(){
 }
 /* ═════════════ shell ═════════════ */
 var TABS=[["flow","tab.flow"],["ledger","tab.ledger"],["clients","tab.clients"],["invoices","tab.invoices"],["funding","tab.funding"],["team","tab.team"],
-          ["costs","tab.costs"],["calendar","tab.calendar"],["outside","tab.outside"],
-          ["users","tab.users"],["setup","tab.setup"]];
+          ["costs","tab.costs"],["calendar","tab.calendar"],["setup","tab.setup"]];
 function render(){
   clearCalc();
   applyTheme();
@@ -1427,7 +1426,7 @@ function render(){
   var allowed=myTabs();
   if(!allowed.length){renderWait();return;}
   if(allowed.indexOf(TAB)<0) TAB=allowed[0];
-  var views={flow:vFlow,ledger:vLedger,clients:vClients,invoices:vInvoices,funding:vFunding,team:vTeam,costs:vCosts,calendar:vCalendar,outside:vOutside,users:vUsers,setup:vSetup};
+  var views={flow:vFlow,ledger:vLedger,clients:vClients,invoices:vInvoices,funding:vFunding,team:vTeam,costs:vCosts,calendar:vCalendar,setup:vSetup};
   el("app").innerHTML='<div class="wrap"><div class="mast">'
    +'<div class="brand">'+stampHTML()+'<div>'+(S.settings.company?'<h1>'+esc(S.settings.company)+'</h1>':'')+'<small>'+t("tagline")+'</small></div></div>'
    +'<div class="tools">'
@@ -1470,38 +1469,6 @@ function vFlow(){
         +kpi("out",t("box.post"),money(w.after),
              w.owed>0.005?t("box.post.n",{v:money(w.owed)}):t("box.post.clear"));})()
    +'</div></div>';
-
-  var base=Math.max(r.revenue,1);
-  h+='<div class="sec ledger"><div class="ledger-head"><div><h2>'+t("fall.t")+'</h2>'
-   +'<p class="sub" style="margin:0">'+t("fall.s",{v:money(r.revenue)})+'</p></div>'
-   +'<span class="eyebrow">'+monthName(MONTH)+'</span></div><div class="fall">'
-   +step(t("s.in"),t("s.in.d"),r.revenue,base,"keep")
-   +step(t("s.wage"),t("s.wage.d"),-r.payroll,base,"cut")
-   +step(t("s.ads"),t("s.ads.d"),-r.adSpend,base,"cut")
-   +step(t("s.run"),r.rentTop?t("s.run.dr"):t("s.run.d"),-r.opex,base,"cut")
-   +step(t("s.profit"),t("s.profit.d"),r.net,base,"keep",true)
-   +'</div><div class="fork">'
-   +(r.partners.length
-      ? r.partners.map(function(pn){
-          var isRent=pn.e.id===r.rentEmp;
-          return '<div class="slice'+(isRent?" mine":"")+'">'
-           +'<span class="who">'+esc(pn.e.name)+' · '+pn.pct+'%</span>'
-           +'<span class="big '+(isRent?"":"acc")+'">'+money(pn.share)+'</span>'
-           +'<span class="note">'+esc(pn.e.role||"")+'</span>'
-           +((isRent&&sees()&&S.settings.rentMode==="myshare")
-              ? '<div class="carve"><span>'+t("fork.setaside",{p:S.settings.rentSharePct})+'</span>'
-                +'<span class="num neg">−'+money(pn.rent)+'</span></div>'
-                +'<div class="carve" style="border:0;padding-top:6px"><span><b>'+t("fork.keep")+'</b></span>'
-                +'<span class="num" style="font-weight:600">'+money(pn.take)+'</span></div>'
-              : '')
-           +'</div>';
-        }).join("")
-      : '<div class="slice"><span class="note">'+t("part.none")+'</span></div>')
-   +'</div>'
-   +(Math.abs(r.pctSum-100)>0.01&&r.partners.length
-      ? '<div style="padding:0 18px 18px"><div class="note" style="border-color:var(--coral);color:var(--coral)">'
-        +t("part.warn",{n:r.pctSum})+'</div></div>' : '')
-   +'</div>';
 
   if(sees()){
     var tg=+S.settings.rentAnnual||0,sv=+S.settings.rentSetAside||0,pc=tg?Math.min(100,sv/tg*100):0;
@@ -2426,22 +2393,15 @@ function userForm(u){
 function vSetup(){
   var s=S.settings;
   var h='<div class="sec"><h2>'+t("sp.t")+'</h2><p class="sub">'+t("sp.s")+'</p><div class="three">';
-  var pr=calc(MONTH).partners;
-  h+=box(t("sp.split"),
-        pr.length?pr.map(function(x){return esc(x.e.name)+" "+x.pct+"%";}).join(" · "):t("part.none"),
-        t("sp.splitS"),"gotoTeam",t("sp.splitB"));
+
   h+=box(t("sp.rent"),s.rentMode==="myshare"?t("sp.rentA",{p:s.rentSharePct}):t("sp.rentB",{v:money(s.rentFlat)}),
         s.rentMode==="myshare"?t("sp.rentAS"):t("sp.rentBS"),"editrent",t("sp.rentBtn"));
-  h+=box(t("sp.basis"),t("basis."+(s.basis||"cash")),t("basis.s"),"editbasis",t("sp.change"));
-  h+=box(t("sp.day"),t("sp.dayH",{h:s.dayCapacity,d:t("daysFull")[s.offDay]}),t("sp.dayS"),"editday",t("sp.change"));
-  h+=box(t("sp.co"),s.company?esc(s.company):'<span class="mut">'+t("f.coname")+'</span>',t("sp.coS"),"editco",t("sp.change"));
-  var swName=(SWATCH.filter(function(x){return x[0].toLowerCase()===(s.accent||"").toLowerCase();})[0]||[null,"f.custom"])[1];
-  h+=box(t("sp.look"),t("sp.lookH",{t:t("th."+(s.theme||"dark")),c:t(swName)}),t("f.accentH"),"editlook",t("sp.lookB"));
-  h+=box(t("sp.inst"),t("sp.instH"),"","install",t("sp.instB"));
+
   h+=box(t("cl.t2"), MODE==="cloud"?esc((ME&&(ME.name||ME.email))||""):t("cl.off"),
         MODE==="cloud"?t("cl.onS"):t("cl.offS"),
         MODE==="cloud"?"cloudmanage":"cloudon",
         MODE==="cloud"?t("cl.manage"):t("cl.connect"));
+
   var pushState=(window.RiwaPush&&window.RiwaPush.status)?window.RiwaPush.status():"unsupported";
   var pushTitle=LANG==="ar"?"التنبيهات":"Notifications";
   var pushStatus=LANG==="ar"
@@ -2450,8 +2410,12 @@ function vSetup(){
   var pushNote=LANG==="ar"?"استلم تنبيهات رِواء ستوديو حتى عندما يكون التطبيق مغلقًا.":"Receive Riwa Studio alerts even when the app is closed.";
   var pushBtn=LANG==="ar"?(pushState==="enabled"?"إرسال تنبيه تجريبي":"تفعيل"):(pushState==="enabled"?"Send test notification":"Enable");
   h+=box(pushTitle,pushStatus,pushNote,"pushnotify",pushBtn);
-  h+=box(t("pwa.t"),t("pwa.h"),t("pwa.note"),"pwa",t("pwa.b"));
   h+='</div>';
+
+  if(amOwner()){
+    h+=vUsers();
+  }
+
   h+='<div class="sec card"><span class="eyebrow">'+t("sp.data")+'</span>'
    +'<h2 style="margin-top:8px">'+t("sp.dataH")+'</h2><p class="sub">'+t("sp.dataS")+'</p>'
    +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="export">'+t("sp.exp")+'</button>'
