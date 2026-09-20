@@ -170,44 +170,47 @@ grant execute on function public.staff_save_work(jsonb) to authenticated;
 grant execute on function public.staff_delete_work(text) to authenticated;
 grant execute on function public.staff_add_payment(jsonb) to authenticated;
 
--- Finance-bearing tables: only finance-enabled users can SELECT them directly.
--- Work and payments remain writable to staff through the RPCs above.
-do $$
+-- Finance-bearing tables: direct browser reads and writes require Finance.
+-- Operational staff use the narrow SECURITY DEFINER RPCs above for work/payments.
+do $
 declare r record;
 begin
   for r in select * from (values
-    ('customers','clients',true),
-    ('employees','team',true),
-    ('work','work',false),
-    ('payments','payments',false),
-    ('invoices','invoices',true),
-    ('fundings','funding',true),
-    ('advances','advances',true),
-    ('payouts','advances',true),
-    ('costs','costs',true),
-    ('transfers','outside',true)
-  ) as x(tbl,sec,finance_write) loop
+    ('customers','clients'),
+    ('employees','team'),
+    ('work','work'),
+    ('payments','payments'),
+    ('invoices','invoices'),
+    ('fundings','funding'),
+    ('advances','advances'),
+    ('payouts','advances'),
+    ('costs','costs'),
+    ('transfers','outside')
+  ) as x(tbl,sec) loop
     execute format('drop policy if exists %I on public.%I;',r.tbl||'_read',r.tbl);
     execute format('drop policy if exists %I on public.%I;',r.tbl||'_write',r.tbl);
+    execute format('drop policy if exists %I on public.%I;',r.tbl||'_insert',r.tbl);
+    execute format('drop policy if exists %I on public.%I;',r.tbl||'_update',r.tbl);
+    execute format('drop policy if exists %I on public.%I;',r.tbl||'_delete',r.tbl);
 
     execute format(
       'create policy %I on public.%I for select using (public.can_see_finance());',
       r.tbl||'_read',r.tbl
     );
-
-    if r.finance_write then
-      execute format(
-        'create policy %I on public.%I for all using (public.can_see_finance() and public.can_edit(%L)) with check (public.can_see_finance() and public.can_edit(%L));',
-        r.tbl||'_write',r.tbl,r.sec,r.sec
-      );
-    else
-      execute format(
-        'create policy %I on public.%I for all using (public.can_edit(%L)) with check (public.can_edit(%L));',
-        r.tbl||'_write',r.tbl,r.sec,r.sec
-      );
-    end if;
+    execute format(
+      'create policy %I on public.%I for insert with check (public.can_see_finance() and public.can_edit(%L));',
+      r.tbl||'_insert',r.tbl,r.sec
+    );
+    execute format(
+      'create policy %I on public.%I for update using (public.can_see_finance() and public.can_edit(%L)) with check (public.can_see_finance() and public.can_edit(%L));',
+      r.tbl||'_update',r.tbl,r.sec,r.sec
+    );
+    execute format(
+      'create policy %I on public.%I for delete using (public.can_see_finance() and public.can_edit(%L));',
+      r.tbl||'_delete',r.tbl,r.sec
+    );
   end loop;
-end $$;
+end $;
 
 -- Settings may contain cash/rent configuration, so staff receives only the
 -- sanitized subset through staff_safe_snapshot.
