@@ -1,7 +1,7 @@
 /* رِواء ستوديو — offline shell.
    The app itself is cached so it opens without a connection.
    Live data always goes to the network; it is never served stale. */
-const CACHE = 'studio-ledger-v43-wizard-reset';
+const CACHE = 'studio-ledger-v47-adaptive-dock';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
                './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon.png', './push.js', './mobile.css', './desktop.css', './staff-portal.html', './client-portal.html', './portal.css', './portal.js'];
 
