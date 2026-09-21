@@ -828,8 +828,13 @@ var TBL=[["customers","clients"],["employees","team"],["work","work"],["payments
          ["debts","outside"],["transfers","outside"]];
 function baked(){return SUPA_URL&&SUPA_KEY&&SUPA_KEY.indexOf("ضع_")<0;}
 function cfg(){
+  try{
+    var savedUrl=localStorage.getItem("sl_url")||"";
+    var savedKey=localStorage.getItem("sl_key")||"";
+    if(savedUrl&&savedKey) return {url:savedUrl,key:savedKey};
+  }catch(e){}
   if(baked()) return {url:SUPA_URL,key:SUPA_KEY};
-  try{return{url:localStorage.getItem("sl_url")||"",key:localStorage.getItem("sl_key")||""};}catch(e){return{url:"",key:""};}
+  return {url:"",key:""};
 }
 function setCfg(u,k){try{localStorage.setItem("sl_url",u);localStorage.setItem("sl_key",k);}catch(e){}}
 function clearCfg(){try{localStorage.removeItem("sl_url");localStorage.removeItem("sl_key");}catch(e){}}
@@ -4079,15 +4084,11 @@ if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
 }
 Store.load().then(async function(d){
   if(d&&d.settings){S=d;
+    if(!S.settings)S.settings={};
     if(!S.settings.pins)S.settings.pins={owner:"",manager:"",accountant:""};
-    if(!S.payments)S.payments=[];
-    if(!S.invoices)S.invoices=[];
-    if(!S.fundings)S.fundings=[];
-    if(!S.advances)S.advances=[];
-    if(!S.payouts)S.payouts=[];
-    if(!S.osadvances)S.osadvances=[];
-    if(!S.debts)S.debts=[];
-    if(!S.transfers)S.transfers=[];
+    ["customers","employees","work","payments","invoices","fundings","advances","payouts","costs","shoots","outside","projects","osadvances","debts","transfers"].forEach(function(k){
+      if(!Array.isArray(S[k])) S[k]=[];
+    });
     if(!S.settings.basis)S.settings.basis="cash";
     S.payments.forEach(function(x){if(!x.kind)x.kind="payment";});
     S.costs.forEach(function(x){if(!x.payer)x.payer="box";});
