@@ -6,11 +6,11 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 (function mobileUiBootstrap(){
   var link=document.createElement("link");
   link.rel="stylesheet";
-  link.href="mobile.css?v=20260921-v48";
+  link.href="mobile.css?v=20260921-v49";
   document.head.appendChild(link);
   var desktopLink=document.createElement("link");
   desktopLink.rel="stylesheet";
-  desktopLink.href="desktop.css?v=20260921-v48";
+  desktopLink.href="desktop.css?v=20260921-v49";
   document.head.appendChild(desktopLink);
 
   var ICONS={
@@ -321,24 +321,36 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     if(document.documentElement.dataset.scrollHeader==="1") return;
     document.documentElement.dataset.scrollHeader="1";
     var lastY=Math.max(0,window.scrollY||0);
+    var anchorY=lastY;
+    var direction=0;
     var ticking=false;
 
     function applyScrollState(y,dy){
       var header=document.querySelector(".mobile-header");
       var nav=document.querySelector(".mobile-bottom-nav");
 
-      if(header){
-        if(y<18){
-          header.classList.remove("mobile-header-hidden");
-        }else if(dy>4){
-          header.classList.add("mobile-header-hidden");
-        }else if(dy<0){
-          header.classList.remove("mobile-header-hidden");
-        }
+      if(y<18){
+        if(header) header.classList.remove("mobile-header-hidden");
+        if(nav) nav.classList.remove("compact");
+        anchorY=y;
+        direction=0;
+        return;
       }
 
-      if(nav){
-        nav.classList.remove("compact");
+      var nextDirection=dy>0?1:(dy<0?-1:direction);
+      if(nextDirection!==direction){
+        direction=nextDirection;
+        anchorY=y;
+      }
+
+      var travelled=Math.abs(y-anchorY);
+
+      if(direction>0 && (dy>2 || travelled>8)){
+        if(header) header.classList.add("mobile-header-hidden");
+        if(nav) nav.classList.add("compact");
+      }else if(direction<0 && (dy<-1 || travelled>3)){
+        if(header) header.classList.remove("mobile-header-hidden");
+        if(nav) nav.classList.remove("compact");
       }
     }
 
