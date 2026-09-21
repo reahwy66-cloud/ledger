@@ -1405,9 +1405,11 @@ async function cancelTaskReminders(taskId, reason='task_changed') {
   const { data, error } = await db.from('notifications').select('id,data');
   if (error) throw error;
   const rows=(data||[]).filter(r=>r.data?.type==='scheduled_push'&&r.data?.taskId===taskId&&r.data?.status==='pending');
-  for(const row of rows){
-    const next={...row.data,status:'cancelled',cancelReason:reason,cancelledAt:new Date().toISOString()};
-    await db.from('notifications').upsert({id:row.id,data:next,updated_at:new Date().toISOString()});
+  if(rows.length){
+    const nowIso=new Date().toISOString();
+    const updates=rows.map(row=>({id:row.id,data:{...row.data,status:'cancelled',cancelReason:reason,cancelledAt:nowIso},updated_at:nowIso}));
+    const {error:writeError}=await db.from('notifications').upsert(updates);
+    if(writeError) throw writeError;
   }
 }
 async function scheduleTaskReminders(task) {
@@ -1415,6 +1417,7 @@ async function scheduleTaskReminders(task) {
   if(task.status!=='pending') return [];
   const start=new Date(task.startAt);
   if(!Number.isFinite(start.getTime())) throw new Error('Invalid startAt');
+  const nowIso=new Date().toISOString(), records=[];
   for(let i=0;i<24;i++){
     const due=new Date(start.getTime()+i*3600000);
     const rid='scheduled_task_'+task.id+'_'+i+'_'+Math.random().toString(36).slice(2,7);
@@ -1423,11 +1426,14 @@ async function scheduleTaskReminders(task) {
       title:i===0?'ابدأ المهمة — رِواء ستوديو':'متابعة المهمة — رِواء ستوديو',
       body:(task.priority==='urgent'?'🔥 مهم جداً — ':task.priority==='important'?'⚠️ مهم — ':'')+(i===0?task.title:('لسا المهمة مفتوحة: '+task.title)),
       dueAt:due.toISOString(),url:task.assignedEmployeeId?'./daily-tasks.html?portal=staff':'./daily-tasks.html',
-      tag:'daily-task-'+task.id,createdAt:new Date().toISOString(),
+      tag:'daily-task-'+task.id,createdAt:nowIso,
       ...(task.assignedEmployeeId?{portalEmployeeId:task.assignedEmployeeId}:{userId:task.ownerUserId||null})
     };
-    await db.from('notifications').insert({id:rid,data,updated_at:new Date().toISOString()});
+    records.push({id:rid,data,updated_at:nowIso});
   }
+  const {error}=await db.from('notifications').insert(records);
+  if(error) throw error;
+  return records.map(r=>({id:r.id,dueAt:r.data.dueAt}));
 }
 async function getTaskRow(id) {
   const { data, error }=await db.from('notifications').select('id,data').eq('id',id).maybeSingle();
