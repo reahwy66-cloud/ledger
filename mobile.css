@@ -666,3 +666,43 @@ body[dir=rtl] .secondary-actions .ledger-action{font-size:11.5px}
     padding-bottom:calc(106px + env(safe-area-inset-bottom))!important;
   }
 }
+
+
+/* Mobile V4.5 — fixed revealable header + slightly narrower full dock */
+@media(max-width:820px){
+  .mobile-header{
+    position:fixed!important;
+    top:0!important;
+    left:22px!important;
+    right:22px!important;
+    width:auto!important;
+    z-index:70!important;
+    transform:translateY(0);
+    opacity:1;
+  }
+
+  .mobile-header.mobile-header-hidden{
+    transform:translateY(calc(-100% - 22px))!important;
+    opacity:0!important;
+    pointer-events:none!important;
+  }
+
+  .wrap{
+    padding-top:calc(78px + env(safe-area-inset-top))!important;
+  }
+
+  .mobile-bottom-nav{
+    width:min(calc(100vw - 34px),520px)!important;
+  }
+
+  .mobile-bottom-nav.compact{
+    width:min(72vw,330px)!important;
+  }
+}
+
+@media(max-width:420px){
+  .mobile-header{
+    left:12px!important;
+    right:12px!important;
+  }
+}
