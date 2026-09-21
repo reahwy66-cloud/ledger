@@ -13,7 +13,7 @@
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2";
 const API="https://studio-ledger-mcp.reahwy66.workers.dev";
 const SUPA_URL="https://gvnpixjkcmbrdfefbamr.supabase.co";
-const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJndm5waXhqa2NtYnJkZmVmYmFtciIsInJlZiI6Imd2bnBpeGprY21icmRmZWZiYW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MDAyNDAsImV4cCI6MjEwMDQ3NjI0MH0.PPuHBLPRwFPvjMgoIWHCubDTX9at5gSgn4QKxcgsbQI";
+const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2bnBpeGprY21icmRmZWZiYW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MDAyNDAsImV4cCI6MjEwMDQ3NjI0MH0.PPuHBLPRwFPvjMgoIWHCubDTX9at5gSgn4QKxcgsbQI";
 const portal=new URLSearchParams(location.search).get("portal")==="staff";
 const sb=createClient(SUPA_URL,SUPA_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
 let token="",actor="";
