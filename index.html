@@ -264,7 +264,7 @@ code{background:var(--ground);border:1px solid var(--line);border-radius:5px;pad
 <div id="app"></div>
 <div id="modalHost"></div>
 
-<script src="push.js?v=20260921-v53" defer></script>
+<script src="push.js?v=20260921-v54" defer></script>
 <script>
 (function(){
 "use strict";
@@ -914,6 +914,7 @@ async function pull(){
     S.settings=Object.assign({},S.settings,st.data.data,localOnly2);
     PULLED.settings=true;
   }
+  normalizeStateShape();
   if(applyBrandDefaults()) setTimeout(save,0);
   await loadPortalPending();
   if(canSeeMoney()&&syncAllOpenInvoiceRoots(MONTH)){
@@ -1105,8 +1106,16 @@ function renderAuth(mode){
       ME=await loadProfile();
       if(!ME||!ME.active){ renderWait(); return; }
       if(oauthAuthorizationId()){ await renderOAuthConsent(); return; }
-      await pull(); watch(); startPortalPolling(); render();
-    }catch(e){ el("aGo").disabled=false; err(e.message||String(e)); }
+      await pull();
+      normalizeStateShape();
+      watch();
+      startPortalPolling();
+      render();
+    }catch(e){
+      el("aGo").disabled=false;
+      try{console.error("[login]",e&&e.stack||e);}catch(_){}
+      err(e&&e.message?e.message:String(e));
+    }
   };
   ["aMail","aPass","aName"].forEach(function(id){
     var n=el(id); if(n) n.addEventListener("keydown",function(e){if(e.key==="Enter")el("aGo").click();});
@@ -1223,6 +1232,22 @@ function seed(){return{
 };}
 
 var S=seed(), TAB="flow", MONTH=ymNow(), SEL=null, SELE=null, LGTYPE="all", LGWHO="all", LGCUSTOMER="all", LGPERSON="all", CALDAY=todayISO(), SAFE_API=false, PENDING_PORTAL=[], PORTAL_POLL=null;
+function normalizeStateShape(){
+  if(!S||typeof S!=="object") S=seed();
+  if(!S.settings||typeof S.settings!=="object") S.settings={};
+  ["customers","employees","work","payments","invoices","fundings","advances","payouts","costs","shoots","outside","projects","osadvances","debts","transfers"].forEach(function(k){
+    if(!Array.isArray(S[k])) S[k]=[];
+  });
+  S.projects.forEach(function(p){
+    if(!p||typeof p!=="object") return;
+    if(!Array.isArray(p.entries)) p.entries=[];
+    if(!Array.isArray(p.splits)) p.splits=[];
+  });
+  S.invoices.forEach(function(inv){
+    if(inv&&typeof inv==="object"&&!Array.isArray(inv.items)) inv.items=[];
+  });
+}
+normalizeStateShape();
 function isMobileUI(){return !!(window.matchMedia&&window.matchMedia("(max-width: 820px)").matches);}
 function save(){clearCalc();Store.save(S);queuePush();}
 
@@ -1375,7 +1400,7 @@ function _calc(m){
   var outside=S.outside.filter(function(o){return o.active;})
     .reduce(function(a,o){return a+(o.kind==="income"?outsideAmt(o,m):-outsideAmt(o,m));},0);
   var projIn=0;
-  S.projects.forEach(function(p){p.entries.forEach(function(e){if(inMonth(e.date,m))projIn+=+e.yours||0;});});
+  S.projects.forEach(function(p){(p.entries||[]).forEach(function(e){if(inMonth(e.date,m))projIn+=+e.yours||0;});});
   return{clients:clients,revenue:revenue,people:people,payroll:payroll,adSpend:adSpend,costs:costs,
     opex:opex,ownerPaid:ownerPaid,cashBasis:cashBasis,rentTop:rentTop,totalOut:totalOut,net:net,partners:partners,pctSum:pctSum,
     rentEmp:rentEmp,mgr:mgr,mp:mp,yours:yours,rentSet:rentSet,
@@ -1546,6 +1571,7 @@ function renderSetup(){
 var TABS=[["flow","tab.flow"],["ledger","tab.ledger"],["clients","tab.clients"],["archive","tab.archive"],["invoices","tab.invoices"],["funding","tab.funding"],["team","tab.team"],
           ["costs","tab.costs"],["calendar","tab.calendar"],["setup","tab.setup"]];
 function render(){
+  normalizeStateShape();
   clearCalc();
   applyTheme();
   if(!ROLE&&!ME){ if(SB) renderAuth(); else renderSetup(); return; }
@@ -2682,7 +2708,7 @@ function vOutside(){
   h+='</tbody></table></div></div>';
 
   S.projects.forEach(function(p){
-    var got=p.entries.filter(function(e){return inMonth(e.date,MONTH);}).reduce(function(a,e){return a+(+e.yours||0);},0);
+    var got=(p.entries||[]).filter(function(e){return inMonth(e.date,MONTH);}).reduce(function(a,e){return a+(+e.yours||0);},0);
     h+='<div class="sec card"><div class="rowhead"><div><h2>'+esc(p.name)+'</h2>'
      +'<p class="sub" style="margin:0">'+esc(p.note)+'</p></div><span class="pill amb">'+t("st."+p.status)+'</span></div>'
      +'<div class="tbl-wrap"><table><thead><tr><th>'+t("th.who")+'</th><th class="r">'+t("th.share")+'</th>'
@@ -4107,6 +4133,7 @@ Store.load().then(async function(d){
       if(!c.startMonth)c.startMonth=ymNow();
       if(c.endMonth==null)c.endMonth="";});
   }
+  normalizeStateShape();
   LANG=S.settings.lang||"ar";
   applyTheme();
   var went=false;
