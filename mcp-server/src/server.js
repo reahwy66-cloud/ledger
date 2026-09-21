@@ -504,14 +504,17 @@ export async function runDueNotifications(now = new Date()) {
           continue;
         }
       }
-      const result = await sendPush({
+      const payload = {
         title: d.title || 'رِواء ستوديو',
         body: d.body || '',
         url: d.url || './',
         tag: d.tag || `scheduled-${row.id}`,
         dir: 'rtl',
         lang: 'ar'
-      }, d.userId || null);
+      };
+      const result = d.portalEmployeeId
+        ? await sendPortalStaffPush(d.portalEmployeeId, payload)
+        : await sendPush(payload, d.userId || null);
 
       const delivered = result.sent > 0;
       const next = {
@@ -1316,6 +1319,102 @@ app.post('/portal/submissions/review', async (req, res) => {
   } catch (error) {
     return res.status(500).json({ error: String(error?.message || 'Could not review submission') });
   }
+});
+
+async function dailyTaskActor(token) {
+  const employeeId = await portalEmployeeFromToken(token).catch(() => null);
+  if (employeeId) return { kind: 'staff', employeeId };
+  const { data, error } = await db.auth.getUser(token);
+  if (error || !data?.user) return null;
+  const { data: profile } = await db.from('profiles').select('role,active').eq('id', data.user.id).maybeSingle();
+  if (!profile?.active) return null;
+  return { kind: profile.role === 'owner' ? 'owner' : 'app_staff', userId: data.user.id };
+}
+async function cancelTaskReminders(taskId, reason='task_changed') {
+  const { data, error } = await db.from('notifications').select('id,data');
+  if (error) throw error;
+  const rows=(data||[]).filter(r=>r.data?.type==='scheduled_push'&&r.data?.taskId===taskId&&r.data?.status==='pending');
+  for(const row of rows){
+    const next={...row.data,status:'cancelled',cancelReason:reason,cancelledAt:new Date().toISOString()};
+    await db.from('notifications').upsert({id:row.id,data:next,updated_at:new Date().toISOString()});
+  }
+}
+async function scheduleTaskReminders(task) {
+  await cancelTaskReminders(task.id,'rescheduled');
+  if(task.status!=='pending') return [];
+  const start=new Date(task.startAt);
+  if(!Number.isFinite(start.getTime())) throw new Error('Invalid startAt');
+  for(let i=0;i<24;i++){
+    const due=new Date(start.getTime()+i*3600000);
+    const rid='scheduled_task_'+task.id+'_'+i+'_'+Math.random().toString(36).slice(2,7);
+    const data={
+      type:'scheduled_push',status:'pending',taskId:task.id,taskStage:i===0?'start':'followup',
+      title:i===0?'ابدأ المهمة — رِواء ستوديو':'متابعة المهمة — رِواء ستوديو',
+      body:i===0?task.title:('لسا المهمة مفتوحة: '+task.title),
+      dueAt:due.toISOString(),url:task.assignedEmployeeId?'./daily-tasks.html?portal=staff':'./daily-tasks.html',
+      tag:'daily-task-'+task.id,createdAt:new Date().toISOString(),
+      ...(task.assignedEmployeeId?{portalEmployeeId:task.assignedEmployeeId}:{userId:task.ownerUserId||null})
+    };
+    await db.from('notifications').insert({id:rid,data,updated_at:new Date().toISOString()});
+  }
+}
+async function getTaskRow(id) {
+  const { data, error }=await db.from('notifications').select('id,data').eq('id',id).maybeSingle();
+  if(error) throw error;
+  if(!data||data.data?.type!=='daily_task') return null;
+  return {id:data.id,...data.data};
+}
+function taskCors(res){res.set({'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, content-type','Access-Control-Allow-Methods':'GET, POST, OPTIONS'});}
+app.options('/daily-tasks',(_req,res)=>{taskCors(res);res.status(204).end();});
+app.get('/daily-tasks',async(req,res)=>{
+  taskCors(res);
+  const token=String(req.headers.authorization||'').replace(/^Bearer\s+/i,'');
+  if(!token)return res.status(401).json({error:'Unauthorized'});
+  try{
+    const actor=await dailyTaskActor(token); if(!actor)return res.status(401).json({error:'Invalid token'});
+    const {data,error}=await db.from('notifications').select('id,data,updated_at').order('updated_at',{ascending:false}).limit(500);
+    if(error)throw error;
+    let items=(data||[]).filter(r=>r.data?.type==='daily_task').map(r=>({id:r.id,...r.data,updatedAt:r.updated_at}));
+    if(actor.kind==='staff') items=items.filter(x=>x.assignedEmployeeId===actor.employeeId);
+    else if(actor.kind!=='owner') items=[];
+    return res.json({ok:true,actor:actor.kind,items});
+  }catch(e){return res.status(500).json({error:String(e?.message||e)});}
+});
+app.post('/daily-tasks',async(req,res)=>{
+  taskCors(res);
+  const token=String(req.headers.authorization||'').replace(/^Bearer\s+/i,'');
+  if(!token)return res.status(401).json({error:'Unauthorized'});
+  try{
+    const actor=await dailyTaskActor(token); if(!actor)return res.status(401).json({error:'Invalid token'});
+    const action=String(req.body?.action||'create');
+    if(action==='create'){
+      if(actor.kind!=='owner')return res.status(403).json({error:'Owner only'});
+      const title=String(req.body?.title||'').trim(),startAt=String(req.body?.startAt||''),assignedEmployeeId=String(req.body?.assignedEmployeeId||'');
+      if(!title||!Number.isFinite(new Date(startAt).getTime()))return res.status(400).json({error:'title and startAt are required'});
+      const id='task_'+crypto.randomUUID();
+      const task={type:'daily_task',title,startAt:new Date(startAt).toISOString(),status:'pending',assignedEmployeeId:assignedEmployeeId||null,ownerUserId:actor.userId,createdAt:new Date().toISOString()};
+      const {error}=await db.from('notifications').insert({id,data:task,updated_at:new Date().toISOString()}); if(error)throw error;
+      await scheduleTaskReminders({id,...task});
+      return res.json({ok:true,task:{id,...task}});
+    }
+    const id=String(req.body?.id||''),task=await getTaskRow(id); if(!task)return res.status(404).json({error:'Task not found'});
+    if(actor.kind==='staff'&&task.assignedEmployeeId!==actor.employeeId)return res.status(403).json({error:'Forbidden'});
+    if(actor.kind!=='staff'&&actor.kind!=='owner')return res.status(403).json({error:'Forbidden'});
+    if(action==='done'||action==='cancel'){
+      task.status=action==='done'?'done':'cancelled'; task.closedAt=new Date().toISOString();
+      await cancelTaskReminders(id,task.status);
+    }else if(action==='tomorrow'||action==='reschedule'){
+      let next;
+      if(action==='tomorrow'){const d=new Date(task.startAt);d.setDate(d.getDate()+1);next=d;}
+      else next=new Date(String(req.body?.startAt||''));
+      if(!Number.isFinite(next.getTime()))return res.status(400).json({error:'Invalid startAt'});
+      task.startAt=next.toISOString();task.status='pending';task.closedAt=null;
+      await scheduleTaskReminders(task);
+    }else return res.status(400).json({error:'Unknown action'});
+    const data={...task};delete data.id;
+    const {error}=await db.from('notifications').upsert({id,data,updated_at:new Date().toISOString()});if(error)throw error;
+    return res.json({ok:true,task});
+  }catch(e){return res.status(500).json({error:String(e?.message||e)});}
 });
 
 app.options('/appointments/delete', (_req, res) => {
