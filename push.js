@@ -322,6 +322,34 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     document.documentElement.dataset.scrollHeader="1";
     var lastY=Math.max(0,window.scrollY||0);
     var ticking=false;
+
+    function applyScrollState(y,dy){
+      var header=document.querySelector(".mobile-header");
+      var nav=document.querySelector(".mobile-bottom-nav");
+
+      if(header){
+        if(y<18){
+          header.classList.remove("mobile-header-hidden");
+        }else if(dy>4){
+          header.classList.add("mobile-header-hidden");
+        }else if(dy<0){
+          header.classList.remove("mobile-header-hidden");
+        }
+      }
+
+      if(nav){
+        if(y<70){
+          nav.classList.remove("compact");
+        }else if(dy>3){
+          nav.classList.add("compact");
+        }else if(dy<-2){
+          nav.classList.remove("compact");
+        }
+      }
+    }
+
+    applyScrollState(lastY,0);
+
     window.addEventListener("scroll",function(){
       if(ticking) return;
       ticking=true;
@@ -329,16 +357,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
         ticking=false;
         var y=Math.max(0,window.scrollY||0);
         var dy=y-lastY;
-        var header=document.querySelector(".mobile-header");
-        if(header){
-          if(y<18){
-            header.classList.remove("mobile-header-hidden");
-          }else if(dy>4){
-            header.classList.add("mobile-header-hidden");
-          }else if(dy<0){
-            header.classList.remove("mobile-header-hidden");
-          }
-        }
+        applyScrollState(y,dy);
         lastY=y;
       });
     },{passive:true});
