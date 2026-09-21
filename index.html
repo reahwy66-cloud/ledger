@@ -281,7 +281,7 @@ en:{
  gate:"Who is using the app?", gatePin:"Enter the code", gateWrong:"That code is not right.",
  unlock:"Unlock", cancel:"Cancel", save:"Save", del:"Delete", edit:"Edit", add:"Add",
  "tab.flow":"Summary","tab.clients":"Clients","tab.team":"Team","tab.work":"Work log",
- "tab.costs":"Costs","tab.calendar":"Appointments","tab.invoices":"Invoices","tab.funding":"Ad funding","tab.outside":"Outside","tab.setup":"Setup",
+ "tab.costs":"Costs","tab.calendar":"Appointments","tab.tasks":"Daily tasks","tab.invoices":"Invoices","tab.funding":"Ad funding","tab.outside":"Outside","tab.setup":"Setup",
  "k.in":"Money in","k.in.n":"{n} active clients",
  "k.out":"Money out","k.out.n":"Wages, ads and running costs",
  "k.net":"Profit to split","k.net.n":"Before the {p}% goes out","k.net.none":"No profit to split this month",
@@ -521,7 +521,7 @@ ar:{
  gate:"من يستخدم البرنامج؟", gatePin:"أدخل الرمز", gateWrong:"الرمز غير صحيح.",
  unlock:"دخول", cancel:"إلغاء", save:"حفظ", del:"حذف", edit:"تعديل", add:"إضافة",
  "tab.flow":"الملخّص","tab.clients":"العملاء","tab.team":"الفريق","tab.work":"سجل الأعمال",
- "tab.costs":"المصروفات","tab.calendar":"المواعيد","tab.invoices":"الفواتير","tab.funding":"التمويل","tab.outside":"خارج الشركة","tab.setup":"الإعدادات",
+ "tab.costs":"المصروفات","tab.calendar":"المواعيد","tab.tasks":"التاسكات اليومية","tab.invoices":"الفواتير","tab.funding":"التمويل","tab.outside":"خارج الشركة","tab.setup":"الإعدادات",
  "tab.users":"المستخدمون","tab.ledger":"السجل","tab.archive":"أرشيف الأعمال",
  "part.none":"لا يوجد شركاء بنسب بعد. أضف شريكاً من تبويب الفريق واختر «حصة من الربح».",
  "part.warn":"مجموع نسب الشركاء {n}% وليس 100%. الأرقام ستبقى خاطئة حتى تُصحَّح.",
@@ -761,11 +761,11 @@ function t(k,a){
 
 /* ═════════════ roles ═════════════ */
 var PERM={
-  owner:      {tabs:["flow","ledger","clients","archive","invoices","funding","team","costs","calendar","setup"],edit:["clients","invoices","funding","team","work","costs","calendar","setup","payments","advances"],finance:true,personal:true},
+  owner:      {tabs:["flow","ledger","clients","archive","invoices","funding","team","costs","calendar","tasks","setup"],edit:["clients","invoices","funding","team","work","costs","calendar","setup","payments","advances"],finance:true,personal:true},
   manager:    {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["work","calendar"],finance:true,personal:false},
   accountant: {tabs:["flow","ledger","clients","invoices","funding","team","costs","calendar"],edit:["clients","invoices","funding","work","costs","payments"],finance:true,personal:false}
 };
-var FULL={tabs:["flow","ledger","clients","archive","invoices","funding","team","work","costs","calendar","setup"],
+var FULL={tabs:["flow","ledger","clients","archive","invoices","funding","team","work","costs","calendar","tasks","setup"],
           edit:["clients","invoices","funding","team","work","costs","calendar","payments","advances","setup"],finance:true,personal:true};
 var SEC_TABS=["flow","ledger","clients","invoices","funding","team","costs","calendar","setup"];
 var SEC_EDIT=["work","payments","calendar","clients","team","invoices","funding","costs","advances","setup"];
@@ -1569,7 +1569,7 @@ function renderSetup(){
 }
 /* ═════════════ shell ═════════════ */
 var TABS=[["flow","tab.flow"],["ledger","tab.ledger"],["clients","tab.clients"],["archive","tab.archive"],["invoices","tab.invoices"],["funding","tab.funding"],["team","tab.team"],
-          ["costs","tab.costs"],["calendar","tab.calendar"],["setup","tab.setup"]];
+          ["costs","tab.costs"],["calendar","tab.calendar"],["tasks","tab.tasks"],["setup","tab.setup"]];
 function render(){
   normalizeStateShape();
   clearCalc();
@@ -1579,7 +1579,7 @@ function render(){
   var allowed=myTabs();
   if(!allowed.length){renderWait();return;}
   if(allowed.indexOf(TAB)<0) TAB=allowed[0];
-  var views={flow:vFlow,ledger:vLedger,clients:vClients,archive:vArchive,invoices:vInvoices,funding:vFunding,team:vTeam,costs:vCosts,calendar:vCalendar,setup:vSetup};
+  var views={flow:vFlow,ledger:vLedger,clients:vClients,archive:vArchive,invoices:vInvoices,funding:vFunding,team:vTeam,costs:vCosts,calendar:vCalendar,tasks:vTasks,setup:vSetup};
   el("app").innerHTML='<div class="wrap"><div class="mast">'
    +'<div class="brand">'+stampHTML()+'<div>'+(S.settings.company?'<h1>'+esc(S.settings.company)+'</h1>':'')+'<small>'+t("tagline")+'</small></div></div>'
    +'<div class="tools">'
@@ -1598,6 +1598,10 @@ function render(){
    +'<div class="view-stack">'+views[TAB]()+'</div></div>';
   if(TAB==="flow") requestAnimationFrame(function(){
     Array.prototype.forEach.call(document.querySelectorAll(".bar[data-w]"),function(b){b.style.width=b.dataset.w+"%";});});
+}
+
+function vTasks(){
+  return '<div class="sec"><iframe src="daily-tasks.html?embed=1" title="'+t("tab.tasks")+'" style="width:100%;min-height:76vh;border:0;border-radius:18px;background:var(--panel);display:block"></iframe></div>';
 }
 
 /* ═════════════ FLOW ═════════════ */
