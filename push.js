@@ -6,11 +6,11 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 (function mobileUiBootstrap(){
   var link=document.createElement("link");
   link.rel="stylesheet";
-  link.href="mobile.css?v=20260921-v47";
+  link.href="mobile.css?v=20260921-v48";
   document.head.appendChild(link);
   var desktopLink=document.createElement("link");
   desktopLink.rel="stylesheet";
-  desktopLink.href="desktop.css?v=20260921-v47";
+  desktopLink.href="desktop.css?v=20260921-v48";
   document.head.appendChild(desktopLink);
 
   var ICONS={
