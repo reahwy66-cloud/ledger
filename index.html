@@ -264,7 +264,7 @@ code{background:var(--ground);border:1px solid var(--line);border-radius:5px;pad
 <div id="app"></div>
 <div id="modalHost"></div>
 
-<script src="push.js?v=20260921-v51" defer></script>
+<script src="push.js?v=20260921-v53" defer></script>
 <script>
 (function(){
 "use strict";
@@ -1050,7 +1050,10 @@ async function loadProfile(){
 
 async function bootCloud(){
   var c=cfg();
-  if(!c.url||!c.key) return false;
+  if(!c.url||!c.key){
+    if(baked()){ renderOffline(); return true; }
+    return false;
+  }
   try{ SB=await sbClient(c.url,c.key); }
   catch(e){ if(baked()){renderOffline();return true;} alert(t("cl.lib")); return false; }
   MODE="cloud";
@@ -4108,8 +4111,11 @@ Store.load().then(async function(d){
   applyTheme();
   var went=false;
   try{ went=await bootCloud(); }catch(e){ went=false; }
-  if(!went){ MODE="local"; renderSetup(); }
-  else { setTimeout(function(){handleAppointmentConfirmation();},300); }
+  if(!went){
+    MODE="local";
+    if(baked()) renderOffline();
+    else renderSetup();
+  } else { setTimeout(function(){handleAppointmentConfirmation();},300); }
 });
 })();
 </script>
