@@ -63,6 +63,7 @@ body[dir="rtl"] .brand small{font-family:var(--ar);letter-spacing:0;text-transfo
 body[dir="rtl"] .tabs button{font-family:var(--ar);letter-spacing:0;text-transform:none;font-size:13px}
 .tabs button:hover{color:var(--bone)}
 .tabs button[aria-selected="true"]{color:var(--brand);border-bottom-color:var(--brand)}
+.tabs button .tab-ico{display:inline-grid;place-items:center;vertical-align:middle;margin-inline-end:7px}
 
 /* ── generic ── */
 h2{font-size:15px;margin:0 0 3px;font-weight:600;letter-spacing:-.01em}
@@ -863,7 +864,7 @@ function startPortalPolling(){
       var host=el("modalHost");
       if(!host||!host.innerHTML) render();
     }
-  },15000);
+  },60000);
 }
 async function pull(){
   if(DIRTY||PUSHING) return;
@@ -1570,6 +1571,12 @@ function renderSetup(){
 /* ═════════════ shell ═════════════ */
 var TABS=[["flow","tab.flow"],["ledger","tab.ledger"],["clients","tab.clients"],["archive","tab.archive"],["invoices","tab.invoices"],["funding","tab.funding"],["team","tab.team"],
           ["costs","tab.costs"],["calendar","tab.calendar"],["tasks","tab.tasks"],["setup","tab.setup"]];
+function tabIcon(k){
+  var icons={
+    tasks:'<svg viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.8 6 1.4 1.4L7.8 4.8M3.8 12l1.4 1.4 2.6-2.6M3.8 18l1.4 1.4 2.6-2.6"/></svg>'
+  };
+  return icons[k]||'';
+}
 function render(){
   normalizeStateShape();
   clearCalc();
@@ -1594,7 +1601,7 @@ function render(){
    +'<button data-act="mnext" title="'+t("next")+'">'+(t("dir")==="rtl"?"‹":"›")+'</button></div>'
    +'</div></div>'
    +'<div class="tabs" role="tablist">'+TABS.filter(function(x){return allowed.indexOf(x[0])>=0;}).map(function(x){
-      return '<button role="tab" data-tab="'+x[0]+'" aria-selected="'+(TAB===x[0])+'">'+t(x[1])+'</button>';}).join("")+'</div>'
+      return '<button role="tab" data-tab="'+x[0]+'" aria-selected="'+(TAB===x[0])+'">'+(tabIcon(x[0])?'<span class="tab-ico">'+tabIcon(x[0])+'</span>':'')+t(x[1])+'</button>';}).join("")+'</div>'
    +'<div class="view-stack">'+views[TAB]()+'</div></div>';
   if(TAB==="flow") requestAnimationFrame(function(){
     Array.prototype.forEach.call(document.querySelectorAll(".bar[data-w]"),function(b){b.style.width=b.dataset.w+"%";});});
