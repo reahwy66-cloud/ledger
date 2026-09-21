@@ -950,6 +950,77 @@ function buildServer() {
     return text({ id: notificationId, status: 'cancelled', changed: true });
   });
 
+
+  server.registerTool('list_daily_tasks', {
+    title: 'List daily tasks',
+    description: 'List daily team tasks in رِواء ستوديو, including assignee, priority, status and start time.',
+    inputSchema: {
+      status: z.enum(['pending','done','cancelled','all']).default('pending'),
+      limit: z.number().int().min(1).max(100).default(50)
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false }
+  }, async ({ status, limit }) => {
+    const { data, error } = await db.from('notifications').select('id,data,updated_at').order('updated_at',{ascending:false}).limit(500);
+    if(error) throw error;
+    let items=(data||[]).filter(r=>r.data?.type==='daily_task').map(r=>({id:r.id,...r.data,updatedAt:r.updated_at}));
+    if(status!=='all') items=items.filter(x=>x.status===status);
+    const team=await rows('team');
+    const names=Object.fromEntries(team.map(e=>[e.id,e.name]));
+    return text(items.slice(0,limit).map(x=>({...x,assignedEmployeeName:x.assignedEmployeeId?(names[x.assignedEmployeeId]||x.assignedEmployeeId):'المالك'})));
+  });
+
+  server.registerTool('create_daily_task', {
+    title: 'Create daily task',
+    description: 'Create a daily task for the owner or a named team member. Schedules the start notification and hourly follow-ups until the task is closed.',
+    inputSchema: {
+      title: z.string().min(1),
+      employee: z.string().optional().describe('Team member name. Omit for the owner.'),
+      startAt: z.string().describe('ISO 8601 timestamp including timezone offset.'),
+      priority: z.enum(['normal','important','urgent']).default('normal'),
+      note: z.string().optional()
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false }
+  }, async ({ title, employee, startAt, priority, note }) => {
+    const start=new Date(startAt);
+    if(!Number.isFinite(start.getTime())) throw new Error('Invalid startAt');
+    const emp=employee?await resolveByName('team',employee):null;
+    if(employee&&!emp) throw new Error('Team member not found');
+    const taskId='task_'+crypto.randomUUID();
+    const task={type:'daily_task',title:String(title).trim(),startAt:start.toISOString(),status:'pending',priority,note:String(note||'').trim(),assignedEmployeeId:emp?.id||null,ownerUserId:null,createdAt:new Date().toISOString()};
+    const {error}=await db.from('notifications').insert({id:taskId,data:task,updated_at:new Date().toISOString()});
+    if(error) throw error;
+    await scheduleTaskReminders({id:taskId,...task});
+    return text({task:{id:taskId,...task,assignedEmployeeName:emp?.name||'المالك'}});
+  });
+
+  server.registerTool('follow_up_daily_task', {
+    title: 'Follow up daily task',
+    description: 'Immediately send a push follow-up for one open daily task. Identify it by task id or by an unambiguous task title.',
+    inputSchema: {
+      id: z.string().optional(),
+      title: z.string().optional()
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false }
+  }, async ({ id: taskId, title }) => {
+    let task=null;
+    if(taskId) task=await getTaskRow(taskId);
+    else {
+      const {data,error}=await db.from('notifications').select('id,data').limit(500);
+      if(error) throw error;
+      const q=String(title||'').trim().toLowerCase();
+      const matches=(data||[]).filter(r=>r.data?.type==='daily_task'&&r.data?.status==='pending'&&String(r.data?.title||'').toLowerCase().includes(q));
+      if(matches.length!==1) throw new Error(matches.length?'Task title is ambiguous':'Task not found');
+      task={id:matches[0].id,...matches[0].data};
+    }
+    if(!task||task.status!=='pending') throw new Error('Open task not found');
+    const prefix=task.priority==='urgent'?'🔥 مهم جداً — ':task.priority==='important'?'⚠️ مهم — ':'';
+    const payload={title:'فولو أب — رِواء ستوديو',body:prefix+task.title,url:task.assignedEmployeeId?'./daily-tasks.html?portal=staff':'./daily-tasks.html',tag:'task-followup-'+task.id,dir:'rtl',lang:'ar'};
+    const push=task.assignedEmployeeId?await sendPortalStaffPush(task.assignedEmployeeId,payload):await sendPush(payload,task.ownerUserId||null);
+    const next={...task,lastFollowUpAt:new Date().toISOString()}; delete next.id;
+    await db.from('notifications').upsert({id:task.id,data:next,updated_at:new Date().toISOString()});
+    return text({taskId:task.id,title:task.title,push});
+  });
+
   server.registerTool('send_push_notification', {
     title: 'Send a push notification',
     description: 'Send a Web Push notification to devices that enabled notifications for رِواء ستوديو.',
@@ -1350,7 +1421,7 @@ async function scheduleTaskReminders(task) {
     const data={
       type:'scheduled_push',status:'pending',taskId:task.id,taskStage:i===0?'start':'followup',
       title:i===0?'ابدأ المهمة — رِواء ستوديو':'متابعة المهمة — رِواء ستوديو',
-      body:i===0?task.title:('لسا المهمة مفتوحة: '+task.title),
+      body:(task.priority==='urgent'?'🔥 مهم جداً — ':task.priority==='important'?'⚠️ مهم — ':'')+(i===0?task.title:('لسا المهمة مفتوحة: '+task.title)),
       dueAt:due.toISOString(),url:task.assignedEmployeeId?'./daily-tasks.html?portal=staff':'./daily-tasks.html',
       tag:'daily-task-'+task.id,createdAt:new Date().toISOString(),
       ...(task.assignedEmployeeId?{portalEmployeeId:task.assignedEmployeeId}:{userId:task.ownerUserId||null})
@@ -1390,9 +1461,11 @@ app.post('/daily-tasks',async(req,res)=>{
     if(action==='create'){
       if(actor.kind!=='owner')return res.status(403).json({error:'Owner only'});
       const title=String(req.body?.title||'').trim(),startAt=String(req.body?.startAt||''),assignedEmployeeId=String(req.body?.assignedEmployeeId||'');
+      const priority=['normal','important','urgent'].includes(String(req.body?.priority||''))?String(req.body.priority):'normal';
+      const note=String(req.body?.note||'').trim();
       if(!title||!Number.isFinite(new Date(startAt).getTime()))return res.status(400).json({error:'title and startAt are required'});
       const id='task_'+crypto.randomUUID();
-      const task={type:'daily_task',title,startAt:new Date(startAt).toISOString(),status:'pending',assignedEmployeeId:assignedEmployeeId||null,ownerUserId:actor.userId,createdAt:new Date().toISOString()};
+      const task={type:'daily_task',title,startAt:new Date(startAt).toISOString(),status:'pending',priority,note,assignedEmployeeId:assignedEmployeeId||null,ownerUserId:actor.userId,createdAt:new Date().toISOString()};
       const {error}=await db.from('notifications').insert({id,data:task,updated_at:new Date().toISOString()}); if(error)throw error;
       await scheduleTaskReminders({id,...task});
       return res.json({ok:true,task:{id,...task}});
@@ -1400,6 +1473,16 @@ app.post('/daily-tasks',async(req,res)=>{
     const id=String(req.body?.id||''),task=await getTaskRow(id); if(!task)return res.status(404).json({error:'Task not found'});
     if(actor.kind==='staff'&&task.assignedEmployeeId!==actor.employeeId)return res.status(403).json({error:'Forbidden'});
     if(actor.kind!=='staff'&&actor.kind!=='owner')return res.status(403).json({error:'Forbidden'});
+    if(action==='followup'){
+      if(actor.kind!=='owner')return res.status(403).json({error:'Owner only'});
+      const prefix=task.priority==='urgent'?'🔥 مهم جداً — ':task.priority==='important'?'⚠️ مهم — ':'';
+      const payload={title:'فولو أب — رِواء ستوديو',body:prefix+task.title,url:task.assignedEmployeeId?'./daily-tasks.html?portal=staff':'./daily-tasks.html',tag:'task-followup-'+task.id,dir:'rtl',lang:'ar'};
+      const push=task.assignedEmployeeId?await sendPortalStaffPush(task.assignedEmployeeId,payload):await sendPush(payload,task.ownerUserId||null);
+      task.lastFollowUpAt=new Date().toISOString();
+      const data={...task};delete data.id;
+      await db.from('notifications').upsert({id,data,updated_at:new Date().toISOString()});
+      return res.json({ok:true,task,push});
+    }
     if(action==='done'||action==='cancel'){
       task.status=action==='done'?'done':'cancelled'; task.closedAt=new Date().toISOString();
       await cancelTaskReminders(id,task.status);
