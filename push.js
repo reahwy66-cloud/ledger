@@ -19,6 +19,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
     archive:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2H3V5Zm0 6h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8Zm7 2v6l5-3-5-3Z"/></svg>',
     ledger:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 5h10V6H7v2Zm0 5h4v-2H7v2Zm6 0h4v-2h-4v2Zm-6 5h4v-2H7v2Zm6 0h4v-2h-4v2Z"/></svg>',
     calendar:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v3h6V2h2v3h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2V2Zm12 8H5v9h14v-9ZM7 12h3v3H7v-3Z"/></svg>',
+    tasks:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h11v2H9V5Zm0 6h11v2H9v-2Zm0 6h11v2H9v-2ZM3.6 6l1.5 1.5L7.8 4.8l1.4 1.4-4.1 4.1L2.2 7.4 3.6 6Zm0 6 1.5 1.5 2.7-2.7 1.4 1.4-4.1 4.1-2.9-2.9L3.6 12Zm0 6 1.5 1.5 2.7-2.7 1.4 1.4-4.1 4.1-2.9-2.9L3.6 18Z"/></svg>',
     invoices:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15l-3-2-3 2-3-2-3 2-3-2-3 2V4a2 2 0 0 1 2-2h2Zm8 2v4h4l-4-4ZM6 11v2h10v-2H6Zm0 4v2h8v-2H6Z"/></svg>',
     funding:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11h18v2H3v-2Zm2-4h14v2H5V7Zm2-4h10v2H7V3Zm0 12h10v2H7v-2Zm2 4h6v2H9v-2Z"/></svg>',
     team:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7-1a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM9 13c-4 0-7 2-7 4.5V21h14v-3.5C16 15 13 13 9 13Zm7.5 0c-.8 0-1.6.1-2.3.3 2.3 1 3.8 2.5 3.8 4.2V21h4v-3c0-2.8-2.4-5-5.5-5Z"/></svg>',
@@ -221,7 +222,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
       var b=extraMap[k]; if(!b) return "";
       return '<button type="button" data-tab="'+k+'" class="'+(tab===k?"active":"")+'">'+(ICONS[k]||"")+'<span>'+((b.textContent||"").trim())+'</span><i>‹</i></button>';
     }
-    var workLinks=["archive","team","invoices","funding","costs"].map(drawerTab).join("");
+    var workLinks=["tasks","archive","team","invoices","funding","costs"].map(drawerTab).join("");
     var appLinks=["setup"].map(drawerTab).join("");
     var drawer=document.createElement("aside");
     drawer.className="mobile-drawer";
