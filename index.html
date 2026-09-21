@@ -3476,7 +3476,7 @@ function printInvoice(c,invoice){
    +'<div class="foot"><span><b>'+esc(co)+'</b></span><span>'+t("inv.thanks")+'</span></div>'
    +'</div>'
    +'<script>window.onload=function(){setTimeout(function(){try{window.print();}catch(e){}},450);}<\/script>'
-   +'</body></html>';
+   +'<script src="daily-tasks-launch.js?v=1"></script>\n</body></html>';
 
   var w=window.open("","_blank");
   if(!w){ alert(t("inv.title")); return; }
