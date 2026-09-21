@@ -338,13 +338,7 @@ var PUSH_API="https://studio-ledger-mcp.reahwy66.workers.dev";
       }
 
       if(nav){
-        if(y<70){
-          nav.classList.remove("compact");
-        }else if(dy>3){
-          nav.classList.add("compact");
-        }else if(dy<-2){
-          nav.classList.remove("compact");
-        }
+        nav.classList.remove("compact");
       }
     }
 
