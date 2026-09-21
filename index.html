@@ -1579,7 +1579,7 @@ function render(){
   var allowed=myTabs();
   if(!allowed.length){renderWait();return;}
   if(allowed.indexOf(TAB)<0) TAB=allowed[0];
-  var views={flow:vFlow,ledger:vLedger,clients:vClients,archive:vArchive,invoices:vInvoices,funding:vFunding,team:vTeam,costs:vCosts,calendar:vCalendar,tasks:vTasks,setup:vSetup};
+  var views={flow:vFlow,ledger:vLedger,clients:vClients,archive:vArchive,invoices:vInvoices,funding:vFunding,team:vTeam,costs:vCosts,calendar:vCalendar,setup:vSetup};
   el("app").innerHTML='<div class="wrap"><div class="mast">'
    +'<div class="brand">'+stampHTML()+'<div>'+(S.settings.company?'<h1>'+esc(S.settings.company)+'</h1>':'')+'<small>'+t("tagline")+'</small></div></div>'
    +'<div class="tools">'
@@ -1598,10 +1598,6 @@ function render(){
    +'<div class="view-stack">'+views[TAB]()+'</div></div>';
   if(TAB==="flow") requestAnimationFrame(function(){
     Array.prototype.forEach.call(document.querySelectorAll(".bar[data-w]"),function(b){b.style.width=b.dataset.w+"%";});});
-}
-
-function vTasks(){
-  return '<div class="sec"><iframe src="daily-tasks.html?embed=1" title="'+t("tab.tasks")+'" style="width:100%;min-height:76vh;border:0;border-radius:18px;background:var(--panel);display:block"></iframe></div>';
 }
 
 /* ═════════════ FLOW ═════════════ */
@@ -3900,7 +3896,7 @@ document.addEventListener("click",function(ev){
   var lb=ev.target.closest("[data-lang]");
   if(lb){LANG=lb.dataset.lang;S.settings.lang=LANG;save();if(ROLE||ME)render();else if(SB)renderAuth();else renderSetup();return;}
   var tb=ev.target.closest("[data-tab]");
-  if(tb){SEL=null;SELE=null;TAB=tb.dataset.tab;render();return;}
+  if(tb){SEL=null;SELE=null;if(tb.dataset.tab==="tasks"){location.href="daily-tasks.html";return;}TAB=tb.dataset.tab;render();return;}
   var a=ev.target.closest("[data-act]"); if(!a) return;
   var id=a.dataset.id, act=a.dataset.act;
   var f=function(arr){return arr.filter(function(x){return x.id===id;})[0];};
