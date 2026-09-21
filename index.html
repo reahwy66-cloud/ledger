@@ -3218,6 +3218,7 @@ function vSetupMobile(){
     +'<section class="settings-group"><div class="settings-group-title"><h2>'+(LANG==="ar"?"التطبيق":"App")+'</h2></div><div class="settings-list">'
     +settingItem("◎",LANG==="ar"?"الحساب":"Account",acct,MODE==="cloud"?t("cl.onS"):t("cl.offS"),MODE==="cloud"?"cloudmanage":"cloudon")
     +settingItem("◉",LANG==="ar"?"التنبيهات":"Notifications",pushStatus,LANG==="ar"?"تنبيهات المواعيد والتذكيرات.":"Appointments and reminder alerts.","pushnotify")
+    +settingItem("✓",LANG==="ar"?"التاسكات اليومية":"Daily tasks","",LANG==="ar"?"مهام اليوم والتنبيهات والمتابعة كل ساعة.":"Daily tasks and hourly follow-ups.","dailytasks")
     +(amOwner()?settingItem("♙",LANG==="ar"?"المستخدمون":"Users",String(USERS.length||""),LANG==="ar"?"الوصول والصلاحيات.":"Access and permissions.","userssheet"):"")
     +'</div></section>'
     +'<section class="settings-group"><div class="settings-group-title"><h2>'+t("sp.data")+'</h2></div><div class="settings-list">'
@@ -3476,7 +3477,7 @@ function printInvoice(c,invoice){
    +'<div class="foot"><span><b>'+esc(co)+'</b></span><span>'+t("inv.thanks")+'</span></div>'
    +'</div>'
    +'<script>window.onload=function(){setTimeout(function(){try{window.print();}catch(e){}},450);}<\/script>'
-   +'<script src="daily-tasks-launch.js?v=2"></script>\n</body></html>';
+   +'</body></html>';
 
   var w=window.open("","_blank");
   if(!w){ alert(t("inv.title")); return; }
@@ -4022,6 +4023,7 @@ document.addEventListener("click",function(ev){
       }
     })();
   }
+  else if(act==="dailytasks"){location.href="daily-tasks.html";}
   else if(act==="edituser"){var u=USERS.filter(function(x){return x.id===id;})[0];if(u)userForm(u);}
   else if(act==="signout"){(async function(){if(SB)await SB.auth.signOut();ME=null;renderAuth();})();}
   else if(act==="theme"){
