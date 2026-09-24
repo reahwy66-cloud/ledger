@@ -309,6 +309,8 @@ en:{
  "th.src":"Source","th.note":"Note","th.type":"Type","th.perm":"Per month","th.who":"Who","th.share":"Share","th.on":"On {v}",
  "pay.t":"What you owe the team","pay.s":"Due at the end of {m}.","pay.mgr":"Manager","pay.mgrb":"{p}% of {v} profit","pay.tot":"Total leaving for wages",
  "cli.t":"Clients","cli.s":"Rename these to your real client names whenever you like.","cli.add":"Add client","cli.edit":"Edit client","cli.none":"No clients yet.",
+ "f.logo":"Client logo","f.logoH":"PNG, JPG or WebP. The image is resized before saving.","f.logoPick":"Choose logo","f.logoRemove":"Remove logo",
+ "f.website":"Client website / social link","f.websiteH":"Optional public link used when the client is shown on the website.","f.websiteVisible":"Show this client on the public website",
  "b.package":"Package","b.per_video":"Per video","b.per_design":"Per design","b.prepaid":"Prepaid credit",
  "b.per_designL":"A price for each design",
  "f.drate":"Design price","f.drateH":"Charged per design delivered. Leave empty if you don't bill designs.",
@@ -619,6 +621,8 @@ ar:{
  "th.earned":"المستحق","th.adv":"سُلف","th.carry":"مُرحَّل","th.net":"الصافي","th.month2":"الشهر","th.payout":"المصروف",
  "pay.t":"مستحقات الفريق","pay.s":"نهاية {m}.","pay.mgr":"المدير","pay.mgrb":"{p}% من ربح {v}","pay.tot":"الإجمالي",
  "cli.t":"العملاء","cli.s":"أضف عملاءك وحدّد طريقة الفوترة.","cli.add":"إضافة عميل","cli.edit":"تعديل عميل","cli.none":"لا يوجد عملاء بعد.",
+ "f.logo":"لوغو العميل","f.logoH":"PNG أو JPG أو WebP. يتم تصغير الصورة قبل الحفظ.","f.logoPick":"اختيار اللوغو","f.logoRemove":"حذف اللوغو",
+ "f.website":"موقع العميل / رابط السوشال","f.websiteH":"اختياري، ويُستخدم كرابط عند إظهار العميل بالموقع العام.","f.websiteVisible":"إظهار هذا العميل على الموقع العام",
  "b.package":"باقة","b.per_video":"بالفيديو","b.per_design":"بالتصميم","b.prepaid":"رصيد مدفوع",
  "b.per_designL":"سعر لكل تصميم",
  "f.drate":"سعر التصميم","f.drateH":"يُحتسب لكل تصميم مُسلَّم. اتركه فارغاً إن كنت لا تفوتر التصاميم.",
@@ -1874,6 +1878,13 @@ function vFundingMobile(){
 function vFunding(){return vFundingMobile();}
 
 /* ═════════════ CLIENTS ═════════════ */
+function clientIdentityHTML(c){
+  var mark=c.logo
+    ? '<span style="width:38px;height:38px;border-radius:12px;overflow:hidden;display:grid;place-items:center;background:var(--panel2,#eef0ed);border:1px solid var(--line,#d8ddd9);flex:0 0 auto"><img src="'+esc(c.logo)+'" alt="" style="width:100%;height:100%;object-fit:contain"></span>'
+    : '<span style="width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--panel2,#eef0ed);border:1px solid var(--line,#d8ddd9);font-weight:700;flex:0 0 auto">'+esc((c.name||"•").trim().charAt(0).toUpperCase())+'</span>';
+  return '<span style="display:flex;align-items:center;gap:10px;min-width:0">'+mark+'<span style="min-width:0"><b>'+esc(c.name)+'</b>'
+    +(c.websiteVisible?'<span title="Public website" style="display:inline-block;margin-inline-start:6px;font-size:11px;opacity:.65">↗</span>':'')+'</span></span>';
+}
 function vClients(){
   if(SEL) return vClient();
   var w=can("clients");
@@ -1892,7 +1903,7 @@ function vClients(){
     var bal=Math.abs(st.balance)<0.005
       ? '<span class="mut">'+money(0)+'</span>'
       : '<span class="num '+(st.balance>0?"neg":"pos")+'">'+(st.balance>0?"":"−")+money(Math.abs(st.balance))+'</span>';
-    h+='<tr><td><a href="#" data-act="opencli" data-id="'+c.id+'" class="lnk"><b>'+esc(c.name)+'</b></a>'
+    h+='<tr><td><a href="#" data-act="opencli" data-id="'+c.id+'" class="lnk">'+clientIdentityHTML(c)+'</a>'
      +(c.active?'':' <span class="pill">'+t("st.paused")+'</span>')
      +(c.note?'<div class="mut" style="font-size:11.5px">'+esc(c.note)+'</div>':'')+'</td>'
      +'<td><span class="pill '+(c.billing==="prepaid"?"cy":"amb")+'">'+t("b."+c.billing)+'</span></td>'
@@ -3307,6 +3318,25 @@ function pwaGuide(){
 }
 
 /* ═════════════ forms ═════════════ */
+function prepareImageFile(file,done){
+  if(!file){done("");return;}
+  if(!/^image\/(png|jpe?g|webp)$/i.test(file.type||"")){alert("PNG / JPG / WebP");return;}
+  var reader=new FileReader();
+  reader.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      var max=360,w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+      var scale=Math.min(1,max/Math.max(w,h));w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));
+      var cv=document.createElement("canvas");cv.width=w;cv.height=h;
+      var cx=cv.getContext("2d");cx.clearRect(0,0,w,h);cx.drawImage(img,0,0,w,h);
+      var transparent=(file.type||"").toLowerCase()==="image/png";
+      done(cv.toDataURL(transparent?"image/png":"image/jpeg",transparent?0.92:0.84));
+    };
+    img.onerror=function(){alert("Image could not be read");};
+    img.src=reader.result;
+  };
+  reader.readAsDataURL(file);
+}
 function form(title,fields,vals,onSave,extra,saveLabel){
   var body=fields.map(function(f){
     var v=(vals&&vals[f.k]!=null)?vals[f.k]:(f.def!=null?f.def:"");
@@ -3314,6 +3344,12 @@ function form(title,fields,vals,onSave,extra,saveLabel){
     if(f.type==="select") i='<select name="'+f.k+'">'+f.options.map(function(o){
         return '<option value="'+esc(o[0])+'"'+(String(v)===String(o[0])?" selected":"")+'>'+esc(o[1])+'</option>';}).join("")+'</select>';
     else if(f.type==="textarea") i='<textarea name="'+f.k+'" rows="2">'+esc(v)+'</textarea>';
+    else if(f.type==="image") i='<div class="client-logo-editor" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
+        +'<span data-image-preview="'+f.k+'" style="width:58px;height:58px;border-radius:16px;display:grid;place-items:center;overflow:hidden;background:var(--panel2,#eef0ed);border:1px solid var(--line,#d8ddd9)">'
+        +(v?'<img src="'+esc(v)+'" alt="" style="width:100%;height:100%;object-fit:contain">':'<span style="font-size:22px;opacity:.45">◈</span>')+'</span>'
+        +'<div style="display:flex;gap:8px;flex-wrap:wrap"><label class="btn sm ghost" style="cursor:pointer">'+t("f.logoPick")+'<input type="file" accept="image/png,image/jpeg,image/webp" data-image-input="'+f.k+'" hidden></label>'
+        +'<button type="button" class="btn sm ghost" data-image-clear="'+f.k+'">'+t("f.logoRemove")+'</button></div>'
+        +'<input type="hidden" name="'+f.k+'" value="'+esc(v)+'"></div>';
     else if(f.type==="check") i='<div class="chk"><input type="checkbox" name="'+f.k+'" id="k_'+f.k+'"'+(v?" checked":"")+'>'
         +'<label for="k_'+f.k+'">'+esc(f.checkLabel||"")+'</label></div>';
     else i='<input type="'+(f.type||"text")+'" name="'+f.k+'" value="'+esc(v)+'"'+(f.step?' step="'+f.step+'"':"")+'>';
@@ -3326,6 +3362,23 @@ function form(title,fields,vals,onSave,extra,saveLabel){
    +'<div class="acts">'+((vals&&vals.id)?'<button class="btn danger ghost" id="fDel">'+t("del")+'</button>':"")
    +'<button class="btn ghost" id="fCancel">'+t("cancel")+'</button>'
    +'<button class="btn primary" id="fSave">'+(saveLabel||t("save"))+'</button></div></div></div>';
+  Array.prototype.forEach.call(el("formBody").querySelectorAll("[data-image-input]"),function(inp){
+    inp.addEventListener("change",function(){
+      var key=this.getAttribute("data-image-input"),file=this.files&&this.files[0];if(!file)return;
+      prepareImageFile(file,function(data){
+        var hidden=el("formBody").querySelector('[name="'+key+'"]'),preview=el("formBody").querySelector('[data-image-preview="'+key+'"]');
+        if(hidden)hidden.value=data;
+        if(preview)preview.innerHTML='<img src="'+data+'" alt="" style="width:100%;height:100%;object-fit:contain">';
+      });
+    });
+  });
+  Array.prototype.forEach.call(el("formBody").querySelectorAll("[data-image-clear]"),function(btn){
+    btn.addEventListener("click",function(){
+      var key=this.getAttribute("data-image-clear"),hidden=el("formBody").querySelector('[name="'+key+'"]'),preview=el("formBody").querySelector('[data-image-preview="'+key+'"]');
+      if(hidden)hidden.value="";
+      if(preview)preview.innerHTML='<span style="font-size:22px;opacity:.45">◈</span>';
+    });
+  });
   function toggles(){
     Array.prototype.forEach.call(document.querySelectorAll("[data-showif]"),function(d){
       var c=JSON.parse(d.getAttribute("data-showif"));
@@ -3575,6 +3628,8 @@ function syncAllOpenInvoiceRoots(fromMonth){
 function clientForm(c){
   form(c?t("cli.edit"):t("cli.add"),[
     {k:"name",label:t("f.cliname")},
+    {k:"logo",label:t("f.logo"),type:"image",hint:t("f.logoH")},
+    {k:"website",label:t("f.website"),type:"url",hint:t("f.websiteH")},
     {k:"email",label:t("f.email"),type:"email"},
     {k:"phone",label:t("f.phone")},
     {k:"billing",label:t("f.howpay"),type:"select",options:[["package",t("b.packageL")],["per_video",t("b.per_videoL")],["per_design",t("b.per_designL")],["prepaid",t("b.prepaidL")]]},
@@ -3591,6 +3646,7 @@ function clientForm(c){
     {k:"startMonth",label:t("f.start"),type:"month",def:ymNow(),hint:t("f.startH")},
     {k:"endMonth",label:t("f.end"),type:"month",hint:t("f.endH")},
     {k:"note",label:t("f.note"),type:"textarea"},
+    {k:"websiteVisible",label:"",type:"check",checkLabel:t("f.websiteVisible"),def:false},
     {k:"active",label:"",type:"check",checkLabel:t("f.activecli"),def:true}
   ],c,function(v){
     if(v===null){S.customers=S.customers.filter(function(x){return x.id!==c.id;});return;}
