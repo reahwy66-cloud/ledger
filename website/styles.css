@@ -359,27 +359,40 @@ body[dir="rtl"] .intro h2{letter-spacing:-.03em}
   border-radius:20px;color:var(--muted);
 }
 .client-card{
-  min-height:130px;
-  padding:18px;
-  border-radius:20px;
+  min-height:190px;
+  padding:24px 18px 20px;
+  border-radius:22px;
   border:1px solid var(--line);
   background:#fff;
-  display:flex;align-items:center;gap:14px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
+  text-align:center;
   transition:.2s ease;
 }
 .client-card:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(33,45,38,.08)}
 .client-logo{
-  width:56px;height:56px;flex:0 0 auto;
-  border-radius:16px;
+  width:64px;height:64px;flex:0 0 auto;
+  border-radius:18px;
   background:#F1EFE9;
   border:1px solid rgba(47,58,52,.08);
   display:grid;place-items:center;
   color:var(--green);font-weight:900;
   overflow:hidden;
 }
-.client-logo img{width:100%;height:100%;object-fit:contain;padding:5px}
-.client-meta{display:grid;gap:4px;min-width:0}
-.client-meta b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.client-logo.has-image{
+  width:132px;
+  height:78px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  overflow:visible;
+}
+.client-logo img{width:100%;height:100%;object-fit:contain;padding:0}
+.client-meta{display:grid;gap:5px;min-width:0;justify-items:center}
+.client-meta b{font-size:16px;line-height:1.35;max-width:220px}
 .client-meta span{font-size:11px;color:var(--muted)}
 
 
@@ -684,8 +697,9 @@ body[dir="rtl"] .contact-card h2{letter-spacing:-.01em}
   .photo-offer{align-items:flex-start;padding:24px;flex-direction:column}
   .photo-offer strong{font-size:44px}
   .client-grid{grid-template-columns:1fr 1fr}
-  .client-card{min-height:118px;padding:14px;display:grid;align-content:start}
-  .client-logo{width:50px;height:50px;border-radius:14px}
+  .client-card{min-height:150px;padding:18px 12px;gap:14px}
+  .client-logo{width:54px;height:54px;border-radius:15px}
+  .client-logo.has-image{width:104px;height:62px}
   .client-meta b{font-size:14px}
   .contact{padding-top:20px;padding-bottom:72px}
   .contact-card{padding:34px 22px;border-radius:28px}
