@@ -1883,7 +1883,19 @@ function clientIdentityHTML(c){
     ? '<span style="width:38px;height:38px;border-radius:12px;overflow:hidden;display:grid;place-items:center;background:var(--panel2,#eef0ed);border:1px solid var(--line,#d8ddd9);flex:0 0 auto"><img src="'+esc(c.logo)+'" alt="" style="width:100%;height:100%;object-fit:contain"></span>'
     : '<span style="width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--panel2,#eef0ed);border:1px solid var(--line,#d8ddd9);font-weight:700;flex:0 0 auto">'+esc((c.name||"•").trim().charAt(0).toUpperCase())+'</span>';
   return '<span style="display:flex;align-items:center;gap:10px;min-width:0">'+mark+'<span style="min-width:0"><b>'+esc(c.name)+'</b>'
-    +(c.websiteVisible?'<span title="Public website" style="display:inline-block;margin-inline-start:6px;font-size:11px;opacity:.65">↗</span>':'')+'</span></span>';
+    +(c.websiteVisible?'<span title="'+esc(t("f.websiteVisible"))+'" style="display:inline-block;margin-inline-start:6px;font-size:11px;opacity:.65">↗</span>':'')+'</span></span>';
+}
+function clientWebsiteControlsHTML(c,w){
+  if(!w) return c.websiteVisible?'<span class="pill on">'+(LANG==="ar"?"ظاهر بالموقع":"On website")+'</span>':'<span class="pill">'+(LANG==="ar"?"مخفي":"Hidden")+'</span>';
+  var on=!!c.websiteVisible;
+  return '<div style="display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap">'
+    +'<button type="button" class="btn sm ghost" data-act="clientlogo" data-id="'+c.id+'" title="'+esc(t("f.logoPick"))+'" style="padding-inline:9px">'+(c.logo?(LANG==="ar"?"تغيير اللوغو":"Change logo"):(LANG==="ar"?"رفع لوغو":"Upload logo"))+'</button>'
+    +'<button type="button" data-act="togglewebclient" data-id="'+c.id+'" aria-pressed="'+on+'" title="'+esc(t("f.websiteVisible"))+'" style="border:0;background:transparent;padding:3px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;color:var(--muted)">'
+      +'<span style="width:38px;height:22px;border-radius:999px;padding:3px;display:flex;align-items:center;background:'+(on?'var(--accent,#5f806e)':'var(--panel2,#dfe3df)')+';justify-content:'+(on?'flex-end':'flex-start')+';transition:.2s">'
+        +'<i style="width:16px;height:16px;border-radius:50%;background:#fff;display:block;box-shadow:0 1px 4px rgba(0,0,0,.18)"></i>'
+      +'</span>'
+      +'<span style="font-size:11.5px;font-weight:700">'+(on?(LANG==="ar"?"ظاهر بالموقع":"Visible"):(LANG==="ar"?"مخفي":"Hidden"))+'</span>'
+    +'</button></div>';
 }
 function vClients(){
   if(SEL) return vClient();
@@ -1911,7 +1923,7 @@ function vClients(){
      +'<td class="r"><span class="num mut">'+money(st.billed)+'</span></td>'
      +'<td class="r"><span class="num mut">'+money(st.paid)+'</span></td>'
      +'<td class="r">'+bal+'</td>'
-     +'<td class="r"><button class="btn sm ghost" data-act="opencli" data-id="'+c.id+'">'+t("cd.open")+'</button></td></tr>';
+     +'<td class="r">'+clientWebsiteControlsHTML(c,w)+'<div style="margin-top:7px"><button class="btn sm ghost" data-act="opencli" data-id="'+c.id+'">'+t("cd.open")+'</button></div></td></tr>';
   });
   h+='<tr class="sum"><td colspan="5" class="r mut">'+t("cli.total")+'</td>'
    +'<td class="r"><span class="num '+(tot>0?"neg":"pos")+'" style="font-weight:600">'+(tot>0?"":"−")+money(Math.abs(tot))+'</span></td><td></td></tr>';
@@ -4028,6 +4040,32 @@ document.addEventListener("click",function(ev){
   }
   else if(act==="editpay") payForm(f(S.payments));
   else if(act==="newclient") clientForm(null);
+  else if(act==="togglewebclient"){
+    var wc=f(S.customers);
+    if(wc&&can("clients")){
+      wc.websiteVisible=!wc.websiteVisible;
+      save();
+      render();
+    }
+  }
+  else if(act==="clientlogo"){
+    var lc=f(S.customers);
+    if(lc&&can("clients")){
+      var pick=document.createElement("input");
+      pick.type="file";
+      pick.accept="image/png,image/jpeg,image/webp";
+      pick.onchange=function(){
+        var file=pick.files&&pick.files[0];
+        if(!file)return;
+        prepareImageFile(file,function(data){
+          lc.logo=data;
+          save();
+          render();
+        });
+      };
+      pick.click();
+    }
+  }
   else if(act==="editclient") clientForm(f(S.customers));
   else if(act==="invoice") printInvoice(f(S.customers));
   else if(act==="newinvoice") invoiceForm(null,id||null);
