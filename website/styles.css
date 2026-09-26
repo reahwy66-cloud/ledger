@@ -179,25 +179,6 @@ body[dir="rtl"] .hero h1{letter-spacing:-.035em}
 }
 .hero-index i{display:block;width:42px;height:1px;background:rgba(255,255,255,.35)}
 
-/* moving capability line */
-.service-ribbon{
-  overflow:hidden;
-  background:#111714;
-  color:#EDE9E1;
-  border-block:1px solid rgba(255,255,255,.08);
-}
-.ribbon-track{
-  width:max-content;
-  display:flex;align-items:center;gap:20px;
-  padding:14px 0;
-  animation:ribbon 35s linear infinite;
-  font-size:11px;font-weight:800;letter-spacing:.14em;
-}
-.ribbon-track i{font-style:normal;color:#89988F}
-@keyframes ribbon{to{transform:translateX(-50%)}}
-body[dir="rtl"] .ribbon-track{animation-name:ribbonRtl}
-@keyframes ribbonRtl{to{transform:translateX(50%)}}
-
 /* intro */
 .intro{padding-top:96px;padding-bottom:90px}
 .intro-grid{
@@ -662,8 +643,6 @@ body[dir="rtl"] .contact-card h2{letter-spacing:-.01em}
   .hero-actions{display:grid;grid-template-columns:1fr 1fr;width:100%;margin-top:22px}
   .hero-actions .btn{padding:0 10px;font-size:13px}
   .hero-index{top:22px;inset-inline-end:20px}
-  .service-ribbon{margin-top:0}
-  .ribbon-track{padding:12px 0;font-size:10px}
   .section{padding-block:72px}
   .about{padding-top:10px;padding-bottom:72px}
   .about-card{padding:30px 24px;grid-template-columns:1fr;gap:36px;border-radius:28px}
