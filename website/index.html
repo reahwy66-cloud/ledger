@@ -11,22 +11,19 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <div class="ambient ambient-a"></div>
-  <div class="ambient ambient-b"></div>
+  <div class="page-noise" aria-hidden="true"></div>
 
   <header class="site-header">
     <a class="brand" href="#top" aria-label="Rewaa Studio">
       <span class="brand-mark"><img src="../riwa-logo.png" alt=""></span>
       <span class="brand-copy"><strong>رِواء</strong><small>STUDIO</small></span>
     </a>
-
     <nav class="desktop-nav" aria-label="Main navigation">
       <a href="#services" data-i18n="nav.services">الخدمات</a>
       <a href="#packages" data-i18n="nav.packages">الباقات</a>
       <a href="#clients" data-i18n="nav.clients">عملاؤنا</a>
       <a href="#contact" data-i18n="nav.contact">تواصل</a>
     </nav>
-
     <div class="header-actions">
       <div class="lang-switch" aria-label="Language">
         <button type="button" data-lang="ar">AR</button>
@@ -46,135 +43,113 @@
 
   <main id="top">
     <section class="hero shell">
-      <div class="hero-banner reveal">
-        <img class="hero-banner-image" src="data:image/webp;base64,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" alt="">
-        <div class="hero-banner-overlay"></div>
-        <div class="hero-banner-copy">
+      <div class="hero-card reveal">
+        <img class="hero-image" src="./hero-cinematic.webp" alt="Rewaa Studio creative production">
+        <div class="hero-shade"></div>
+        <div class="hero-content">
           <div class="eyebrow"><span></span><b data-i18n="hero.eyebrow">رِواء ستوديو</b></div>
           <h1 data-i18n="hero.title">كل ما يحتاجه مشروعك. بفريق واحد.</h1>
           <p data-i18n="hero.body">من صناعة المحتوى والتصوير، إلى الإعلانات والهوية والمواقع والتطبيقات.</p>
           <div class="hero-actions">
-            <a class="btn primary" href="#contact" data-i18n="hero.cta">ابدأ مشروعك</a>
-            <a class="btn ghost" href="#services" data-i18n="hero.secondary">اكتشف خدماتنا</a>
+            <a class="btn btn-light" href="#contact" data-i18n="hero.cta">ابدأ مشروعك</a>
+            <a class="btn btn-outline" href="#services" data-i18n="hero.secondary">اكتشف خدماتنا</a>
+          </div>
+        </div>
+        <div class="hero-index" aria-hidden="true"><span>01</span><i></i><span>REWAA / 2026</span></div>
+      </div>
+    </section>
+
+    <section class="service-ribbon" aria-label="Capabilities">
+      <div class="ribbon-track">
+        <span>REELS</span><i>•</i><span>SOCIAL MEDIA</span><i>•</i><span>BRANDING</span><i>•</i><span>LISTING IMAGES</span><i>•</i><span>PAID CAMPAIGNS</span><i>•</i><span>3D</span><i>•</i><span>AI VIDEO</span><i>•</i><span>WEB</span><i>•</i><span>APPS</span><i>•</i>
+        <span>REELS</span><i>•</i><span>SOCIAL MEDIA</span><i>•</i><span>BRANDING</span><i>•</i><span>LISTING IMAGES</span><i>•</i><span>PAID CAMPAIGNS</span><i>•</i><span>3D</span><i>•</i><span>AI VIDEO</span><i>•</i><span>WEB</span><i>•</i><span>APPS</span><i>•</i>
+      </div>
+    </section>
+
+    <section class="intro shell section">
+      <div class="intro-grid">
+        <div class="intro-title reveal">
+          <span class="kicker" data-i18n="services.kicker">ما الذي نفعله</span>
+          <h2 data-i18n="services.title">كل ما تحتاجه علامتك، تحت سقف واحد.</h2>
+        </div>
+        <div class="intro-copy reveal">
+          <p data-i18n="services.body">نركّب الخدمة حسب هدفك: حضور مستمر، إطلاق منتج، حملة، أو بناء تجربة رقمية كاملة.</p>
+          <div class="intro-tags">
+            <span data-i18n="hero.note1">محتوى سريع ومرن</span>
+            <span data-i18n="hero.note2">تنفيذ بصري موحّد</span>
+            <span data-i18n="hero.note3">حلول من السوشال إلى الويب</span>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="marquee" aria-hidden="true">
-      <div>REELS • SOCIAL MEDIA • BRANDING • LISTING IMAGES • 3D • AI VIDEO • WEB • APPS • E-COMMERCE • META •</div>
-    </section>
-
-    <section class="section shell" id="services">
-      <div class="section-head reveal">
-        <div><span class="kicker" data-i18n="services.kicker">ما الذي نفعله</span><h2 data-i18n="services.title">كل ما تحتاجه علامتك، تحت سقف واحد.</h2></div>
-        <p data-i18n="services.body">نركّب الخدمة حسب هدفك: حضور مستمر، إطلاق منتج، حملة، أو بناء تجربة رقمية كاملة.</p>
-      </div>
-
-      <div class="service-grid">
-        <article class="service-card reveal"><span>01</span><h3 data-i18n="services.s1t">إدارة السوشال ميديا</h3><p data-i18n="services.s1b">خطة محتوى، نشر، إدارة الصفحة والرد على الجمهور.</p></article>
-        <article class="service-card reveal"><span>02</span><h3 data-i18n="services.s2t">تصوير سينمائي</h3><p data-i18n="services.s2b">تصوير منتجات، أشخاص ومساحات بصياغة بصرية تناسب المنصة.</p></article>
-        <article class="service-card reveal"><span>03</span><h3 data-i18n="services.s3t">مونتاج Reels</h3><p data-i18n="services.s3b">إيقاع، صوت، ألوان وحركة مصممة للمحتوى القصير.</p></article>
-        <article class="service-card reveal"><span>04</span><h3 data-i18n="services.s4t">تصميم وصناعة محتوى</h3><p data-i18n="services.s4b">بوستات، أفكار، نصوص وحملات متناسقة مع هوية العلامة.</p></article>
-        <article class="service-card reveal"><span>05</span><h3 data-i18n="services.s5t">إعلانات ممولة</h3><p data-i18n="services.s5b">إعداد الحملات، المتابعة والتحسين على منصات Meta.</p></article>
-        <article class="service-card reveal"><span>06</span><h3 data-i18n="services.s6t">Branding</h3><p data-i18n="services.s6b">هوية بصرية ونظام تصميم قابل للتطبيق على كل نقاط التواصل.</p></article>
-        <article class="service-card reveal"><span>07</span><h3 data-i18n="services.s7t">Listing Images</h3><p data-i18n="services.s7b">صور متاجر احترافية توضّح المنتج ومزاياه بشكل مقنع.</p></article>
-        <article class="service-card reveal"><span>08</span><h3 data-i18n="services.s8t">3D و AI Video</h3><p data-i18n="services.s8b">مشاهد ثلاثية الأبعاد وفيديوهات مدعومة بالذكاء الاصطناعي.</p></article>
-        <article class="service-card reveal"><span>09</span><h3 data-i18n="services.s9t">مواقع وتطبيقات ومتاجر</h3><p data-i18n="services.s9b">تجارب رقمية سريعة ومتجاوبة من الفكرة حتى الإطلاق.</p></article>
-        <article class="service-card reveal"><span>10</span><h3 data-i18n="services.s10t">حل مشاكل Meta</h3><p data-i18n="services.s10b">مساعدة تقنية في إعداد الحسابات، الربط ومشاكل الإعلانات.</p></article>
+    <section class="services section" id="services">
+      <div class="shell">
+        <div class="section-top reveal"><span class="section-number">02</span><span class="hairline"></span><span class="kicker">REWAA / SERVICES</span></div>
+        <div class="service-grid">
+          <article class="service-card reveal"><span class="service-no">01</span><div><h3 data-i18n="services.s1t">إدارة السوشال ميديا</h3><p data-i18n="services.s1b">خطة محتوى، نشر، إدارة الصفحة والرد على الجمهور.</p></div></article>
+          <article class="service-card reveal"><span class="service-no">02</span><div><h3 data-i18n="services.s2t">تصوير سينمائي</h3><p data-i18n="services.s2b">تصوير منتجات، أشخاص ومساحات بصياغة بصرية تناسب المنصة.</p></div></article>
+          <article class="service-card reveal"><span class="service-no">03</span><div><h3 data-i18n="services.s3t">مونتاج Reels</h3><p data-i18n="services.s3b">إيقاع، صوت، ألوان وحركة مصممة للمحتوى القصير.</p></div></article>
+          <article class="service-card reveal"><span class="service-no">04</span><div><h3 data-i18n="services.s4t">تصميم وصناعة محتوى</h3><p data-i18n="services.s4b">بوستات، أفكار، نصوص وحملات متناسقة مع هوية العلامة.</p></div></article>
+          <article class="service-card reveal"><span class="service-no">05</span><div><h3 data-i18n="services.s5t">إعلانات ممولة</h3><p data-i18n="services.s5b">إعداد الحملات، المتابعة والتحسين على منصات Meta.</p></div></article>
+          <article class="service-card reveal"><span class="service-no">06</span><div><h3 data-i18n="services.s6t">Branding</h3><p data-i18n="services.s6b">هوية بصرية ونظام تصميم قابل للتطبيق على كل نقاط التواصل.</p></div></article>
+          <article class="service-card reveal"><span class="service-no">07</span><div><h3 data-i18n="services.s7t">Listing Images</h3><p data-i18n="services.s7b">صور متاجر احترافية توضّح المنتج ومزاياه بشكل مقنع.</p></div></article>
+          <article class="service-card reveal"><span class="service-no">08</span><div><h3 data-i18n="services.s8t">3D و AI Video</h3><p data-i18n="services.s8b">مشاهد ثلاثية الأبعاد وفيديوهات مدعومة بالذكاء الاصطناعي.</p></div></article>
+          <article class="service-card wide reveal"><span class="service-no">09</span><div><h3 data-i18n="services.s9t">مواقع وتطبيقات ومتاجر</h3><p data-i18n="services.s9b">تجارب رقمية سريعة ومتجاوبة من الفكرة حتى الإطلاق.</p></div></article>
+          <article class="service-card wide reveal"><span class="service-no">10</span><div><h3 data-i18n="services.s10t">حل مشاكل Meta</h3><p data-i18n="services.s10b">مساعدة تقنية في إعداد الحسابات، الربط ومشاكل الإعلانات.</p></div></article>
+        </div>
       </div>
     </section>
 
-    <section class="section packages-section" id="packages">
+    <section class="statement section">
+      <div class="shell">
+        <div class="statement-card reveal">
+          <div class="statement-mark"><img src="../riwa-logo.png" alt=""></div>
+          <div class="statement-copy"><span class="kicker" data-i18n="process.kicker">طريقة العمل</span><h2 data-i18n="process.title">واضحة من أول خطوة.</h2></div>
+          <div class="process-inline">
+            <article><b>01</b><h3 data-i18n="process.s1t">نفهم الهدف</h3><p data-i18n="process.s1b">نحدد الجمهور، العرض والمنصة قبل أن نبدأ الإنتاج.</p></article>
+            <article><b>02</b><h3 data-i18n="process.s2t">نبني الخطة</h3><p data-i18n="process.s2b">نحوّل الهدف إلى محتوى وتصميم وتصوير بجدول واضح.</p></article>
+            <article><b>03</b><h3 data-i18n="process.s3t">ننفّذ ونحسّن</h3><p data-i18n="process.s3b">ننتج، ننشر ونطوّر التنفيذ حسب النتائج وردود الفعل.</p></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="packages section" id="packages">
       <div class="shell">
         <div class="section-head reveal">
           <div><span class="kicker" data-i18n="packages.kicker">باقات الإدارة الشهرية</span><h2 data-i18n="packages.title">اختر حجم الحضور الذي يناسبك.</h2></div>
           <p data-i18n="packages.body">كل الباقات تشمل إدارة الصفحة والرد. ميزانية التمويل على Meta غير مشمولة بالسعر.</p>
         </div>
-
         <div class="package-grid">
-          <article class="package-card reveal">
-            <div class="package-top"><span>START</span><b>$150</b></div>
-            <h3 data-i18n="packages.p1t">بداية ثابتة</h3>
-            <ul>
-              <li data-i18n="packages.p1a">4 Reels شهريًا</li>
-              <li data-i18n="packages.p1b">4 بوستات شهريًا</li>
-              <li data-i18n="packages.manage">إدارة الصفحة والرد</li>
-              <li data-i18n="packages.meta">تمويل Meta غير مشمول</li>
-            </ul>
-          </article>
-
-          <article class="package-card featured reveal">
-            <div class="featured-badge" data-i18n="packages.popular">الأكثر توازنًا</div>
-            <div class="package-top"><span>GROW</span><b>$200</b></div>
-            <h3 data-i18n="packages.p2t">نمو مستمر</h3>
-            <ul>
-              <li data-i18n="packages.p2a">6 Reels شهريًا</li>
-              <li data-i18n="packages.p2b">6 بوستات شهريًا</li>
-              <li data-i18n="packages.manage">إدارة الصفحة والرد</li>
-              <li data-i18n="packages.meta">تمويل Meta غير مشمول</li>
-            </ul>
-          </article>
-
-          <article class="package-card reveal">
-            <div class="package-top"><span>SCALE</span><b>$250</b></div>
-            <h3 data-i18n="packages.p3t">حضور مكثّف</h3>
-            <ul>
-              <li data-i18n="packages.p3a">8 Reels شهريًا</li>
-              <li data-i18n="packages.p3b">8 بوستات شهريًا</li>
-              <li data-i18n="packages.manage">إدارة الصفحة والرد</li>
-              <li data-i18n="packages.meta">تمويل Meta غير مشمول</li>
-            </ul>
-          </article>
+          <article class="package-card reveal"><div class="package-top"><span>START</span><b>$150</b></div><h3 data-i18n="packages.p1t">بداية ثابتة</h3><ul><li data-i18n="packages.p1a">4 Reels شهريًا</li><li data-i18n="packages.p1b">4 بوستات شهريًا</li><li data-i18n="packages.manage">إدارة الصفحة والرد</li><li data-i18n="packages.meta">تمويل Meta غير مشمول</li></ul></article>
+          <article class="package-card featured reveal"><div class="package-label" data-i18n="packages.popular">الأكثر توازنًا</div><div class="package-top"><span>GROW</span><b>$200</b></div><h3 data-i18n="packages.p2t">نمو مستمر</h3><ul><li data-i18n="packages.p2a">6 Reels شهريًا</li><li data-i18n="packages.p2b">6 بوستات شهريًا</li><li data-i18n="packages.manage">إدارة الصفحة والرد</li><li data-i18n="packages.meta">تمويل Meta غير مشمول</li></ul></article>
+          <article class="package-card reveal"><div class="package-top"><span>SCALE</span><b>$250</b></div><h3 data-i18n="packages.p3t">حضور مكثّف</h3><ul><li data-i18n="packages.p3a">8 Reels شهريًا</li><li data-i18n="packages.p3b">8 بوستات شهريًا</li><li data-i18n="packages.manage">إدارة الصفحة والرد</li><li data-i18n="packages.meta">تمويل Meta غير مشمول</li></ul></article>
         </div>
-
-        <div class="photo-offer reveal">
-          <div><span class="kicker" data-i18n="photo.kicker">جلسة تصوير</span><h3 data-i18n="photo.title">30 صورة بجلسة مركّزة</h3><p data-i18n="photo.body">15 صورة معدّلة بعناية ضمن الجلسة، مع تسليم مجموعة من 30 صورة.</p></div>
-          <strong>$50</strong>
-        </div>
+        <div class="photo-offer reveal"><div><span class="kicker" data-i18n="photo.kicker">جلسة تصوير</span><h3 data-i18n="photo.title">30 صورة بجلسة مركّزة</h3><p data-i18n="photo.body">15 صورة معدّلة بعناية ضمن الجلسة، مع تسليم مجموعة من 30 صورة.</p></div><strong>$50</strong></div>
       </div>
     </section>
 
-    <section class="section shell" id="clients">
-      <div class="section-head reveal">
-        <div><span class="kicker" data-i18n="clients.kicker">شركاء النجاح</span><h2 data-i18n="clients.title">علامات نعمل معها.</h2></div>
-        <p data-i18n="clients.body">هذه القائمة مرتبطة مباشرة بالداشبورد، ولا يظهر هنا إلا العميل الذي تفعّل له خيار الظهور العام.</p>
-      </div>
-      <div class="client-grid" id="clientGrid">
-        <div class="client-loading" data-i18n="clients.loading">جارٍ تحميل العملاء…</div>
-      </div>
-    </section>
-
-    <section class="section process-section">
+    <section class="clients section" id="clients">
       <div class="shell">
         <div class="section-head reveal">
-          <div><span class="kicker" data-i18n="process.kicker">طريقة العمل</span><h2 data-i18n="process.title">واضحة من أول خطوة.</h2></div>
+          <div><span class="kicker" data-i18n="clients.kicker">شركاء النجاح</span><h2 data-i18n="clients.title">علامات نعمل معها.</h2></div>
+          <p data-i18n="clients.body">هذه القائمة مرتبطة مباشرة بالداشبورد، ولا يظهر هنا إلا العميل الذي تفعّل له خيار الظهور العام.</p>
         </div>
-        <div class="process-grid">
-          <article class="reveal"><b>01</b><h3 data-i18n="process.s1t">نفهم الهدف</h3><p data-i18n="process.s1b">نحدد الجمهور، العرض والمنصة قبل أن نبدأ الإنتاج.</p></article>
-          <article class="reveal"><b>02</b><h3 data-i18n="process.s2t">نبني الخطة</h3><p data-i18n="process.s2b">نحوّل الهدف إلى محتوى وتصميم وتصوير بجدول واضح.</p></article>
-          <article class="reveal"><b>03</b><h3 data-i18n="process.s3t">ننفّذ ونحسّن</h3><p data-i18n="process.s3b">ننتج، ننشر ونطوّر التنفيذ حسب النتائج وردود الفعل.</p></article>
-        </div>
+        <div class="client-grid" id="clientGrid"><div class="client-loading" data-i18n="clients.loading">جارٍ تحميل العملاء…</div></div>
       </div>
     </section>
 
-    <section class="section shell" id="contact">
+    <section class="contact section shell" id="contact">
       <div class="contact-card reveal">
-        <div>
-          <span class="kicker" data-i18n="contact.kicker">خلّينا نبدأ</span>
-          <h2 data-i18n="contact.title">عندك مشروع؟ أعطينا الفكرة والباقي علينا.</h2>
-          <p data-i18n="contact.body">اختر الخدمة أو الباقة المناسبة، وسنحوّلها لخطة تنفيذ واضحة.</p>
-        </div>
-        <a class="btn light" href="#packages" data-i18n="contact.cta">اختيار الباقة</a>
+        <div><span class="kicker" data-i18n="contact.kicker">خلّينا نبدأ</span><h2 data-i18n="contact.title">عندك مشروع؟ أعطينا الفكرة والباقي علينا.</h2><p data-i18n="contact.body">اختر الخدمة أو الباقة المناسبة، وسنحوّلها لخطة تنفيذ واضحة.</p></div>
+        <a class="btn btn-light" href="#packages" data-i18n="contact.cta">اختيار الباقة</a>
       </div>
     </section>
   </main>
 
   <footer class="site-footer shell">
-    <div class="brand footer-brand">
-      <span class="brand-mark"><img src="../riwa-logo.png" alt=""></span>
-      <span class="brand-copy"><strong>رِواء</strong><small>STUDIO</small></span>
-    </div>
+    <a class="brand footer-brand" href="#top"><span class="brand-mark"><img src="../riwa-logo.png" alt=""></span><span class="brand-copy"><strong>رِواء</strong><small>STUDIO</small></span></a>
     <p data-i18n="footer.copy">رِواء ستوديو — محتوى، تصميم وحلول رقمية.</p>
     <span>© <span id="year"></span> REWAA</span>
   </footer>
