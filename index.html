@@ -2523,7 +2523,7 @@ function vWork(){
      +'<td class="r"><span class="num neg">'+(pay?"−"+money(pay):"—")+'</span></td>'
      +'<td class="r">'+(bill?'<span class="num pos">'+money(bill)+'</span>':(c&&c.billing==="package"?'<span class="mut">'+t("wk.inpack")+'</span>':"—"))+'</td>'
      +'<td class="r">'+(w?'<div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">'
-       +'<button class="btn sm ghost" data-act="attachworkfile" data-id="'+x.id+'">'+(x.file&&x.file.driveFileId?(LANG==="ar"?"استبدال الملف":"Replace file"):(LANG==="ar"?"رفع ملف":"Upload file"))+'</button>'
+       +'<button class="btn sm ghost" data-act="attachworkfile" data-id="'+x.id+'">'+(adminWorkFileCount(x)?(LANG==="ar"?"إضافة ملف "+adminWorkFileCount(x)+"/"+(+x.qty||1):"Add file "+adminWorkFileCount(x)+"/"+(+x.qty||1)):(LANG==="ar"?"رفع ملف":"Upload file"))+'</button>'
        +'<button class="btn sm ghost" data-act="editwork" data-id="'+x.id+'">'+t("edit")+'</button></div>':'')+'</td></tr>';
   });
   return h+'</tbody></table></div></div></div>';
@@ -3352,6 +3352,13 @@ async function adminWorkFileRequest(payload){
 function adminUploadMB(bytes){
   return (Math.max(0,Number(bytes||0))/1048576).toFixed(2)+" MB";
 }
+function adminWorkFileCount(w){
+  var seen={},n=0;
+  function add(f){var id=String(f&&f.driveFileId||"");if(id&&!seen[id]){seen[id]=1;n++;}}
+  add(w&&w.file);
+  if(w&&Array.isArray(w.files))w.files.forEach(add);
+  return n;
+}
 function adminDriveChunk(url,blob,start,end,total,mime,onProgress){
   return new Promise(function(resolve,reject){
     var xhr=new XMLHttpRequest();
@@ -3379,15 +3386,9 @@ async function attachFileToExistingWork(w){
   input.accept="video/*,image/*,application/pdf,.mov,.mp4,.m4v,.avi,.webm";
   input.onchange=async function(){
     var file=input.files&&input.files[0];if(!file)return;
-    var replace=!!(w.file&&w.file.driveFileId);
-    var deletePrevious=false;
-    if(replace){
-      deletePrevious=confirm(LANG==="ar"
-        ?"هذا التسليم مرتبط بملف سابق. بعد نجاح رفع الملف الجديد، هل تريد حذف الملف القديم من Google Drive؟"
-        :"This delivery already has a file. Delete the old Drive file after the new upload succeeds?");
-    }
+    var beforeCount=adminWorkFileCount(w);
     el("modalHost").innerHTML='<div class="scrim"><div class="modal" style="max-width:620px">'
-      +'<h3>'+(LANG==="ar"?(replace?"استبدال ملف التسليم":"رفع ملف للتسليم"):(replace?"Replace delivery file":"Upload delivery file"))+'</h3>'
+      +'<h3>'+(LANG==="ar"?(beforeCount?"إضافة ملف آخر للتسليم":"رفع ملف للتسليم"):(beforeCount?"Add another delivery file":"Upload delivery file"))+'</h3>'
       +'<p class="sub">'+esc(file.name)+'</p>'
       +'<div style="display:grid;gap:12px;margin-top:20px">'
       +'<div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><strong id="adminUploadBytes" class="num">0.00 MB / '+adminUploadMB(file.size)+'</strong><span id="adminUploadStatus" class="mut">'+(LANG==="ar"?"جارٍ تجهيز الرفع…":"Preparing upload…")+'</span></div>'
@@ -3425,8 +3426,7 @@ async function attachFileToExistingWork(w){
       if(!lastBody||!lastBody.id)throw new Error("drive_upload_missing_file");
       if(el("adminUploadStatus"))el("adminUploadStatus").textContent=LANG==="ar"?"جارٍ ربط الملف بالتسليم…":"Linking file to delivery…";
       await adminWorkFileRequest({
-        action:"attach",workId:w.id,fileId:lastBody.id,archivePath:session.archivePath||"",
-        deletePrevious:deletePrevious
+        action:"attach",workId:w.id,fileId:lastBody.id,archivePath:session.archivePath||""
       });
       await pull();
       el("modalHost").innerHTML="";
@@ -3819,8 +3819,8 @@ function workForm(w){
     if(v===null){
       if(w&&w.file&&w.file.driveFileId){
         var removeDrive=confirm(LANG==="ar"
-          ?"هذا التسليم مرتبط بملف على Google Drive. هل تريد حذف الملف من Drive أيضاً؟\n\nموافق = حذف التسليم والملف\nإلغاء = حذف التسليم فقط"
-          :"This delivery has a Google Drive file. Delete the Drive file too?\n\nOK = delete both\nCancel = delete delivery only");
+          ?"هذا التسليم مرتبط بملف أو أكثر على Google Drive. هل تريد حذف الملفات من Drive أيضاً؟\n\nموافق = حذف التسليم وكل ملفاته\nإلغاء = حذف التسليم فقط"
+          :"This delivery has one or more Google Drive files. Delete those files too?\n\nOK = delete delivery and all files\nCancel = delete delivery only");
         if(removeDrive){
           await adminWorkFileRequest({action:"delete-file",workId:w.id});
         }
