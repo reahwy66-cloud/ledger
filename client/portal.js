@@ -643,12 +643,26 @@ function clientDeliverySection(){
         +(rate?'<small class="unit-price">'+money(rate)+' لكل '+esc(label)+'</small>':'')+'</div><div class="row-side">'+(rate?'<b>'+money((+w.qty||0)*rate)+'</b>':'')+'<small>'+esc(w.date||"")+'</small></div></div>';
     }).join(""):'<div class="empty">ما في تسليمات معتمدة بعد.</div>')+'</div></section>';
 }
+function workFilesList(w){
+  var out=[],seen={};
+  function add(f){
+    var id=String(f&&f.driveFileId||"");
+    if(!id||seen[id])return;
+    seen[id]=1;out.push(f);
+  }
+  add(w&&w.file);
+  if(w&&Array.isArray(w.files))w.files.forEach(add);
+  return out;
+}
 function clientArchiveSection(){
-  var files=(DATA.work||[]).filter(function(w){return w.file&&w.file.driveFileId;});
-  return '<section class="card full archive-card"><div class="card-head-actions"><div><h2>أرشيف الملفات</h2><p class="sub">كل الملفات المعتمدة متاحة للمشاهدة والتحميل بأي وقت.</p></div><span class="pill">'+files.length+'</span></div>'
-    +(files.length?'<div class="archive-grid">'+files.map(function(w){
-      var f=w.file||{},mime=String(f.mimeType||""),preview="";
-      var mediaUrl=PORTAL_API+"/portal/client/file?token="+encodeURIComponent(token())+"&workId="+encodeURIComponent(w.id||"");
+  var entries=[];
+  (DATA.work||[]).forEach(function(w){
+    workFilesList(w).forEach(function(f,index){entries.push({w:w,f:f,index:index});});
+  });
+  return '<section class="card full archive-card"><div class="card-head-actions"><div><h2>أرشيف الملفات</h2><p class="sub">كل الملفات المعتمدة متاحة للمشاهدة والتحميل بأي وقت.</p></div><span class="pill">'+entries.length+'</span></div>'
+    +(entries.length?'<div class="archive-grid">'+entries.map(function(entry){
+      var w=entry.w,f=entry.f||{},mime=String(f.mimeType||""),preview="";
+      var mediaUrl=PORTAL_API+"/portal/client/file?token="+encodeURIComponent(token())+"&workId="+encodeURIComponent(w.id||"")+"&fileIndex="+entry.index;
       var downloadUrl=mediaUrl+"&download=1";
       if(mime.indexOf("video/")===0){
         preview='<button type="button" class="archive-preview video video-poster" data-act="archivevideo" data-url="'+esc(mediaUrl)+'" data-name="'+esc(f.name||"فيديو")+'">'
