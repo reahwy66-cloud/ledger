@@ -286,9 +286,7 @@ async function uploadDirectToDrive(file,d,onProgress){
       if(result.status===200||result.status===201) break;
     }catch(err){
       if(String(err&&err.message||err)==="upload_cancelled") throw err;
-      attempts++;
-      if(attempts>=3) throw err;
-      await new Promise(function(resolve){setTimeout(resolve,700*attempts)});
+      throw err;
     }
   }
 
