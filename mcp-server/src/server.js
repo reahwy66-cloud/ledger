@@ -1624,16 +1624,24 @@ app.post('/portal/submissions/review', async (req, res) => {
     } else if (action === 'approve') {
       const workId = crypto.randomUUID();
       let workData = { ...(row.data || {}), editorId: row.employee_id };
-      const driveFileId = workData.file?.driveFileId;
-      if (driveFileId) {
-        const published = await drivePublishFile(driveFileId);
+      const sourceFiles = workDriveFiles(workData);
+      if (sourceFiles.length) {
+        const approvedAt = new Date().toISOString();
+        const publishedFiles = [];
+        for (const sourceFile of sourceFiles) {
+          const driveFileId = String(sourceFile?.driveFileId || '');
+          if (!driveFileId) continue;
+          const published = await drivePublishFile(driveFileId);
+          publishedFiles.push({
+            ...(sourceFile || {}),
+            ...(published || {}),
+            approvedAt
+          });
+        }
         workData = {
           ...workData,
-          file: {
-            ...(workData.file || {}),
-            ...(published || {}),
-            approvedAt: new Date().toISOString()
-          }
+          file: publishedFiles[0] || workData.file,
+          files: publishedFiles
         };
       }
       const { error: workError } = await db.from('work').insert({
