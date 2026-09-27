@@ -159,6 +159,12 @@ async function portalEmployeeFromToken(token) {
   return String(data);
 }
 
+async function portalCustomerFromToken(token) {
+  const { data, error } = await db.rpc('portal_entity', { p_kind: 'client', p_token: token });
+  if (error || !data) return null;
+  return String(data);
+}
+
 async function googleDriveAccessToken() {
   const clientId = process.env.GOOGLE_DRIVE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
@@ -1279,6 +1285,72 @@ app.post('/portal/drive/upload-session', async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ error: String(error?.message || 'Could not prepare Drive upload') });
+  }
+});
+
+app.get('/portal/client/file', async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  const portalToken = String(req.query?.token || '');
+  const workId = String(req.query?.workId || '');
+  const download = String(req.query?.download || '') === '1';
+
+  if (!portalToken || !workId) return res.status(400).send('Invalid media request');
+
+  try {
+    const customerId = await portalCustomerFromToken(portalToken);
+    if (!customerId) return res.status(401).send('Invalid portal session');
+
+    const { data: work, error: workError } = await db.from('work')
+      .select('id,data')
+      .eq('id', workId)
+      .maybeSingle();
+    if (workError) throw workError;
+    if (!work || String(work.data?.customerId || '') !== customerId) {
+      return res.status(404).send('File not found');
+    }
+
+    const file = work.data?.file || {};
+    const fileId = String(file.driveFileId || '');
+    if (!fileId) return res.status(404).send('File not found');
+
+    const accessToken = await googleDriveAccessToken();
+    const mediaUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`;
+    const headers = { authorization: `Bearer ${accessToken}` };
+    if (req.headers.range) headers.range = String(req.headers.range);
+
+    const upstream = await fetch(mediaUrl, { headers });
+    if (!upstream.ok && upstream.status !== 206) {
+      const body = await upstream.text().catch(() => '');
+      return res.status(upstream.status || 502).send(body || 'Could not read Drive file');
+    }
+
+    res.status(upstream.status);
+    res.set('Content-Type', upstream.headers.get('content-type') || file.mimeType || 'application/octet-stream');
+    res.set('Accept-Ranges', upstream.headers.get('accept-ranges') || 'bytes');
+    res.set('Cache-Control', 'private, no-store, max-age=0');
+    const contentLength = upstream.headers.get('content-length');
+    const contentRange = upstream.headers.get('content-range');
+    if (contentLength) res.set('Content-Length', contentLength);
+    if (contentRange) res.set('Content-Range', contentRange);
+
+    const safeName = driveSafeName(file.name || 'file');
+    res.set('Content-Disposition', `${download ? 'attachment' : 'inline'}; filename*=UTF-8''${encodeURIComponent(safeName)}`);
+
+    if (!upstream.body) return res.end();
+    const reader = upstream.body.getReader();
+    while (true) {
+      const part = await reader.read();
+      if (part.done) break;
+      if (!res.write(Buffer.from(part.value))) {
+        await new Promise(resolve => res.once('drain', resolve));
+      }
+    }
+    return res.end();
+  } catch (error) {
+    if (!res.headersSent) {
+      return res.status(500).send(String(error?.message || 'Could not stream Drive file'));
+    }
+    try { res.end(); } catch (_e) {}
   }
 });
 
