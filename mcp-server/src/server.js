@@ -263,6 +263,20 @@ async function drivePublishFile(fileId) {
   };
 }
 
+async function driveDeleteFile(fileId) {
+  if (!fileId) return false;
+  const accessToken = await googleDriveAccessToken();
+  const r = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?supportsAllDrives=true`, {
+    method: 'DELETE',
+    headers: { authorization: `Bearer ${accessToken}` }
+  });
+  if (!r.ok && r.status !== 404) {
+    const body = await r.text().catch(() => '');
+    throw new Error(body || `drive_delete_${r.status}`);
+  }
+  return true;
+}
+
 async function resolveDriveArchiveRoot(accessToken) {
   const configured = String(process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID || '').trim();
 
@@ -1285,6 +1299,154 @@ app.post('/portal/drive/upload-session', async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ error: String(error?.message || 'Could not prepare Drive upload') });
+  }
+});
+
+app.options('/admin/work-file', (_req, res) => {
+  res.set({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  }).status(204).end();
+});
+
+app.post('/admin/work-file', async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  const token = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    const { data: authData, error: authError } = await db.auth.getUser(token);
+    if (authError || !authData?.user) return res.status(401).json({ error: 'Invalid token' });
+    const { data: profile, error: profileError } = await db.from('profiles')
+      .select('role,active').eq('id', authData.user.id).maybeSingle();
+    if (profileError || !profile || profile.role !== 'owner' || !profile.active) {
+      return res.status(403).json({ error: 'Owner only' });
+    }
+
+    const action = String(req.body?.action || '');
+    const workId = String(req.body?.workId || '');
+    if (!workId || !['upload-session','attach','delete-file'].includes(action)) {
+      return res.status(400).json({ error: 'Invalid work file request' });
+    }
+
+    const { data: work, error: workError } = await db.from('work')
+      .select('id,data').eq('id', workId).maybeSingle();
+    if (workError) throw workError;
+    if (!work) return res.status(404).json({ error: 'Work not found' });
+
+    const workData = work.data || {};
+
+    if (action === 'delete-file') {
+      const fileId = String(workData.file?.driveFileId || '');
+      if (fileId) await driveDeleteFile(fileId);
+      const next = { ...workData };
+      delete next.file;
+      const { error: updateError } = await db.from('work').update({
+        data: next,
+        updated_at: new Date().toISOString(),
+        updated_by: authData.user.id
+      }).eq('id', workId);
+      if (updateError) throw updateError;
+      return res.json({ ok: true, deleted: Boolean(fileId) });
+    }
+
+    if (action === 'upload-session') {
+      const customerId = String(workData.customerId || '');
+      const fileName = driveSafeName(req.body?.fileName || '');
+      const mimeType = String(req.body?.mimeType || 'application/octet-stream');
+      const size = Number(req.body?.size || 0);
+      const browserOrigin = String(req.body?.origin || '').trim();
+      const allowedOrigin = /^https:\/\/(?:www\.)?riwaa\.me$/i.test(browserOrigin)
+        || /^https:\/\/reahwy66-cloud\.github\.io$/i.test(browserOrigin);
+
+      if (!customerId || !fileName || !Number.isFinite(size) || size <= 0) {
+        return res.status(400).json({ error: 'Invalid upload request' });
+      }
+      if (!allowedOrigin) return res.status(400).json({ error: 'Invalid upload origin' });
+
+      const { data: customer, error: customerError } = await db.from('customers')
+        .select('id,data').eq('id', customerId).maybeSingle();
+      if (customerError) throw customerError;
+      if (!customer) return res.status(404).json({ error: 'Customer not found' });
+
+      const archive = await ensureClientArchiveFolder(
+        customer,
+        String(workData.type || 'task'),
+        String(workData.date || today())
+      );
+      const metadata = {
+        name: fileName,
+        parents: [archive.folderId],
+        appProperties: {
+          riwaCustomerId: customerId,
+          riwaWorkId: workId,
+          riwaWorkType: String(workData.type || 'task'),
+          riwaDate: String(workData.date || today()),
+          riwaSource: 'admin-existing-work'
+        }
+      };
+
+      const upload = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,name,mimeType,size,webViewLink,webContentLink,thumbnailLink', {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${archive.accessToken}`,
+          'content-type': 'application/json; charset=UTF-8',
+          'x-upload-content-type': mimeType,
+          'x-upload-content-length': String(size),
+          origin: browserOrigin
+        },
+        body: JSON.stringify(metadata)
+      });
+
+      if (!upload.ok) {
+        const err = await upload.text();
+        throw new Error(err || 'drive_resumable_session_failed');
+      }
+
+      const uploadUrl = upload.headers.get('location');
+      if (!uploadUrl) throw new Error('drive_upload_location_missing');
+
+      return res.json({
+        ok: true,
+        uploadUrl,
+        archivePath: archive.path,
+        fileName,
+        mimeType,
+        size,
+        replacingFileId: String(workData.file?.driveFileId || '')
+      });
+    }
+
+    const fileId = String(req.body?.fileId || '');
+    const archivePath = String(req.body?.archivePath || '');
+    if (!fileId) return res.status(400).json({ error: 'Missing Drive file ID' });
+
+    const previousFileId = String(workData.file?.driveFileId || '');
+    const published = await drivePublishFile(fileId);
+    const next = {
+      ...workData,
+      file: {
+        ...(published || {}),
+        archivePath,
+        approvedAt: new Date().toISOString()
+      }
+    };
+
+    const { error: updateError } = await db.from('work').update({
+      data: next,
+      updated_at: new Date().toISOString(),
+      updated_by: authData.user.id
+    }).eq('id', workId);
+    if (updateError) throw updateError;
+
+    if (previousFileId && previousFileId !== fileId && req.body?.deletePrevious === true) {
+      await driveDeleteFile(previousFileId).catch(() => {});
+    }
+
+    return res.json({ ok: true, file: next.file });
+  } catch (error) {
+    return res.status(500).json({ error: String(error?.message || 'Could not manage work file') });
   }
 });
 
