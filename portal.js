@@ -302,11 +302,24 @@ function wizardCustomerName(id){
   var c=(DATA.customers||[]).filter(function(x){return x.id===id})[0];
   return c&&c.name||"—";
 }
+function staffDraftFiles(d){
+  var out=[],seen={};
+  function add(f){
+    var id=String(f&&f.driveFileId||"");
+    if(!id||seen[id])return;
+    seen[id]=1;out.push(f);
+  }
+  add(d&&d.file);
+  if(d&&Array.isArray(d.files))d.files.forEach(add);
+  return out;
+}
 function renderDeliveryWizard(e){
-  var d=staffDraft(),types=roleWorkTypes(e.role),step=window.__RIWA_WIZARD_STEP|| (d.file?3:1);
+  var d=staffDraft(),types=roleWorkTypes(e.role),uploaded=staffDraftFiles(d);
+  var step=window.__RIWA_WIZARD_STEP||(uploaded.length?3:1);
   if(!d.date)d.date=today();
   if(!d.qty)d.qty=1;
   if(!d.type)d.type=types[0]||"video";
+  var designMode=d.type==="design";
 
   var customerOpts='<option value="">اختر العميل</option>'+(DATA.customers||[]).map(function(c){
     return '<option value="'+esc(c.id)+'"'+(d.customerId===c.id?' selected':'')+'>'+esc(c.name)+'</option>';
@@ -315,12 +328,12 @@ function renderDeliveryWizard(e){
     return '<option value="'+k+'"'+(d.type===k?' selected':'')+'>'+esc(TYPES[k]||k)+'</option>';
   }).join("");
 
-  var html='<section class="card delivery-wizard'+(d.customerId||d.note||d.file?' dirty':'')+'" data-dirty="'+((d.customerId||d.note||d.file)?'1':'0')+'" id="deliveryWizard">'
+  var html='<section class="card delivery-wizard'+(d.customerId||d.note||uploaded.length?' dirty':'')+'" data-dirty="'+((d.customerId||d.note||uploaded.length)?'1':'0')+'" id="deliveryWizard">'
     +'<div class="wizard-head"><div><h2>تسليم عمل</h2><p class="sub">ثلاث خطوات فقط، والبيانات تبقى محفوظة حتى لو صار تحديث.</p></div>'
     +'<span class="wizard-step-count">0'+step+' / 03</span></div>'
     +'<div class="wizard-steps">'
     +'<button type="button" class="wizard-step '+(step===1?'active':step>1?'done':'')+'" data-wstep="1"><span>1</span><b>العميل والعمل</b></button>'
-    +'<button type="button" class="wizard-step '+(step===2?'active':step>2?'done':'')+'" data-wstep="2"><span>2</span><b>رفع الملف</b></button>'
+    +'<button type="button" class="wizard-step '+(step===2?'active':step>2?'done':'')+'" data-wstep="2"><span>2</span><b>'+(designMode?'رفع الصور':'رفع الملف')+'</b></button>'
     +'<button type="button" class="wizard-step '+(step===3?'active':'')+'" data-wstep="3"><span>3</span><b>إتمام العمل</b></button>'
     +'</div>'
     +'<form id="workForm" class="delivery-wizard-form">';
@@ -333,23 +346,29 @@ function renderDeliveryWizard(e){
     +'<div class="field"><label>التاريخ</label><input name="date" type="date" value="'+esc(d.date||today())+'"></div>'
     +'<div class="field full"><label>ملاحظة</label><textarea name="note" placeholder="تفاصيل اختيارية…">'+esc(d.note||"")+'</textarea></div>'
     +'</div>'
-    +'<div class="wizard-actions"><button type="button" class="btn primary wizard-next" data-next="2">التالي: رفع الملف</button></div>'
+    +'<div class="wizard-actions"><button type="button" class="btn primary wizard-next" data-next="2">التالي: '+(designMode?'رفع الصور':'رفع الملف')+'</button></div>'
     +'</div>';
 
-  html+='<div class="wizard-panel '+(step===2?'active':'')+'" data-panel="2">'
-    +'<div class="upload-stage">'
-    +(d.file?'<div class="uploaded-file-card"><div><b>'+esc(d.file.name||"تم رفع الملف")+'</b><small>'+esc(d.file.archivePath||"Google Drive")+'</small></div><span>تم الرفع ✓</span></div>':''
-      +'<label class="direct-upload-zone" id="directUploadZone">'
-      +'<input id="directDriveFile" type="file" accept="video/*,image/*,.pdf,.doc,.docx">'
-      +'<div class="direct-upload-copy"><span class="direct-upload-icon">↥</span><div><h3>اسحب الملف وأفلته هنا</h3><p>أو اضغط لاختيار الملف. الرفع مباشر إلى Google Drive مع نسبة حقيقية.</p></div></div>'
+  html+='<div class="wizard-panel '+(step===2?'active':'')+'" data-panel="2"><div class="upload-stage">';
+  if(uploaded.length){
+    html+='<div class="uploaded-file-stack">'+uploaded.map(function(file,i){
+      return '<div class="uploaded-file-card"><div><b>'+(designMode?'الصورة '+(i+1)+' — ':'')+esc(file.name||"تم رفع الملف")+'</b><small>'+esc(file.archivePath||"Google Drive")+'</small></div><span>تم الرفع ✓</span></div>';
+    }).join("")+'</div>';
+  }
+  if(designMode||!uploaded.length){
+    html+='<label class="direct-upload-zone" id="directUploadZone">'
+      +'<input id="directDriveFile" type="file" '+(designMode?'accept="image/*" multiple':'accept="video/*,image/*,.pdf,.doc,.docx"')+'>'
+      +'<div class="direct-upload-copy"><span class="direct-upload-icon">↥</span><div><h3>'+(designMode?(uploaded.length?'أضف صوراً أخرى':'اسحب صور التصميم وأفلتها هنا'):'اسحب الملف وأفلته هنا')+'</h3><p>'
+      +(designMode?'يمكنك اختيار عدة صور دفعة واحدة. ترتيب العرض سيكون حسب ترتيب الرفع، وأول صورة ستكون الغلاف.':'أو اضغط لاختيار الملف. الرفع مباشر إلى Google Drive مع نسبة حقيقية.')+'</p></div></div>'
       +'<div class="direct-upload-progress" id="directUploadProgress">'
-      +'<div class="direct-upload-progress-head"><div><b id="directUploadName">—</b><small id="directUploadSize"></small></div><strong id="directUploadPercent">0%</strong></div>'
+      +'<div class="direct-upload-progress-head"><div><b id="directUploadName">—</b><small id="directUploadSize"></small></div><strong id="directUploadPercent">0.00 MB</strong></div>'
       +'<div class="direct-upload-track"><i id="directUploadBar"></i></div>'
       +'<small class="direct-upload-status" id="directUploadStatus">جاري تجهيز الرفع…</small>'
       +'</div></label>'
-      +'<button type="button" class="btn ghost direct-upload-cancel" id="directUploadCancel" hidden>إلغاء الرفع</button>')
-    +'</div>'
-    +'<div class="wizard-actions split upload-step-actions"><button type="button" class="btn ghost" data-next="1">رجوع</button></div></div>';
+      +'<button type="button" class="btn ghost direct-upload-cancel" id="directUploadCancel" hidden>إلغاء الرفع</button>';
+  }
+  html+='</div><div class="wizard-actions split upload-step-actions"><button type="button" class="btn ghost" data-next="1">رجوع</button>'
+    +(uploaded.length?'<button type="button" class="btn primary" data-next="3">التالي: إتمام العمل</button>':'')+'</div></div>';
 
   html+='<div class="wizard-panel '+(step===3?'active':'')+'" data-panel="3">'
     +'<div class="review-card">'
@@ -357,7 +376,7 @@ function renderDeliveryWizard(e){
     +'<div><span>نوع العمل</span><b>'+esc(wizardTypeLabel(d.type))+'</b></div>'
     +'<div><span>الكمية</span><b>'+esc(d.qty||1)+'×</b></div>'
     +'<div><span>التاريخ</span><b>'+esc(d.date||today())+'</b></div>'
-    +'<div class="full"><span>الملف</span><b>'+esc(d.file&&d.file.name||"—")+'</b></div>'
+    +'<div class="full"><span>'+(designMode?'الصور':'الملف')+'</span><b>'+(uploaded.length?(designMode?uploaded.length+' صورة':esc(uploaded[0].name||"ملف")):"—")+'</b></div>'
     +(d.note?'<div class="full"><span>ملاحظة</span><b>'+esc(d.note)+'</b></div>':'')
     +'</div>'
     +'<div class="wizard-actions split"><button type="button" class="btn ghost" data-next="2">رجوع</button><button class="btn primary" type="submit">رفع التسليم</button></div>'
@@ -382,8 +401,9 @@ function bindDeliveryWizard(){
   form.querySelectorAll("[data-next]").forEach(function(btn){
     btn.onclick=function(){
       if(window.__RIWA_UPLOAD_XHR){$("#workError").textContent="انتظر حتى يكتمل رفع الملف أو ألغِ الرفع أولاً.";return}
-      var d=collect(),next=+btn.dataset.next;
+      var d=collect(),next=+btn.dataset.next,files=staffDraftFiles(d);
       if(next>1&&!d.customerId){$("#workError").textContent="اختَر العميل أولاً.";return}
+      if(next===3&&!files.length){$("#workError").textContent=d.type==="design"?"ارفع صورة واحدة على الأقل.":"ارفع الملف أولاً.";return}
       window.__RIWA_WIZARD_STEP=next;
       renderStaff();
     };
@@ -391,9 +411,9 @@ function bindDeliveryWizard(){
   form.querySelectorAll("[data-wstep]").forEach(function(btn){
     btn.onclick=function(){
       if(window.__RIWA_UPLOAD_XHR)return;
-      var d=collect(),next=+btn.dataset.wstep;
+      var d=collect(),next=+btn.dataset.wstep,files=staffDraftFiles(d);
       if(next>1&&!d.customerId)return;
-      if(next===3&&!d.file)return;
+      if(next===3&&!files.length)return;
       window.__RIWA_WIZARD_STEP=next;
       renderStaff();
     };
@@ -414,18 +434,31 @@ function bindDeliveryWizard(){
     if(size)size.textContent="الحجم الكلي: "+uploadMegabytes(file.size);
     if(status){status.textContent=statusText||"جاري الرفع…";status.classList.toggle("error",!!isError)}
   }
-  async function startUpload(file){
+  async function startUploadFiles(files){
     var d=collect();
     if(!d.customerId){$("#workError").textContent="اختَر العميل أولاً.";return}
-    if(!file)return;
+    files=Array.prototype.slice.call(files||[]).filter(Boolean);
+    if(!files.length)return;
+    if(d.type!=="design")files=files.slice(0,1);
+    if(d.type==="design"&&files.some(function(file){return String(file.type||"").indexOf("image/")!==0})){
+      $("#workError").textContent="التصميم يقبل صوراً فقط.";
+      return;
+    }
     $("#workError").textContent="";
-    setUploadUi(file,0,file.size,"جاري إنشاء جلسة رفع آمنة…",false);
+    var latest=staffDraft(),existing=staffDraftFiles(latest),added=[];
     try{
-      var meta=await uploadDirectToDrive(file,d,function(loaded,total){
-        setUploadUi(file,loaded,total,"جاري الرفع مباشرة إلى Google Drive…",false);
-      });
-      var latest=staffDraft();
-      latest.file=meta;
+      for(var i=0;i<files.length;i++){
+        var file=files[i];
+        setUploadUi(file,0,file.size,(d.type==="design"?"الصورة "+(i+1)+" من "+files.length+" — ":"")+"جاري إنشاء جلسة رفع آمنة…",false);
+        var meta=await uploadDirectToDrive(file,d,function(loaded,total){
+          setUploadUi(file,loaded,total,(d.type==="design"?"الصورة "+(i+1)+" من "+files.length+" — ":"")+"جاري الرفع مباشرة إلى Google Drive…",false);
+        });
+        added.push(meta);
+      }
+      var all=existing.concat(added),seen={},ordered=[];
+      all.forEach(function(file){var id=String(file&&file.driveFileId||"");if(id&&!seen[id]){seen[id]=1;ordered.push(file)}});
+      latest.file=ordered[0]||null;
+      latest.files=ordered;
       saveStaffDraft(latest);
       window.__RIWA_UPLOAD_XHR=null;
       window.__RIWA_WIZARD_STEP=3;
@@ -438,9 +471,9 @@ function bindDeliveryWizard(){
       window.__RIWA_UPLOAD_XHR=null;
       var msg=String(ex&&ex.message||ex);
       if(msg==="upload_cancelled"){
-        setUploadUi(file,0,file.size,"تم إلغاء الرفع.",false);
+        if(files[0])setUploadUi(files[0],0,files[0].size,"تم إلغاء الرفع.",false);
       }else{
-        setUploadUi(file,0,file.size,"تعذّر رفع الملف: "+msg,true);
+        if(files[0])setUploadUi(files[0],0,files[0].size,"تعذّر رفع الملف: "+msg,true);
         $("#workError").textContent="تعذّر رفع الملف — "+msg;
       }
       if(input)input.disabled=false;
@@ -451,8 +484,7 @@ function bindDeliveryWizard(){
   }
   if(input){
     input.onchange=function(){
-      var file=input.files&&input.files[0];
-      if(file)startUpload(file);
+      if(input.files&&input.files.length)startUploadFiles(input.files);
     };
   }
   if(zone){
@@ -464,7 +496,7 @@ function bindDeliveryWizard(){
     });
     zone.addEventListener("drop",function(ev){
       var files=ev.dataTransfer&&ev.dataTransfer.files;
-      if(files&&files[0])startUpload(files[0]);
+      if(files&&files.length)startUploadFiles(files);
     });
   }
   if(cancel){
@@ -475,15 +507,15 @@ function bindDeliveryWizard(){
 
   form.onsubmit=async function(ev){
     ev.preventDefault();
-    var d=collect();
+    var d=collect(),files=staffDraftFiles(d);
     if(!d.customerId){$("#workError").textContent="اختَر العميل أولاً.";return}
-    if(!d.file){window.__RIWA_WIZARD_STEP=2;renderStaff();return}
+    if(!files.length){window.__RIWA_WIZARD_STEP=2;renderStaff();return}
     var btn=form.querySelector('button[type="submit"]');
     btn.disabled=true;btn.textContent="جاري الإرسال…";$("#workError").textContent="";
     try{
       var payload={
         customerId:d.customerId,type:d.type,qty:+d.qty||1,date:d.date||today(),
-        note:d.note||"",file:d.file
+        note:d.note||"",file:files[0],files:files
       };
       var r=await SB.rpc("portal_staff_submit_work",{p_token:token(),p_data:payload});
       if(r.error) throw new Error(String(r.error.message||r.error.details||r.error.hint||"unknown_error"));
