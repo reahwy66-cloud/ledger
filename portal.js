@@ -113,6 +113,9 @@ function bindGlobal(){
     }
     if(act==="printstatement"&&KIND==="client") printStatement();
     if(act==="archivevideo"&&KIND==="client") openArchiveVideo(a.dataset.url||"",a.dataset.name||"فيديو");
+    if(act==="designprev"&&KIND==="client") moveDesignCarousel(a.closest("[data-design-carousel]"),-1);
+    if(act==="designnext"&&KIND==="client") moveDesignCarousel(a.closest("[data-design-carousel]"),1);
+    if(act==="designslide"&&KIND==="client") setDesignCarousel(a.closest("[data-design-carousel]"),Number(a.dataset.index||0));
   });
 }
 
@@ -686,20 +689,68 @@ function workFilesList(w){
   if(w&&Array.isArray(w.files))w.files.forEach(add);
   return out;
 }
-function clientArchiveSection(){
-  var entries=[];
-  (DATA.work||[]).forEach(function(w){
-    workFilesList(w).forEach(function(f,index){entries.push({w:w,f:f,index:index});});
+function archiveMediaUrl(w,index,download){
+  return PORTAL_API+"/portal/client/file?token="+encodeURIComponent(token())+"&workId="+encodeURIComponent(w.id||"")+"&fileIndex="+index+(download?"&download=1":"");
+}
+function designPostCard(w,files){
+  var imageEntries=files.map(function(f,index){return {f:f,index:index}}).filter(function(entry){
+    return String(entry.f&&entry.f.mimeType||"").indexOf("image/")===0;
   });
-  return '<section class="card full archive-card"><div class="card-head-actions"><div><h2>أرشيف الملفات</h2><p class="sub">كل الملفات المعتمدة متاحة للمشاهدة والتحميل بأي وقت.</p></div><span class="pill">'+entries.length+'</span></div>'
-    +(entries.length?'<div class="archive-grid">'+entries.map(function(entry){
-      var w=entry.w,f=entry.f||{},mime=String(f.mimeType||""),preview="";
-      var mediaUrl=PORTAL_API+"/portal/client/file?token="+encodeURIComponent(token())+"&workId="+encodeURIComponent(w.id||"")+"&fileIndex="+entry.index;
-      var downloadUrl=mediaUrl+"&download=1";
+  if(!imageEntries.length)return "";
+  var count=imageEntries.length;
+  var slides=imageEntries.map(function(entry,i){
+    var src=archiveMediaUrl(w,entry.index,false),download=archiveMediaUrl(w,entry.index,true);
+    return '<div class="design-slide'+(i===0?' active':'')+'" data-design-slide="'+i+'" data-download="'+esc(download)+'">'
+      +'<img src="'+esc(src)+'" alt="'+esc(entry.f.name||("تصميم "+(i+1)))+'" loading="lazy"></div>';
+  }).join("");
+  var dots=count>1?'<div class="design-dots">'+imageEntries.map(function(_entry,i){
+    return '<button type="button" class="'+(i===0?'active':'')+'" data-act="designslide" data-index="'+i+'" aria-label="الصورة '+(i+1)+'"></button>';
+  }).join("")+'</div>':'';
+  return '<article class="archive-item design-post" data-design-carousel data-index="0">'
+    +'<div class="design-post-head"><div class="design-avatar">رِ</div><div><b>رِواء ستوديو</b><small>'+esc(w.date||"")+'</small></div><span class="design-count">1/'+count+'</span></div>'
+    +'<div class="design-stage">'+slides
+    +(count>1?'<button type="button" class="design-nav prev" data-act="designprev" aria-label="السابق">‹</button><button type="button" class="design-nav next" data-act="designnext" aria-label="التالي">›</button>':'')
+    +'</div>'+dots
+    +'<div class="design-post-foot"><div><b>'+(count>1?'كاروسيل':'تصميم')+'</b><small>'+count+' '+(count===1?'صورة':'صور')+' · '+esc(w.note||"")+'</small></div>'
+    +'<a class="btn primary design-download" href="'+esc(archiveMediaUrl(w,imageEntries[0].index,true))+'" target="_blank" rel="noopener">تحميل الصورة</a></div>'
+    +'</article>';
+}
+function setDesignCarousel(root,index){
+  if(!root)return;
+  var slides=Array.prototype.slice.call(root.querySelectorAll("[data-design-slide]"));
+  if(!slides.length)return;
+  index=((index%slides.length)+slides.length)%slides.length;
+  root.dataset.index=String(index);
+  slides.forEach(function(slide,i){slide.classList.toggle("active",i===index)});
+  Array.prototype.forEach.call(root.querySelectorAll(".design-dots button"),function(dot,i){dot.classList.toggle("active",i===index)});
+  var count=root.querySelector(".design-count");if(count)count.textContent=(index+1)+"/"+slides.length;
+  var dl=root.querySelector(".design-download"),active=slides[index];
+  if(dl&&active&&active.dataset.download)dl.href=active.dataset.download;
+}
+function moveDesignCarousel(root,delta){
+  if(!root)return;
+  setDesignCarousel(root,Number(root.dataset.index||0)+delta);
+}
+function clientArchiveSection(){
+  var cards=[],totalFiles=0;
+  (DATA.work||[]).forEach(function(w){
+    var files=workFilesList(w);
+    totalFiles+=files.length;
+    var designImages=[];
+    if(w.type==="design"){
+      files.forEach(function(f,index){
+        if(String(f&&f.mimeType||"").indexOf("image/")===0)designImages.push(f);
+      });
+      if(designImages.length)cards.push(designPostCard(w,files));
+    }
+    files.forEach(function(f,index){
+      var mime=String(f&&f.mimeType||"");
+      if(w.type==="design"&&mime.indexOf("image/")===0)return;
+      var mediaUrl=archiveMediaUrl(w,index,false),downloadUrl=archiveMediaUrl(w,index,true),preview="",itemClass="";
       if(mime.indexOf("video/")===0){
+        itemClass=" video-item";
         preview='<button type="button" class="archive-preview video video-poster" data-act="archivevideo" data-url="'+esc(mediaUrl)+'" data-name="'+esc(f.name||"فيديو")+'">'
-          +'<span class="video-poster-shade"></span><span class="video-play">▶</span>'
-          +'<small>تشغيل الفيديو</small></button>';
+          +'<span class="video-poster-shade"></span><span class="video-play">▶</span><small>تشغيل الفيديو</small></button>';
       }else if(mime.indexOf("image/")===0){
         preview='<div class="archive-preview image"><img src="'+esc(mediaUrl)+'" alt="'+esc(f.name||"")+'" loading="lazy"></div>';
       }else if(mime.indexOf("pdf")>=0){
@@ -710,17 +761,19 @@ function clientArchiveSection(){
       var viewAction=mime.indexOf("video/")===0
         ?'<button type="button" class="btn" data-act="archivevideo" data-url="'+esc(mediaUrl)+'" data-name="'+esc(f.name||"فيديو")+'">مشاهدة</button>'
         :'<a class="btn" href="'+esc(mediaUrl)+'" target="_blank" rel="noopener">مشاهدة</a>';
-      return '<article class="archive-item">'+preview+'<div class="archive-meta"><div><b>'+esc(f.name||"ملف")+'</b><small>'+esc([TYPES[w.type]||w.type,w.date].filter(Boolean).join(" · "))+'</small></div>'
-        +'<div class="archive-actions">'+viewAction
-        +'<a class="btn primary" href="'+esc(downloadUrl)+'" target="_blank" rel="noopener">تحميل</a></div></div></article>';
-    }).join("")+'</div>':'<div class="empty">ما في ملفات معتمدة بالأرشيف بعد.</div>')
+      cards.push('<article class="archive-item'+itemClass+'">'+preview+'<div class="archive-meta"><div><b>'+esc(f.name||"ملف")+'</b><small>'+esc([TYPES[w.type]||w.type,w.date].filter(Boolean).join(" · "))+'</small></div>'
+        +'<div class="archive-actions">'+viewAction+'<a class="btn primary" href="'+esc(downloadUrl)+'" target="_blank" rel="noopener">تحميل</a></div></div></article>');
+    });
+  });
+  return '<section class="card full archive-card"><div class="card-head-actions"><div><h2>أرشيف الملفات</h2><p class="sub">كل الملفات المعتمدة متاحة للمشاهدة والتحميل بأي وقت.</p></div><span class="pill">'+totalFiles+'</span></div>'
+    +(cards.length?'<div class="archive-grid">'+cards.join("")+'</div>':'<div class="empty">ما في ملفات معتمدة بالأرشيف بعد.</div>')
     +'</section>';
 }
 function openArchiveVideo(url,name){
   var old=document.querySelector(".archive-viewer-overlay");if(old)old.remove();
   var wrap=document.createElement("div");
   wrap.className="archive-viewer-overlay";
-  wrap.innerHTML='<div class="archive-viewer-modal"><div class="archive-viewer-head"><div><b>'+esc(name||"فيديو")+'</b><small>المشاهدة من أرشيف رِواء ستوديو</small></div><button type="button" class="archive-viewer-close">×</button></div>'
+  wrap.innerHTML='<div class="archive-viewer-modal video-portrait"><div class="archive-viewer-head"><div><b>'+esc(name||"فيديو")+'</b><small>المشاهدة من أرشيف رِواء ستوديو</small></div><button type="button" class="archive-viewer-close">×</button></div>'
     +'<div class="archive-viewer-body"><video controls playsinline autoplay preload="metadata" src="'+esc(url)+'"></video></div></div>';
   document.body.appendChild(wrap);
   function close(){
