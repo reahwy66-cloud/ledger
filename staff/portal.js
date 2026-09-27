@@ -201,6 +201,9 @@ function uploadBytesLabel(bytes){
   while(n>=1024&&i<u.length-1){n/=1024;i++}
   return (i===0?Math.round(n):n.toFixed(n>=10?1:2))+" "+u[i];
 }
+function uploadMegabytes(bytes){
+  return (Math.max(0,Number(bytes||0))/1048576).toFixed(2)+" MB";
+}
 function driveFileMeta(meta,file,archivePath){
   meta=meta||{};
   var id=meta.id||"";
@@ -406,9 +409,9 @@ function bindDeliveryWizard(){
     var pct=total?Math.max(0,Math.min(100,(loaded/total)*100)):0;
     var bar=$("#directUploadBar"),percent=$("#directUploadPercent"),name=$("#directUploadName"),size=$("#directUploadSize"),status=$("#directUploadStatus");
     if(bar)bar.style.width=pct.toFixed(2)+"%";
-    if(percent)percent.textContent=Math.round(pct)+"%";
+    if(percent)percent.textContent=uploadMegabytes(loaded)+" / "+uploadMegabytes(total||file.size);
     if(name)name.textContent=file.name;
-    if(size)size.textContent=uploadBytesLabel(file.size);
+    if(size)size.textContent="الحجم الكلي: "+uploadMegabytes(file.size);
     if(status){status.textContent=statusText||"جاري الرفع…";status.classList.toggle("error",!!isError)}
   }
   async function startUpload(file){
@@ -645,22 +648,25 @@ function clientArchiveSection(){
   return '<section class="card full archive-card"><div class="card-head-actions"><div><h2>أرشيف الملفات</h2><p class="sub">كل الملفات المعتمدة متاحة للمشاهدة والتحميل بأي وقت.</p></div><span class="pill">'+files.length+'</span></div>'
     +(files.length?'<div class="archive-grid">'+files.map(function(w){
       var f=w.file||{},mime=String(f.mimeType||""),preview="";
-      if(mime.indexOf("video/")===0&&f.previewUrl){
-        var thumb=f.thumbnailLink||('https://drive.google.com/thumbnail?id='+encodeURIComponent(f.driveFileId)+'&sz=w1600');
-        preview='<button type="button" class="archive-preview video video-poster" data-act="archivevideo" data-url="'+esc(f.previewUrl)+'" data-name="'+esc(f.name||"فيديو")+'">'
-          +'<img src="'+esc(thumb)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+      var mediaUrl=PORTAL_API+"/portal/client/file?token="+encodeURIComponent(token())+"&workId="+encodeURIComponent(w.id||"");
+      var downloadUrl=mediaUrl+"&download=1";
+      if(mime.indexOf("video/")===0){
+        preview='<button type="button" class="archive-preview video video-poster" data-act="archivevideo" data-url="'+esc(mediaUrl)+'" data-name="'+esc(f.name||"فيديو")+'">'
           +'<span class="video-poster-shade"></span><span class="video-play">▶</span>'
           +'<small>تشغيل الفيديو</small></button>';
       }else if(mime.indexOf("image/")===0){
-        preview='<div class="archive-preview image"><img src="'+esc(f.thumbnailLink||f.webViewLink||"")+'" alt="'+esc(f.name||"")+'" loading="lazy"></div>';
-      }else if((mime.indexOf("pdf")>=0||mime.indexOf("document")>=0)&&f.previewUrl){
-        preview='<div class="archive-preview document embedded"><iframe src="'+esc(f.previewUrl)+'" loading="lazy" title="'+esc(f.name||"ملف")+'"></iframe></div>';
+        preview='<div class="archive-preview image"><img src="'+esc(mediaUrl)+'" alt="'+esc(f.name||"")+'" loading="lazy"></div>';
+      }else if(mime.indexOf("pdf")>=0){
+        preview='<div class="archive-preview document embedded"><iframe src="'+esc(mediaUrl)+'" loading="lazy" title="'+esc(f.name||"ملف")+'"></iframe></div>';
       }else{
         preview='<div class="archive-preview file"><span>▤</span><small>'+esc(fileKindLabel(f))+'</small></div>';
       }
+      var viewAction=mime.indexOf("video/")===0
+        ?'<button type="button" class="btn" data-act="archivevideo" data-url="'+esc(mediaUrl)+'" data-name="'+esc(f.name||"فيديو")+'">مشاهدة</button>'
+        :'<a class="btn" href="'+esc(mediaUrl)+'" target="_blank" rel="noopener">مشاهدة</a>';
       return '<article class="archive-item">'+preview+'<div class="archive-meta"><div><b>'+esc(f.name||"ملف")+'</b><small>'+esc([TYPES[w.type]||w.type,w.date].filter(Boolean).join(" · "))+'</small></div>'
-        +'<div class="archive-actions">'+(f.webViewLink?'<a class="btn" href="'+esc(f.webViewLink)+'" target="_blank" rel="noopener">مشاهدة</a>':'')
-        +(f.webContentLink?'<a class="btn primary" href="'+esc(f.webContentLink)+'" target="_blank" rel="noopener">تحميل</a>':'')+'</div></div></article>';
+        +'<div class="archive-actions">'+viewAction
+        +'<a class="btn primary" href="'+esc(downloadUrl)+'" target="_blank" rel="noopener">تحميل</a></div></div></article>';
     }).join("")+'</div>':'<div class="empty">ما في ملفات معتمدة بالأرشيف بعد.</div>')
     +'</section>';
 }
@@ -669,9 +675,12 @@ function openArchiveVideo(url,name){
   var wrap=document.createElement("div");
   wrap.className="archive-viewer-overlay";
   wrap.innerHTML='<div class="archive-viewer-modal"><div class="archive-viewer-head"><div><b>'+esc(name||"فيديو")+'</b><small>المشاهدة من أرشيف رِواء ستوديو</small></div><button type="button" class="archive-viewer-close">×</button></div>'
-    +'<div class="archive-viewer-body"><iframe src="'+esc(url)+'" allow="autoplay; fullscreen" allowfullscreen></iframe></div></div>';
+    +'<div class="archive-viewer-body"><video controls playsinline autoplay preload="metadata" src="'+esc(url)+'"></video></div></div>';
   document.body.appendChild(wrap);
-  function close(){wrap.remove()}
+  function close(){
+    var v=wrap.querySelector("video");if(v){try{v.pause()}catch(_e){}}
+    wrap.remove();
+  }
   wrap.querySelector(".archive-viewer-close").onclick=close;
   wrap.addEventListener("click",function(e){if(e.target===wrap)close()});
 }
