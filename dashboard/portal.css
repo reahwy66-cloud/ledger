@@ -739,11 +739,16 @@ button{cursor:pointer}
   aspect-ratio:16/9;
   background:#0c0f0d;
 }
-.archive-viewer-body iframe{
+.archive-viewer-body iframe,
+.archive-viewer-body video{
   width:100%;
   height:100%;
   border:0;
   display:block;
+}
+.archive-viewer-body video{
+  object-fit:contain;
+  background:#0c0f0d;
 }
 @media(max-width:700px){
   .wizard-equal-field{grid-template-rows:auto 62px 18px}
@@ -829,10 +834,11 @@ button{cursor:pointer}
 .direct-upload-progress-head small{color:var(--mute);font-size:10px}
 .direct-upload-progress-head strong{
   font-family:var(--mono);
-  font-size:28px;
-  font-weight:600;
+  font-size:18px;
+  font-weight:650;
   color:var(--brand);
   direction:ltr;
+  white-space:nowrap;
 }
 .direct-upload-track{
   width:100%;
@@ -860,5 +866,5 @@ button{cursor:pointer}
 @media(max-width:700px){
   .direct-upload-zone{min-height:270px;padding:22px 18px}
   .direct-upload-copy{display:grid;text-align:center;justify-items:center}
-  .direct-upload-progress-head strong{font-size:24px}
+  .direct-upload-progress-head strong{font-size:15px}
 }
