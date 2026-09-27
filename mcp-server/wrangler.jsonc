@@ -14,7 +14,8 @@
   "vars": {
     "SUPABASE_URL": "https://gvnpixjkcmbrdfefbamr.supabase.co",
     "PUBLIC_MCP_URL": "https://studio-ledger-mcp.reahwy66.workers.dev/mcp",
-    "STUDIO_TIMEZONE_OFFSET": "+03:00"
+    "STUDIO_TIMEZONE_OFFSET": "+03:00",
+    "GOOGLE_DRIVE_ROOT_FOLDER_ID": "1slG-yGJBl21CFay916mWKigHeAx4SPPV"
   },
   "observability": {
     "enabled": true
