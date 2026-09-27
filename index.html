@@ -2522,7 +2522,9 @@ function vWork(){
      +'<td class="r">'+n(x.qty)+'</td><td class="mut">'+esc(e?e.name:"—")+'</td>'
      +'<td class="r"><span class="num neg">'+(pay?"−"+money(pay):"—")+'</span></td>'
      +'<td class="r">'+(bill?'<span class="num pos">'+money(bill)+'</span>':(c&&c.billing==="package"?'<span class="mut">'+t("wk.inpack")+'</span>':"—"))+'</td>'
-     +'<td class="r">'+(w?'<button class="btn sm ghost" data-act="editwork" data-id="'+x.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
+     +'<td class="r">'+(w?'<div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">'
+       +'<button class="btn sm ghost" data-act="attachworkfile" data-id="'+x.id+'">'+(x.file&&x.file.driveFileId?(LANG==="ar"?"استبدال الملف":"Replace file"):(LANG==="ar"?"رفع ملف":"Upload file"))+'</button>'
+       +'<button class="btn sm ghost" data-act="editwork" data-id="'+x.id+'">'+t("edit")+'</button></div>':'')+'</td></tr>';
   });
   return h+'</tbody></table></div></div></div>';
 }
@@ -3330,6 +3332,119 @@ function pwaGuide(){
   if(el("pNow")) el("pNow").onclick=function(){DEFER.prompt();el("modalHost").innerHTML="";};
 }
 
+async function adminApiToken(){
+  if(!SB) throw new Error(LANG==="ar"?"يلزم تسجيل الدخول.":"Sign in required.");
+  var session=(await SB.auth.getSession()).data.session;
+  if(!session||!session.access_token) throw new Error(LANG==="ar"?"انتهت جلسة الدخول.":"Session expired.");
+  return session.access_token;
+}
+async function adminWorkFileRequest(payload){
+  var token=await adminApiToken();
+  var r=await fetch("https://studio-ledger-mcp.reahwy66.workers.dev/admin/work-file",{
+    method:"POST",
+    headers:{"content-type":"application/json","authorization":"Bearer "+token},
+    body:JSON.stringify(payload||{})
+  });
+  var data={};try{data=await r.json()}catch(_e){}
+  if(!r.ok||!data.ok) throw new Error(data.error||("HTTP "+r.status));
+  return data;
+}
+function adminUploadMB(bytes){
+  return (Math.max(0,Number(bytes||0))/1048576).toFixed(2)+" MB";
+}
+function adminDriveChunk(url,blob,start,end,total,mime,onProgress){
+  return new Promise(function(resolve,reject){
+    var xhr=new XMLHttpRequest();
+    window.__RIWA_ADMIN_UPLOAD_XHR=xhr;
+    xhr.open("PUT",url,true);
+    xhr.setRequestHeader("Content-Type",mime||"application/octet-stream");
+    xhr.setRequestHeader("Content-Range","bytes "+start+"-"+(end-1)+"/"+total);
+    xhr.upload.onprogress=function(ev){
+      if(ev.lengthComputable&&onProgress)onProgress(ev.loaded,ev.total);
+    };
+    xhr.onerror=function(){reject(new Error("network_upload_failed"));};
+    xhr.onabort=function(){reject(new Error("upload_cancelled"));};
+    xhr.onload=function(){
+      var body={};if(xhr.responseText){try{body=JSON.parse(xhr.responseText)}catch(_e){}}
+      if(xhr.status===308||xhr.status===200||xhr.status===201)resolve({status:xhr.status,body:body});
+      else reject(new Error((body&&body.error&&body.error.message)||("drive_upload_"+xhr.status)));
+    };
+    xhr.send(blob);
+  });
+}
+async function attachFileToExistingWork(w){
+  if(!w||!w.id)return;
+  var input=document.createElement("input");
+  input.type="file";
+  input.accept="video/*,image/*,application/pdf,.mov,.mp4,.m4v,.avi,.webm";
+  input.onchange=async function(){
+    var file=input.files&&input.files[0];if(!file)return;
+    var replace=!!(w.file&&w.file.driveFileId);
+    var deletePrevious=false;
+    if(replace){
+      deletePrevious=confirm(LANG==="ar"
+        ?"هذا التسليم مرتبط بملف سابق. بعد نجاح رفع الملف الجديد، هل تريد حذف الملف القديم من Google Drive؟"
+        :"This delivery already has a file. Delete the old Drive file after the new upload succeeds?");
+    }
+    el("modalHost").innerHTML='<div class="scrim"><div class="modal" style="max-width:620px">'
+      +'<h3>'+(LANG==="ar"?(replace?"استبدال ملف التسليم":"رفع ملف للتسليم"):(replace?"Replace delivery file":"Upload delivery file"))+'</h3>'
+      +'<p class="sub">'+esc(file.name)+'</p>'
+      +'<div style="display:grid;gap:12px;margin-top:20px">'
+      +'<div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><strong id="adminUploadBytes" class="num">0.00 MB / '+adminUploadMB(file.size)+'</strong><span id="adminUploadStatus" class="mut">'+(LANG==="ar"?"جارٍ تجهيز الرفع…":"Preparing upload…")+'</span></div>'
+      +'<div style="height:12px;border-radius:999px;overflow:hidden;background:var(--panel2);border:1px solid var(--line)"><i id="adminUploadBar" style="display:block;height:100%;width:0;background:var(--brand);transition:width .12s linear"></i></div>'
+      +'</div><div class="acts"><button class="btn ghost" id="adminUploadCancel">'+(LANG==="ar"?"إلغاء":"Cancel")+'</button></div></div></div>';
+    var cancelled=false;
+    el("adminUploadCancel").onclick=function(){
+      cancelled=true;
+      if(window.__RIWA_ADMIN_UPLOAD_XHR)window.__RIWA_ADMIN_UPLOAD_XHR.abort();
+      el("modalHost").innerHTML="";
+    };
+    function prog(loaded,total){
+      var pct=total?Math.max(0,Math.min(100,loaded/total*100)):0;
+      if(el("adminUploadBar"))el("adminUploadBar").style.width=pct.toFixed(2)+"%";
+      if(el("adminUploadBytes"))el("adminUploadBytes").textContent=adminUploadMB(loaded)+" / "+adminUploadMB(total);
+    }
+    try{
+      var session=await adminWorkFileRequest({
+        action:"upload-session",workId:w.id,fileName:file.name,
+        mimeType:file.type||"application/octet-stream",size:file.size,origin:location.origin
+      });
+      if(cancelled)return;
+      if(el("adminUploadStatus"))el("adminUploadStatus").textContent=LANG==="ar"?"جارٍ الرفع إلى Google Drive…":"Uploading to Google Drive…";
+      var chunkSize=8*1024*1024,offset=0,lastBody=null;
+      while(offset<file.size){
+        var end=Math.min(offset+chunkSize,file.size),blob=file.slice(offset,end);
+        var result=await adminDriveChunk(session.uploadUrl,blob,offset,end,file.size,file.type||"application/octet-stream",function(loaded){
+          prog(Math.min(file.size,offset+loaded),file.size);
+        });
+        lastBody=result.body||{};
+        offset=end;prog(offset,file.size);
+        if(result.status===200||result.status===201)break;
+      }
+      window.__RIWA_ADMIN_UPLOAD_XHR=null;
+      if(!lastBody||!lastBody.id)throw new Error("drive_upload_missing_file");
+      if(el("adminUploadStatus"))el("adminUploadStatus").textContent=LANG==="ar"?"جارٍ ربط الملف بالتسليم…":"Linking file to delivery…";
+      await adminWorkFileRequest({
+        action:"attach",workId:w.id,fileId:lastBody.id,archivePath:session.archivePath||"",
+        deletePrevious:deletePrevious
+      });
+      await pull();
+      el("modalHost").innerHTML="";
+      render();
+    }catch(err){
+      window.__RIWA_ADMIN_UPLOAD_XHR=null;
+      if(cancelled||String(err&&err.message||err)==="upload_cancelled")return;
+      if(el("adminUploadStatus")){
+        el("adminUploadStatus").className="neg";
+        el("adminUploadStatus").textContent=(LANG==="ar"?"تعذّر رفع الملف: ":"Upload failed: ")+String(err&&err.message||err);
+      }else{
+        alert((LANG==="ar"?"تعذّر رفع الملف: ":"Upload failed: ")+String(err&&err.message||err));
+      }
+    }
+  };
+  input.click();
+}
+
 /* ═════════════ forms ═════════════ */
 function prepareImageFile(file,done){
   if(!file){done("");return;}
@@ -3403,8 +3518,11 @@ function form(title,fields,vals,onSave,extra,saveLabel){
   var scrim=document.querySelector(".scrim");
   scrim.addEventListener("mousedown",function(e){if(e.target===this)close();});
   el("fCancel").onclick=close;
-  if(el("fDel")) el("fDel").onclick=function(){if(confirm(t("confirmDel"))){
-    var cloudRow=cloudRowFor(vals.id);onSave(null);close();save();render();deleteCloudRow(cloudRow);
+  if(el("fDel")) el("fDel").onclick=async function(){if(confirm(t("confirmDel"))){
+    var cloudRow=cloudRowFor(vals.id);
+    try{await Promise.resolve(onSave(null));}
+    catch(err){alert((LANG==="ar"?"تعذّر الحذف: ":"Delete failed: ")+String(err&&err.message||err));return;}
+    close();save();render();await deleteCloudRow(cloudRow);
   }};
   el("fSave").onclick=function(){
     var out={};
@@ -3697,9 +3815,17 @@ function workForm(w){
     fields.push({k:"charge",label:t("f.clientcharge"),type:"number",step:"0.01",hint:t("f.clientchargeH")});
   }
   fields.push({k:"note",label:t("f.note"),type:"textarea"});
-  form(w?t("wk.edit"):t("wk.add"),fields,w,function(v){
+  form(w?t("wk.edit"):t("wk.add"),fields,w,async function(v){
     if(v===null){
-      if(w&&SAFE_API&&!canSeeMoney()) safeDeleteWork(w.id);
+      if(w&&w.file&&w.file.driveFileId){
+        var removeDrive=confirm(LANG==="ar"
+          ?"هذا التسليم مرتبط بملف على Google Drive. هل تريد حذف الملف من Drive أيضاً؟\n\nموافق = حذف التسليم والملف\nإلغاء = حذف التسليم فقط"
+          :"This delivery has a Google Drive file. Delete the Drive file too?\n\nOK = delete both\nCancel = delete delivery only");
+        if(removeDrive){
+          await adminWorkFileRequest({action:"delete-file",workId:w.id});
+        }
+      }
+      if(w&&SAFE_API&&!canSeeMoney()) await safeDeleteWork(w.id);
       S.work=S.work.filter(function(x){return !w||x.id!==w.id;});
       return;
     }
@@ -4075,6 +4201,7 @@ document.addEventListener("click",function(ev){
   else if(act==="newemp") empForm(null);
   else if(act==="editemp") empForm(f(S.employees));
   else if(act==="newwork") workForm(null);
+  else if(act==="attachworkfile") attachFileToExistingWork(f(S.work));
   else if(act==="editwork") workForm(f(S.work));
   else if(act==="newcost") costForm(null);
   else if(act==="editcost") costForm(f(S.costs));
