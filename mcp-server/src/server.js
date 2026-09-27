@@ -1225,10 +1225,13 @@ app.post('/portal/drive/upload-session', async (req, res) => {
     const size = Number(req.body?.size || 0);
     const workType = String(req.body?.workType || 'task');
     const date = String(req.body?.date || today());
+    const browserOrigin = String(req.body?.origin || '').trim();
+    const allowedOrigin = /^https:\/\/(?:www\.)?riwaa\.me$/i.test(browserOrigin) || /^https:\/\/reahwy66-cloud\.github\.io$/i.test(browserOrigin);
 
     if (!customerId || !fileName || !Number.isFinite(size) || size <= 0) {
       return res.status(400).json({ error: 'Invalid upload request' });
     }
+    if (!allowedOrigin) return res.status(400).json({ error: 'Invalid upload origin' });
 
     const { data: customer, error: customerError } = await db.from('customers').select('id,data').eq('id', customerId).maybeSingle();
     if (customerError) throw customerError;
@@ -1252,7 +1255,8 @@ app.post('/portal/drive/upload-session', async (req, res) => {
         authorization: `Bearer ${archive.accessToken}`,
         'content-type': 'application/json; charset=UTF-8',
         'x-upload-content-type': mimeType,
-        'x-upload-content-length': String(size)
+        'x-upload-content-length': String(size),
+        origin: browserOrigin
       },
       body: JSON.stringify(metadata)
     });
