@@ -229,7 +229,8 @@ async function createDriveUploadSession(file,d){
       mimeType:file.type||"application/octet-stream",
       size:file.size,
       workType:d.type||"task",
-      date:d.date||today()
+      date:d.date||today(),
+      origin:location.origin
     })
   });
   var data={};try{data=await r.json()}catch(_e){}
