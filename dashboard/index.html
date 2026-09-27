@@ -2523,7 +2523,7 @@ function vWork(){
      +'<td class="r"><span class="num neg">'+(pay?"−"+money(pay):"—")+'</span></td>'
      +'<td class="r">'+(bill?'<span class="num pos">'+money(bill)+'</span>':(c&&c.billing==="package"?'<span class="mut">'+t("wk.inpack")+'</span>':"—"))+'</td>'
      +'<td class="r">'+(w?'<div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">'
-       +'<button class="btn sm ghost" data-act="attachworkfile" data-id="'+x.id+'">'+(adminWorkFileCount(x)?(LANG==="ar"?"إضافة ملف "+adminWorkFileCount(x)+"/"+(+x.qty||1):"Add file "+adminWorkFileCount(x)+"/"+(+x.qty||1)):(LANG==="ar"?"رفع ملف":"Upload file"))+'</button>'
+       +'<button class="btn sm ghost" data-act="attachworkfile" data-id="'+x.id+'">'+(x.type==="design"?(adminWorkFileCount(x)?(LANG==="ar"?"إضافة صور ("+adminWorkFileCount(x)+")":"Add images ("+adminWorkFileCount(x)+")"):(LANG==="ar"?"رفع صور":"Upload images")):(adminWorkFileCount(x)?(LANG==="ar"?"إضافة ملف ("+adminWorkFileCount(x)+")":"Add file ("+adminWorkFileCount(x)+")"):(LANG==="ar"?"رفع ملف":"Upload file")))+'</button>'
        +'<button class="btn sm ghost" data-act="editwork" data-id="'+x.id+'">'+t("edit")+'</button></div>':'')+'</td></tr>';
   });
   return h+'</tbody></table></div></div></div>';
@@ -3381,53 +3381,73 @@ function adminDriveChunk(url,blob,start,end,total,mime,onProgress){
 }
 async function attachFileToExistingWork(w){
   if(!w||!w.id)return;
+  var designMode=w.type==="design";
   var input=document.createElement("input");
   input.type="file";
-  input.accept="video/*,image/*,application/pdf,.mov,.mp4,.m4v,.avi,.webm";
+  input.multiple=designMode;
+  input.accept=designMode?"image/*":"video/*,image/*,application/pdf,.mov,.mp4,.m4v,.avi,.webm";
   input.onchange=async function(){
-    var file=input.files&&input.files[0];if(!file)return;
+    var files=Array.prototype.slice.call(input.files||[]).filter(Boolean);
+    if(!files.length)return;
+    if(!designMode)files=files.slice(0,1);
+    if(designMode&&files.some(function(file){return String(file.type||"").indexOf("image/")!==0})){
+      alert(LANG==="ar"?"التصاميم تقبل ملفات صور فقط.":"Design deliveries accept image files only.");
+      return;
+    }
     var beforeCount=adminWorkFileCount(w);
+    var totalBytes=files.reduce(function(sum,file){return sum+(+file.size||0)},0);
     el("modalHost").innerHTML='<div class="scrim"><div class="modal" style="max-width:620px">'
-      +'<h3>'+(LANG==="ar"?(beforeCount?"إضافة ملف آخر للتسليم":"رفع ملف للتسليم"):(beforeCount?"Add another delivery file":"Upload delivery file"))+'</h3>'
-      +'<p class="sub">'+esc(file.name)+'</p>'
+      +'<h3>'+(LANG==="ar"?(designMode?(beforeCount?"إضافة صور أخرى للتصميم":"رفع صور التصميم"):(beforeCount?"إضافة ملف آخر للتسليم":"رفع ملف للتسليم")):(designMode?(beforeCount?"Add more design images":"Upload design images"):(beforeCount?"Add another delivery file":"Upload delivery file")))+'</h3>'
+      +'<p class="sub">'+(designMode?(LANG==="ar"?"سيتم حفظ الصور بنفس ترتيب الرفع، والصورة الأولى ستكون الغلاف.":"Images will keep their upload order; the first image is the cover.") :esc(files[0].name))+'</p>'
       +'<div style="display:grid;gap:12px;margin-top:20px">'
-      +'<div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><strong id="adminUploadBytes" class="num">0.00 MB / '+adminUploadMB(file.size)+'</strong><span id="adminUploadStatus" class="mut">'+(LANG==="ar"?"جارٍ تجهيز الرفع…":"Preparing upload…")+'</span></div>'
+      +'<div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><strong id="adminUploadBytes" class="num">0.00 MB / '+adminUploadMB(totalBytes)+'</strong><span id="adminUploadStatus" class="mut">'+(LANG==="ar"?"جارٍ تجهيز الرفع…":"Preparing upload…")+'</span></div>'
       +'<div style="height:12px;border-radius:999px;overflow:hidden;background:var(--panel2);border:1px solid var(--line)"><i id="adminUploadBar" style="display:block;height:100%;width:0;background:var(--brand);transition:width .12s linear"></i></div>'
+      +'<small id="adminUploadFileName" class="mut">'+esc(files[0].name)+'</small>'
       +'</div><div class="acts"><button class="btn ghost" id="adminUploadCancel">'+(LANG==="ar"?"إلغاء":"Cancel")+'</button></div></div></div>';
-    var cancelled=false;
+    var cancelled=false,completedBytes=0;
     el("adminUploadCancel").onclick=function(){
       cancelled=true;
       if(window.__RIWA_ADMIN_UPLOAD_XHR)window.__RIWA_ADMIN_UPLOAD_XHR.abort();
       el("modalHost").innerHTML="";
     };
-    function prog(loaded,total){
-      var pct=total?Math.max(0,Math.min(100,loaded/total*100)):0;
+    function prog(currentLoaded){
+      var loaded=Math.min(totalBytes,completedBytes+(+currentLoaded||0));
+      var pct=totalBytes?Math.max(0,Math.min(100,loaded/totalBytes*100)):0;
       if(el("adminUploadBar"))el("adminUploadBar").style.width=pct.toFixed(2)+"%";
-      if(el("adminUploadBytes"))el("adminUploadBytes").textContent=adminUploadMB(loaded)+" / "+adminUploadMB(total);
+      if(el("adminUploadBytes"))el("adminUploadBytes").textContent=adminUploadMB(loaded)+" / "+adminUploadMB(totalBytes);
     }
     try{
-      var session=await adminWorkFileRequest({
-        action:"upload-session",workId:w.id,fileName:file.name,
-        mimeType:file.type||"application/octet-stream",size:file.size,origin:location.origin
-      });
-      if(cancelled)return;
-      if(el("adminUploadStatus"))el("adminUploadStatus").textContent=LANG==="ar"?"جارٍ الرفع إلى Google Drive…":"Uploading to Google Drive…";
-      var chunkSize=8*1024*1024,offset=0,lastBody=null;
-      while(offset<file.size){
-        var end=Math.min(offset+chunkSize,file.size),blob=file.slice(offset,end);
-        var result=await adminDriveChunk(session.uploadUrl,blob,offset,end,file.size,file.type||"application/octet-stream",function(loaded){
-          prog(Math.min(file.size,offset+loaded),file.size);
+      for(var fi=0;fi<files.length;fi++){
+        var file=files[fi];
+        if(cancelled)return;
+        if(el("adminUploadFileName"))el("adminUploadFileName").textContent=file.name;
+        if(el("adminUploadStatus"))el("adminUploadStatus").textContent=(designMode?(LANG==="ar"?"الصورة "+(fi+1)+" من "+files.length+" — ":"Image "+(fi+1)+" of "+files.length+" — "):"")+(LANG==="ar"?"جارٍ إنشاء جلسة الرفع…":"Preparing upload session…");
+        var session=await adminWorkFileRequest({
+          action:"upload-session",workId:w.id,fileName:file.name,
+          mimeType:file.type||"application/octet-stream",size:file.size,origin:location.origin
         });
-        lastBody=result.body||{};
-        offset=end;prog(offset,file.size);
-        if(result.status===200||result.status===201)break;
+        if(cancelled)return;
+        if(el("adminUploadStatus"))el("adminUploadStatus").textContent=(designMode?(LANG==="ar"?"الصورة "+(fi+1)+" من "+files.length+" — ":"Image "+(fi+1)+" of "+files.length+" — "):"")+(LANG==="ar"?"جارٍ الرفع إلى Google Drive…":"Uploading to Google Drive…");
+        var chunkSize=8*1024*1024,offset=0,lastBody=null;
+        while(offset<file.size){
+          var chunkStart=offset,end=Math.min(offset+chunkSize,file.size),blob=file.slice(offset,end);
+          var result=await adminDriveChunk(session.uploadUrl,blob,offset,end,file.size,file.type||"application/octet-stream",function(loaded){
+            prog(chunkStart+loaded);
+          });
+          lastBody=result.body||{};
+          offset=end;
+          prog(offset);
+          if(result.status===200||result.status===201)break;
+        }
+        window.__RIWA_ADMIN_UPLOAD_XHR=null;
+        if(!lastBody||!lastBody.id)throw new Error("drive_upload_missing_file");
+        if(el("adminUploadStatus"))el("adminUploadStatus").textContent=LANG==="ar"?"جارٍ ربط الملف بالتسليم…":"Linking file to delivery…";
+        await adminWorkFileRequest({
+          action:"attach",workId:w.id,fileId:lastBody.id,archivePath:session.archivePath||""
+        });
+        completedBytes+=file.size;
+        prog(0);
       }
-      window.__RIWA_ADMIN_UPLOAD_XHR=null;
-      if(!lastBody||!lastBody.id)throw new Error("drive_upload_missing_file");
-      if(el("adminUploadStatus"))el("adminUploadStatus").textContent=LANG==="ar"?"جارٍ ربط الملف بالتسليم…":"Linking file to delivery…";
-      await adminWorkFileRequest({
-        action:"attach",workId:w.id,fileId:lastBody.id,archivePath:session.archivePath||""
-      });
       await pull();
       el("modalHost").innerHTML="";
       render();
