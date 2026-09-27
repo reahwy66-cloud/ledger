@@ -263,6 +263,20 @@ async function drivePublishFile(fileId) {
   };
 }
 
+function workDriveFiles(workData) {
+  const out = [];
+  const seen = new Set();
+  const add = file => {
+    const id = String(file?.driveFileId || '');
+    if (!id || seen.has(id)) return;
+    seen.add(id);
+    out.push(file);
+  };
+  add(workData?.file);
+  if (Array.isArray(workData?.files)) workData.files.forEach(add);
+  return out;
+}
+
 async function driveDeleteFile(fileId) {
   if (!fileId) return false;
   const accessToken = await googleDriveAccessToken();
@@ -1338,17 +1352,20 @@ app.post('/admin/work-file', async (req, res) => {
     const workData = work.data || {};
 
     if (action === 'delete-file') {
-      const fileId = String(workData.file?.driveFileId || '');
-      if (fileId) await driveDeleteFile(fileId);
+      const linked = workDriveFiles(workData);
+      for (const file of linked) {
+        await driveDeleteFile(String(file.driveFileId || ''));
+      }
       const next = { ...workData };
       delete next.file;
+      delete next.files;
       const { error: updateError } = await db.from('work').update({
         data: next,
         updated_at: new Date().toISOString(),
         updated_by: authData.user.id
       }).eq('id', workId);
       if (updateError) throw updateError;
-      return res.json({ ok: true, deleted: Boolean(fileId) });
+      return res.json({ ok: true, deleted: linked.length });
     }
 
     if (action === 'upload-session') {
@@ -1414,7 +1431,7 @@ app.post('/admin/work-file', async (req, res) => {
         fileName,
         mimeType,
         size,
-        replacingFileId: String(workData.file?.driveFileId || '')
+        existingFileCount: workDriveFiles(workData).length
       });
     }
 
@@ -1422,15 +1439,18 @@ app.post('/admin/work-file', async (req, res) => {
     const archivePath = String(req.body?.archivePath || '');
     if (!fileId) return res.status(400).json({ error: 'Missing Drive file ID' });
 
-    const previousFileId = String(workData.file?.driveFileId || '');
     const published = await drivePublishFile(fileId);
+    const attached = {
+      ...(published || {}),
+      archivePath,
+      approvedAt: new Date().toISOString()
+    };
+    const files = workDriveFiles(workData).filter(f => String(f.driveFileId || '') !== fileId);
+    files.push(attached);
     const next = {
       ...workData,
-      file: {
-        ...(published || {}),
-        archivePath,
-        approvedAt: new Date().toISOString()
-      }
+      file: files[0] || attached,
+      files
     };
 
     const { error: updateError } = await db.from('work').update({
@@ -1440,11 +1460,7 @@ app.post('/admin/work-file', async (req, res) => {
     }).eq('id', workId);
     if (updateError) throw updateError;
 
-    if (previousFileId && previousFileId !== fileId && req.body?.deletePrevious === true) {
-      await driveDeleteFile(previousFileId).catch(() => {});
-    }
-
-    return res.json({ ok: true, file: next.file });
+    return res.json({ ok: true, file: attached, files });
   } catch (error) {
     return res.status(500).json({ error: String(error?.message || 'Could not manage work file') });
   }
@@ -1454,6 +1470,7 @@ app.get('/portal/client/file', async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   const portalToken = String(req.query?.token || '');
   const workId = String(req.query?.workId || '');
+  const fileIndex = Math.max(0, Number(req.query?.fileIndex || 0) || 0);
   const download = String(req.query?.download || '') === '1';
 
   if (!portalToken || !workId) return res.status(400).send('Invalid media request');
@@ -1471,8 +1488,9 @@ app.get('/portal/client/file', async (req, res) => {
       return res.status(404).send('File not found');
     }
 
-    const file = work.data?.file || {};
-    const fileId = String(file.driveFileId || '');
+    const linkedFiles = workDriveFiles(work.data || {});
+    const file = linkedFiles[fileIndex] || null;
+    const fileId = String(file?.driveFileId || '');
     if (!fileId) return res.status(404).send('File not found');
 
     const accessToken = await googleDriveAccessToken();
