@@ -752,3 +752,113 @@ button{cursor:pointer}
   .archive-viewer-modal{width:100%;height:100dvh;max-height:none;border-radius:0}
   .archive-viewer-body{aspect-ratio:auto;height:100%}
 }
+
+/* Portal V13 — direct resumable Drive upload with real progress */
+.direct-upload-zone{
+  position:relative;
+  min-height:300px;
+  display:grid;
+  place-items:center;
+  padding:28px;
+  border:1.5px dashed color-mix(in srgb,var(--brand) 42%,var(--gl));
+  border-radius:24px;
+  background:color-mix(in srgb,var(--brand) 4%,transparent);
+  cursor:pointer;
+  overflow:hidden;
+  transition:border-color .2s ease,background .2s ease,transform .2s ease;
+}
+.direct-upload-zone:hover,
+.direct-upload-zone.drag{
+  border-color:color-mix(in srgb,var(--brand) 76%,var(--gl));
+  background:color-mix(in srgb,var(--brand) 8%,transparent);
+}
+.direct-upload-zone input{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  opacity:0;
+  cursor:pointer;
+  z-index:2;
+}
+.direct-upload-zone input:disabled{cursor:default}
+.direct-upload-copy{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
+  max-width:520px;
+  text-align:start;
+  pointer-events:none;
+}
+.direct-upload-icon{
+  width:68px;height:68px;flex:none;
+  display:grid;place-items:center;
+  border-radius:20px;
+  border:1px solid color-mix(in srgb,var(--brand) 32%,var(--gl));
+  background:color-mix(in srgb,var(--brand) 12%,transparent);
+  font-size:30px;
+}
+.direct-upload-copy h3{margin:0 0 7px;font-size:17px}
+.direct-upload-copy p{margin:0;color:var(--mute);font-size:11.5px;line-height:1.7}
+.direct-upload-progress{
+  width:min(560px,100%);
+  display:none;
+  gap:16px;
+  pointer-events:none;
+}
+.direct-upload-progress.show{display:grid}
+.direct-upload-progress-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+.direct-upload-progress-head>div{
+  min-width:0;
+  display:grid;
+  gap:5px;
+}
+.direct-upload-progress-head b{
+  max-width:420px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:13px;
+}
+.direct-upload-progress-head small{color:var(--mute);font-size:10px}
+.direct-upload-progress-head strong{
+  font-family:var(--mono);
+  font-size:28px;
+  font-weight:600;
+  color:var(--brand);
+  direction:ltr;
+}
+.direct-upload-track{
+  width:100%;
+  height:12px;
+  overflow:hidden;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--brand) 11%,var(--ground));
+  border:1px solid var(--gl);
+}
+.direct-upload-track i{
+  display:block;
+  width:0;
+  height:100%;
+  border-radius:inherit;
+  background:linear-gradient(90deg,var(--brand),color-mix(in srgb,var(--brand) 72%,white));
+  transition:width .12s linear;
+}
+.direct-upload-status{
+  color:var(--mute);
+  font-size:11px;
+  line-height:1.55;
+}
+.direct-upload-status.error{color:var(--coral)}
+.direct-upload-cancel{justify-self:start}
+@media(max-width:700px){
+  .direct-upload-zone{min-height:270px;padding:22px 18px}
+  .direct-upload-copy{display:grid;text-align:center;justify-items:center}
+  .direct-upload-progress-head strong{font-size:24px}
+}

@@ -5,7 +5,6 @@ var SUPA_URL="https://gvnpixjkcmbrdfefbamr.supabase.co";
 var SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2bnBpeGprY21icmRmZWZiYW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MDAyNDAsImV4cCI6MjEwMDQ3NjI0MH0.PPuHBLPRwFPvjMgoIWHCubDTX9at5gSgn4QKxcgsbQI";
 var KIND=document.body.getAttribute("data-portal")||"staff";
 var PORTAL_API="https://studio-ledger-mcp.reahwy66.workers.dev";
-var DRIVE_APP_URL="https://script.google.com/macros/s/AKfycby5AkO98YVGA4Lq1r0NdUm_6gTdtu6aPigPRoFad4qu3EQsPpB5M_8x3snTtGYSLEtrlQ/exec";
 var SB=null,DATA=null;
 var TOKEN_KEY="riwa_portal_"+KIND+"_token";
 var TYPES={video:"فيديو",post:"بوست",design:"تصميم",shoot:"تصوير",voice:"فويس",script:"سكربت",task:"مهمة"};
@@ -197,16 +196,104 @@ function saveStaffDraft(d){
 function clearStaffDraft(){
   try{localStorage.removeItem(STAFF_DRAFT_KEY)}catch(e){}
 }
-function driveUploaderUrl(payload){
-  var customer=(DATA.customers||[]).filter(function(c){return c.id===payload.customerId})[0];
-  var q=new URLSearchParams({
-    mode:"upload",
-    customerId:payload.customerId||"",
-    customerName:customer&&customer.name||"Client",
-    workType:payload.type||"task",
-    date:payload.date||today()
+function uploadBytesLabel(bytes){
+  var n=Number(bytes||0),u=["B","KB","MB","GB"],i=0;
+  while(n>=1024&&i<u.length-1){n/=1024;i++}
+  return (i===0?Math.round(n):n.toFixed(n>=10?1:2))+" "+u[i];
+}
+function driveFileMeta(meta,file,archivePath){
+  meta=meta||{};
+  var id=meta.id||"";
+  return {
+    driveFileId:id,
+    name:meta.name||file.name,
+    mimeType:meta.mimeType||file.type||"application/octet-stream",
+    size:Number(meta.size||file.size||0),
+    webViewLink:meta.webViewLink||("https://drive.google.com/file/d/"+id+"/view"),
+    webContentLink:meta.webContentLink||("https://drive.google.com/uc?export=download&id="+encodeURIComponent(id)),
+    thumbnailLink:meta.thumbnailLink||"",
+    previewUrl:"https://drive.google.com/file/d/"+id+"/preview",
+    archivePath:archivePath||""
+  };
+}
+async function createDriveUploadSession(file,d){
+  var r=await fetch(PORTAL_API+"/portal/drive/upload-session",{
+    method:"POST",
+    headers:{
+      "content-type":"application/json",
+      "authorization":"Bearer "+token()
+    },
+    body:JSON.stringify({
+      customerId:d.customerId,
+      fileName:file.name,
+      mimeType:file.type||"application/octet-stream",
+      size:file.size,
+      workType:d.type||"task",
+      date:d.date||today()
+    })
   });
-  return DRIVE_APP_URL+"?"+q.toString();
+  var data={};try{data=await r.json()}catch(_e){}
+  if(!r.ok||!data.ok||!data.uploadUrl){
+    throw new Error(data.error||("upload_session_"+r.status));
+  }
+  return data;
+}
+function putDriveChunk(url,blob,start,end,total,mime,onProgress){
+  return new Promise(function(resolve,reject){
+    var xhr=new XMLHttpRequest();
+    window.__RIWA_UPLOAD_XHR=xhr;
+    xhr.open("PUT",url,true);
+    xhr.setRequestHeader("Content-Type",mime||"application/octet-stream");
+    xhr.setRequestHeader("Content-Range","bytes "+start+"-"+(end-1)+"/"+total);
+    xhr.upload.onprogress=function(ev){
+      if(ev.lengthComputable&&onProgress) onProgress(ev.loaded,ev.total);
+    };
+    xhr.onerror=function(){reject(new Error("network_upload_failed"))};
+    xhr.onabort=function(){reject(new Error("upload_cancelled"))};
+    xhr.onload=function(){
+      var body={};
+      if(xhr.responseText){try{body=JSON.parse(xhr.responseText)}catch(_e){}}
+      if(xhr.status===308||xhr.status===200||xhr.status===201){
+        resolve({status:xhr.status,body:body});
+      }else{
+        reject(new Error((body&&body.error&&body.error.message)||("drive_upload_"+xhr.status)));
+      }
+    };
+    xhr.send(blob);
+  });
+}
+async function uploadDirectToDrive(file,d,onProgress){
+  var session=await createDriveUploadSession(file,d);
+  var chunkSize=8*1024*1024;
+  var offset=0,attempts=0,lastBody=null;
+
+  while(offset<file.size){
+    var end=Math.min(offset+chunkSize,file.size);
+    var blob=file.slice(offset,end);
+    try{
+      var result=await putDriveChunk(
+        session.uploadUrl,blob,offset,end,file.size,
+        file.type||"application/octet-stream",
+        function(loaded){
+          if(onProgress) onProgress(Math.min(file.size,offset+loaded),file.size);
+        }
+      );
+      attempts=0;
+      lastBody=result.body||{};
+      offset=end;
+      if(onProgress) onProgress(offset,file.size);
+      if(result.status===200||result.status===201) break;
+    }catch(err){
+      if(String(err&&err.message||err)==="upload_cancelled") throw err;
+      attempts++;
+      if(attempts>=3) throw err;
+      await new Promise(function(resolve){setTimeout(resolve,700*attempts)});
+    }
+  }
+
+  window.__RIWA_UPLOAD_XHR=null;
+  if(!lastBody||!lastBody.id) throw new Error("drive_upload_missing_file");
+  return driveFileMeta(lastBody,file,session.archivePath||"");
 }
 function wizardTypeLabel(k){return TYPES[k]||k||"—"}
 function wizardCustomerName(id){
@@ -247,11 +334,18 @@ function renderDeliveryWizard(e){
     +'<div class="wizard-actions"><button type="button" class="btn primary wizard-next" data-next="2">التالي: رفع الملف</button></div>'
     +'</div>';
 
-  var iframeSrc=d.customerId?driveUploaderUrl(d):"";
   html+='<div class="wizard-panel '+(step===2?'active':'')+'" data-panel="2">'
     +'<div class="upload-stage">'
-    +(d.file?'<div class="uploaded-file-card"><div><b>'+esc(d.file.name||"تم رفع الملف")+'</b><small>'+esc(d.file.archivePath||"Google Drive")+'</small></div><span>تم الرفع ✓</span></div>':'')
-    +(iframeSrc?'<iframe class="drive-inline-frame drive-inline-clean" id="driveInlineFrame" src="'+esc(iframeSrc)+'" allow="clipboard-write" scrolling="no"></iframe>':'<div class="wizard-warning">ارجع للخطوة الأولى واختر العميل.</div>')
+    +(d.file?'<div class="uploaded-file-card"><div><b>'+esc(d.file.name||"تم رفع الملف")+'</b><small>'+esc(d.file.archivePath||"Google Drive")+'</small></div><span>تم الرفع ✓</span></div>':''
+      +'<label class="direct-upload-zone" id="directUploadZone">'
+      +'<input id="directDriveFile" type="file" accept="video/*,image/*,.pdf,.doc,.docx">'
+      +'<div class="direct-upload-copy"><span class="direct-upload-icon">↥</span><div><h3>اسحب الملف وأفلته هنا</h3><p>أو اضغط لاختيار الملف. الرفع مباشر إلى Google Drive مع نسبة حقيقية.</p></div></div>'
+      +'<div class="direct-upload-progress" id="directUploadProgress">'
+      +'<div class="direct-upload-progress-head"><div><b id="directUploadName">—</b><small id="directUploadSize"></small></div><strong id="directUploadPercent">0%</strong></div>'
+      +'<div class="direct-upload-track"><i id="directUploadBar"></i></div>'
+      +'<small class="direct-upload-status" id="directUploadStatus">جاري تجهيز الرفع…</small>'
+      +'</div></label>'
+      +'<button type="button" class="btn ghost direct-upload-cancel" id="directUploadCancel" hidden>إلغاء الرفع</button>')
     +'</div>'
     +'<div class="wizard-actions split upload-step-actions"><button type="button" class="btn ghost" data-next="1">رجوع</button></div></div>';
 
@@ -285,15 +379,16 @@ function bindDeliveryWizard(){
 
   form.querySelectorAll("[data-next]").forEach(function(btn){
     btn.onclick=function(){
+      if(window.__RIWA_UPLOAD_XHR){$("#workError").textContent="انتظر حتى يكتمل رفع الملف أو ألغِ الرفع أولاً.";return}
       var d=collect(),next=+btn.dataset.next;
       if(next>1&&!d.customerId){$("#workError").textContent="اختَر العميل أولاً.";return}
-      var w=$("#deliveryWizard"); if(w)w.dataset.runtimeStep=String(next);
       window.__RIWA_WIZARD_STEP=next;
       renderStaff();
     };
   });
   form.querySelectorAll("[data-wstep]").forEach(function(btn){
     btn.onclick=function(){
+      if(window.__RIWA_UPLOAD_XHR)return;
       var d=collect(),next=+btn.dataset.wstep;
       if(next>1&&!d.customerId)return;
       if(next===3&&!d.file)return;
@@ -302,27 +397,79 @@ function bindDeliveryWizard(){
     };
   });
 
-  function onMessage(ev){
-    var data=ev.data||{};
-    if(typeof data==="string"){
-      try{data=JSON.parse(data)}catch(_e){}
-    }
-    if(data&&data.type==="riwa-drive-uploaded"&&data.file){
-      var d=collect();
-      d.file=data.file;
-      saveStaffDraft(d);
+  var input=$("#directDriveFile"),zone=$("#directUploadZone"),cancel=$("#directUploadCancel");
+  function setUploadUi(file,loaded,total,statusText,isError){
+    var progress=$("#directUploadProgress"),copy=zone&&zone.querySelector(".direct-upload-copy");
+    if(progress)progress.classList.add("show");
+    if(copy)copy.style.display="none";
+    if(input)input.disabled=true;
+    if(cancel)cancel.hidden=false;
+    var pct=total?Math.max(0,Math.min(100,(loaded/total)*100)):0;
+    var bar=$("#directUploadBar"),percent=$("#directUploadPercent"),name=$("#directUploadName"),size=$("#directUploadSize"),status=$("#directUploadStatus");
+    if(bar)bar.style.width=pct.toFixed(2)+"%";
+    if(percent)percent.textContent=Math.round(pct)+"%";
+    if(name)name.textContent=file.name;
+    if(size)size.textContent=uploadBytesLabel(file.size);
+    if(status){status.textContent=statusText||"جاري الرفع…";status.classList.toggle("error",!!isError)}
+  }
+  async function startUpload(file){
+    var d=collect();
+    if(!d.customerId){$("#workError").textContent="اختَر العميل أولاً.";return}
+    if(!file)return;
+    $("#workError").textContent="";
+    setUploadUi(file,0,file.size,"جاري إنشاء جلسة رفع آمنة…",false);
+    try{
+      var meta=await uploadDirectToDrive(file,d,function(loaded,total){
+        setUploadUi(file,loaded,total,"جاري الرفع مباشرة إلى Google Drive…",false);
+      });
+      var latest=staffDraft();
+      latest.file=meta;
+      saveStaffDraft(latest);
+      window.__RIWA_UPLOAD_XHR=null;
       window.__RIWA_WIZARD_STEP=3;
-      window.removeEventListener("message",onMessage);
       renderStaff();
       setTimeout(function(){
         var submit=document.querySelector("#workForm button[type='submit']");
-        if(submit) submit.scrollIntoView({behavior:"smooth",block:"center"});
-      },120);
-    }else if(data&&data.type==="riwa-drive-upload-error"){
-      $("#workError").textContent="تعذّر رفع الملف — "+String(data.error||"خطأ غير معروف");
+        if(submit)submit.scrollIntoView({behavior:"smooth",block:"center"});
+      },100);
+    }catch(ex){
+      window.__RIWA_UPLOAD_XHR=null;
+      var msg=String(ex&&ex.message||ex);
+      if(msg==="upload_cancelled"){
+        setUploadUi(file,0,file.size,"تم إلغاء الرفع.",false);
+      }else{
+        setUploadUi(file,0,file.size,"تعذّر رفع الملف: "+msg,true);
+        $("#workError").textContent="تعذّر رفع الملف — "+msg;
+      }
+      if(input)input.disabled=false;
+      if(cancel)cancel.hidden=true;
+      var copy=zone&&zone.querySelector(".direct-upload-copy");
+      if(copy)copy.style.display="";
     }
   }
-  window.addEventListener("message",onMessage);
+  if(input){
+    input.onchange=function(){
+      var file=input.files&&input.files[0];
+      if(file)startUpload(file);
+    };
+  }
+  if(zone){
+    ["dragenter","dragover"].forEach(function(name){
+      zone.addEventListener(name,function(ev){ev.preventDefault();zone.classList.add("drag")});
+    });
+    ["dragleave","drop"].forEach(function(name){
+      zone.addEventListener(name,function(ev){ev.preventDefault();zone.classList.remove("drag")});
+    });
+    zone.addEventListener("drop",function(ev){
+      var files=ev.dataTransfer&&ev.dataTransfer.files;
+      if(files&&files[0])startUpload(files[0]);
+    });
+  }
+  if(cancel){
+    cancel.onclick=function(){
+      if(window.__RIWA_UPLOAD_XHR)window.__RIWA_UPLOAD_XHR.abort();
+    };
+  }
 
   form.onsubmit=async function(ev){
     ev.preventDefault();
@@ -348,7 +495,6 @@ function bindDeliveryWizard(){
     }
   };
 }
-
 function fileKindLabel(file){
   var mime=String(file&&file.mimeType||"");
   if(mime.indexOf("video/")===0) return "فيديو";
