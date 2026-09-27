@@ -257,20 +257,52 @@ async function drivePublishFile(fileId) {
   };
 }
 
+async function resolveDriveArchiveRoot(accessToken) {
+  const configured = String(process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID || '').trim();
+
+  if (configured) {
+    try {
+      const checkUrl = new URL(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(configured)}`);
+      checkUrl.searchParams.set('fields', 'id,name,mimeType,trashed');
+      checkUrl.searchParams.set('supportsAllDrives', 'true');
+      const check = await fetch(checkUrl, {
+        headers: { authorization: `Bearer ${accessToken}` }
+      });
+      const meta = await check.json().catch(() => ({}));
+      if (
+        check.ok &&
+        meta?.id &&
+        meta?.trashed !== true &&
+        meta?.mimeType === 'application/vnd.google-apps.folder'
+      ) {
+        return { id: meta.id, name: meta.name || 'Riwa Studio Clients' };
+      }
+    } catch (_error) {
+      // Fall back to the authenticated Google account's My Drive root.
+    }
+  }
+
+  const folder = await driveEnsureFolder(accessToken, 'root', 'Riwa Studio Clients');
+  return { id: folder.id, name: folder.name || 'Riwa Studio Clients' };
+}
+
 async function ensureClientArchiveFolder(customer, workType, dateValue) {
-  const rootId = process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID;
-  if (!rootId) throw new Error('google_drive_root_folder_missing');
   const accessToken = await googleDriveAccessToken();
+  const root = await resolveDriveArchiveRoot(accessToken);
   const date = /^\d{4}-\d{2}-\d{2}$/.test(String(dateValue || '')) ? new Date(dateValue + 'T00:00:00Z') : new Date();
   const year = String(date.getUTCFullYear());
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   const category = ({ video:'Videos', design:'Designs', post:'Posts', shoot:'Shoots', script:'Scripts', voice:'Voice', task:'Other' })[workType] || 'Other';
 
-  const client = await driveEnsureFolder(accessToken, rootId, customer.data?.name || customer.id);
+  const client = await driveEnsureFolder(accessToken, root.id, customer.data?.name || customer.id);
   const yearFolder = await driveEnsureFolder(accessToken, client.id, year);
   const monthFolder = await driveEnsureFolder(accessToken, yearFolder.id, month);
   const typeFolder = await driveEnsureFolder(accessToken, monthFolder.id, category);
-  return { accessToken, folderId: typeFolder.id, path: [customer.data?.name || customer.id, year, month, category].join(' / ') };
+  return {
+    accessToken,
+    folderId: typeFolder.id,
+    path: [root.name, customer.data?.name || customer.id, year, month, category].join(' / ')
+  };
 }
 
 async function createScheduledPush({ title = 'رِواء ستوديو', body, dueAt, url = './', tag = 'riwa-reminder', userId = null }) {
@@ -1251,10 +1283,13 @@ app.get('/drive/status', async (_req, res) => {
   const configured = Boolean(
     process.env.GOOGLE_DRIVE_CLIENT_ID &&
     process.env.GOOGLE_DRIVE_CLIENT_SECRET &&
-    process.env.GOOGLE_DRIVE_REFRESH_TOKEN &&
-    process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID
+    process.env.GOOGLE_DRIVE_REFRESH_TOKEN
   );
-  return res.json({ ok: true, configured });
+  return res.json({
+    ok: true,
+    configured,
+    rootMode: process.env.GOOGLE_DRIVE_ROOT_FOLDER_ID ? 'configured' : 'auto'
+  });
 });
 
 app.options('/portal/push/subscribe', (_req, res) => {
