@@ -1374,7 +1374,7 @@ function _calc(m){
     if(cashBasis){
       // only money that actually arrived counts, and never the ad funding
       amt=S.payments.filter(function(x){
-            return x.customerId===c.id&&inAccountingMonth(x,m);})
+            return x.customerId===c.id&&x.kind!=="funding"&&inAccountingMonth(x,m);})
           .reduce(function(a,x){return a+(+x.amount||0);},0);
     }
     adSpend+=fundingCost;
