@@ -2581,7 +2581,7 @@ function vWork(){
      +'<td><span class="pill">'+t("d."+x.type)+'</span>'+(x.note?' <span class="mut" style="font-size:11.5px">'+esc(x.note)+'</span>':'')+'</td>'
      +'<td class="r">'+n(x.qty)+'</td><td class="mut">'+esc(e?e.name:"—")+'</td>'
      +'<td class="r"><span class="num neg">'+(pay?"−"+money(pay):"—")+'</span></td>'
-     +'<td class="r">'+(bill?'<span class="num pos">'+money(bill)+'</span>':(c&&c.billing==="package"?'<span class="mut">'+t("wk.inpack")+'</span>':"—"))+'</td>'
+     +'<td class="r">'+(!countsInPackage(x)?'<span class="pill">'+(LANG==="ar"?"أرشيفي":"Archive")+'</span>':(bill?'<span class="num pos">'+money(bill)+'</span>':(c&&c.billing==="package"?'<span class="mut">'+t("wk.inpack")+'</span>':"—")))+'</td>'
      +'<td class="r">'+(w?'<div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">'
        +'<button class="btn sm ghost" data-act="attachworkfile" data-id="'+x.id+'">'+(x.type==="design"?(adminWorkFileCount(x)?(LANG==="ar"?"إضافة صور ("+adminWorkFileCount(x)+")":"Add images ("+adminWorkFileCount(x)+")"):(LANG==="ar"?"رفع صور":"Upload images")):(adminWorkFileCount(x)?(LANG==="ar"?"إضافة ملف ("+adminWorkFileCount(x)+")":"Add file ("+adminWorkFileCount(x)+")"):(LANG==="ar"?"رفع ملف":"Upload file")))+'</button>'
        +'<button class="btn sm ghost" data-act="editwork" data-id="'+x.id+'">'+t("edit")+'</button></div>':'')+'</td></tr>';
