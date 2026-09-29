@@ -393,7 +393,7 @@ en:{
  "cost.payer":"Paid by","cost.box":"The company box","cost.owner":"{n} personally","cost.client":"Client paid directly",
  "reim.t":"Owed back to {n}","reim.n":"Costs paid personally, not yet reimbursed",
  "reim.add":"Record a reimbursement","reim.none":"Nothing outstanding","reim.line":"Reimbursement",
- "lg.work":"Delivery","lg.fund":"Ad funding","lg.reim":"Reimbursement",
+ "lg.work":"Delivery","lg.fund":"Ad funding","lg.fundpay":"Funding payment","lg.funddue":"Funding due","lg.reim":"Reimbursement",
  "lg.all":"Everything","lg.money":"Money only",
  "flt.type":"Type","flt.who":"Person","flt.all":"All",
  "flt.pay":"Payments","flt.adv":"Advances","flt.work":"Deliveries","flt.wage":"Wages","flt.cost":"Costs","flt.fund":"Funding","flt.clear":"Clear filters",
@@ -570,7 +570,7 @@ ar:{
  "cost.payer":"دفعه","cost.box":"صندوق الشركة","cost.owner":"{n} من جيبه","cost.client":"العميل مباشرة",
  "reim.t":"مستحق الاسترداد لـ{n}","reim.n":"مصروفات دفعها من جيبه ولم تُسترد",
  "reim.add":"تسجيل استرداد","reim.none":"لا يوجد","reim.line":"استرداد مصروفات",
- "lg.work":"تسليم","lg.fund":"تمويل إعلاني","lg.reim":"استرداد مصروفات",
+ "lg.work":"تسليم","lg.fund":"تمويل إعلاني","lg.fundpay":"دفعة تمويل","lg.funddue":"تمويل مستحق","lg.reim":"استرداد مصروفات",
  "lg.all":"الكل","lg.money":"الحركات المالية فقط",
  "flt.type":"النوع","flt.who":"الشخص","flt.all":"الكل",
  "flt.pay":"الدفعات","flt.adv":"السلف","flt.work":"التسليمات","flt.wage":"الرواتب","flt.cost":"المصروفات","flt.fund":"التمويل","flt.clear":"مسح الفلاتر",
@@ -1805,8 +1805,18 @@ function step(a,b,amt,base,k,total){
 
 /* ═════════════ INVOICES ═════════════ */
 function invoiceTotal(inv){return effectiveInvoiceItems(inv).reduce(function(a,x){return a+(+x.amount||0);},0);}
-function invoicePaid(inv){return S.payments.filter(function(p){return p.invoiceId===inv.id&&p.kind!=="funding";})
-  .reduce(function(a,p){return a+(+p.amount||0);},0);}
+function invoicePayments(inv){
+  var fundingIds=(inv&&inv.items||[]).filter(function(item){return item&&item.kind==="funding"&&item.fundingId;})
+    .map(function(item){return item.fundingId;});
+  return S.payments.filter(function(p){
+    if(p.invoiceId===inv.id&&p.kind!=="funding")return true;
+    if(p.kind==="funding"&&p.fundingId&&fundingIds.indexOf(p.fundingId)>=0)return true;
+    return false;
+  });
+}
+function invoicePaid(inv){
+  return invoicePayments(inv).reduce(function(a,p){return a+(+p.amount||0);},0);
+}
 function invoiceCustomer(inv){
   return S.customers.filter(function(c){return c.id===inv.customerId;})[0]||null;
 }
@@ -1863,13 +1873,16 @@ function invoiceForm(inv,custId){
     {k:"notes",label:t("inv.notes"),type:"textarea",def:defaults.notes||""}
   ],inv?defaults:null,function(v){
     if(v===null){S.invoices=S.invoices.filter(function(x){return x.id!==inv.id;});return;}
-    var items=[];
+    var items=[],chosen=S.customers.filter(function(x){return x.id===v.customerId;})[0];
+    var autoFunding=chosen?fundingInvoiceItemsForClient(chosen,v.period||MONTH,+v.adAmount||0):{replacesLegacy:false,items:[]};
     if(+v.serviceAmount)items.push({kind:"service",description:t("inv.service"),amount:+v.serviceAmount});
-    if(+v.adAmount)items.push({kind:"ads",description:t("inv.ads"),amount:+v.adAmount});
+    if(+v.adAmount&&!autoFunding.replacesLegacy)items.push({kind:"ads",description:t("inv.ads"),amount:+v.adAmount});
     if((+v.videoQty||0)*(+v.videoRate||0))items.push({kind:"video",description:v.videoQty+" × "+t("d.video"),qty:+v.videoQty,rate:+v.videoRate,amount:+v.videoQty*+v.videoRate});
     if((+v.designQty||0)*(+v.designRate||0))items.push({kind:"design",description:v.designQty+" × "+t("d.design"),qty:+v.designQty,rate:+v.designRate,amount:+v.designQty*+v.designRate});
-    if(+v.extraAmount)items.push({kind:"other",description:v.extraDesc||t("inv.extra"),amount:+v.extraAmount});
-    v.items=items; v.updatedAt=new Date().toISOString();
+    items=items.concat(autoFunding.items);
+    var keep=inv?(inv.items||[]).filter(function(item){return !isInvoiceRootItem(item);}):[];
+    if(+v.extraAmount)keep.push({kind:"other",description:v.extraDesc||t("inv.extra"),amount:+v.extraAmount});
+    v.items=items.concat(keep); v.updatedAt=new Date().toISOString();
     if(inv)Object.assign(inv,v);else{v.id=uid();v.createdAt=v.updatedAt;S.invoices.push(v);}
   });
 }
@@ -2009,9 +2022,14 @@ function movements(upto){
     out.push({date:transactionDate(x),accountingMonth:accountingMonthOf(x),kind:x.kind==="funding"?"fund":"pay",who:c?c.name:"—",note:x.note||"",
       amt:+x.amount||0,dir:1,id:x.id,act:"editpay",sec:"payments",customerId:x.customerId||""});
   });
-  /* media spend attached to a funding campaign */
+  /* funding creates a receivable on the client first; this does not move cash */
   (S.fundings||[]).forEach(function(x){
+    if(x.status==="cancelled")return;
     var c=S.customers.filter(function(y){return y.id===x.customerId;})[0];
+    var total=fundingTotal(x);
+    out.push({date:transactionDate(x),accountingMonth:accountingMonthOf(x),kind:"fundcharge",who:c?c.name:"—",
+      note:(x.platform||"Meta")+" · "+(LANG==="ar"?"مستحق على العميل":"due from client"),
+      amt:total,dir:0,displayDir:1,id:x.id,act:"editfunding",sec:"funding",customerId:x.customerId||""});
     var payer=x.payer||"box", pe=S.employees.filter(function(y){return y.id===payer;})[0];
     var tag=payer==="box"?"":(" · "+t("cost.owner",{n:pe?pe.name:"—"}));
     if((+x.spentAmount||0)>0)out.push({date:transactionDate(x),accountingMonth:accountingMonthOf(x),kind:"fundspend",who:c?c.name:(x.platform||"—"),note:(x.platform||"Meta")+tag,
@@ -2841,7 +2859,7 @@ function vLedgerFull(){
     if(LGTYPE==="money") rows=rows.filter(function(x){return x.kind!=="work";});
     else rows=rows.filter(function(x){
       if(LGTYPE==="wage") return x.kind==="out"||x.kind==="reim";
-      if(LGTYPE==="fund") return x.kind==="fund"||x.kind==="fundspend";
+      if(LGTYPE==="fund") return x.kind==="fund"||x.kind==="fundcharge"||x.kind==="fundspend";
       return x.kind===LGTYPE;});
   }
   if(LGWHO!=="all"){
@@ -2911,13 +2929,13 @@ function vLedgerFull(){
    +'<th class="r">'+t("lg.run")+'</th><th></th></tr></thead><tbody>';
   if(!rows.length) h+='<tr><td colspan="7" class="empty">'+t("lg.none")+'</td></tr>';
   rows.forEach(function(x){
-    var lbl={pay:"lg.pay",cost:"lg.cost",fundspend:"fund.spent",adv:"lg.adv",out:"lg.out",work:"lg.work",fund:"lg.fund",reim:"lg.reim",trans:"lg.trans"}[x.kind]||"lg.pay";
-    var pill={pay:"on",cost:"",fundspend:"",adv:"cy",out:"amb",work:"",fund:"cy",reim:"amb",trans:"on"}[x.kind]||"";
+    var lbl={pay:"lg.pay",cost:"lg.cost",fundspend:"fund.spent",fundcharge:"lg.funddue",adv:"lg.adv",out:"lg.out",work:"lg.work",fund:"lg.fundpay",reim:"lg.reim",trans:"lg.trans"}[x.kind]||"lg.pay";
+    var pill={pay:"on",cost:"",fundspend:"",adv:"cy",out:"amb",work:"",fund:"cy",fundcharge:"amb",reim:"amb",trans:"on"}[x.kind]||"";
     var can_=can(x.sec);
     h+='<tr><td>'+n(esc(x.date))+'</td>'
      +'<td><span class="pill '+pill+'">'+t(lbl)+'</span></td>'
      +'<td>'+esc(x.who)+(x.note?'<div class="mut" style="font-size:11.5px">'+esc(x.note)+'</div>':'')+'</td>'
-     +'<td class="r">'+(x.dir>0?'<span class="num pos">+'+money(x.amt)+'</span>':'')+'</td>'
+     +'<td class="r">'+(x.dir>0?'<span class="num pos">+'+money(x.amt)+'</span>':(x.kind==="fundcharge"?'<span class="num" style="color:#d88a63">+'+money(x.amt)+'</span>':''))+'</td>'
      +'<td class="r">'+(x.dir<0?'<span class="num neg">−'+money(x.amt)+'</span>':(x.kind==="cost"?'<span class="mut" style="font-size:11.5px">'+money(x.amt)+'</span>':''))+'</td>'
      +'<td class="r">'+(x.dir!==0?'<span class="num '+(x.run<0?"neg":"")+'">'+money(x.run)+'</span>':'')+'</td>'
      +'<td class="r">'+(can_?'<button class="btn sm ghost" data-act="'+x.act+'" data-id="'+x.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
@@ -2956,7 +2974,7 @@ function vLedgerSafe(){
     if(LGTYPE==="money") rows=rows.filter(function(x){return x.kind!=="work";});
     else rows=rows.filter(function(x){
       if(LGTYPE==="wage") return x.kind==="out"||x.kind==="reim";
-      if(LGTYPE==="fund") return x.kind==="fund"||x.kind==="fundspend";
+      if(LGTYPE==="fund") return x.kind==="fund"||x.kind==="fundcharge"||x.kind==="fundspend";
       return x.kind===LGTYPE;
     });
   }
@@ -2985,8 +3003,8 @@ function vLedgerSafe(){
     +'<div class="tbl-wrap"><table><thead><tr><th>'+t("th.date")+'</th><th>'+t("th.action")+'</th><th>'+t("th.who")+'</th><th></th></tr></thead><tbody>';
   if(!rows.length) h+='<tr><td colspan="4" class="empty">'+t("lg.none")+'</td></tr>';
   rows.forEach(function(x){
-    var lbl={pay:"lg.pay",cost:"lg.cost",fundspend:"fund.spent",adv:"lg.adv",out:"lg.out",work:"lg.work",fund:"lg.fund",reim:"lg.reim",trans:"lg.trans"}[x.kind]||"lg.pay";
-    var pill={pay:"on",cost:"",fundspend:"",adv:"cy",out:"amb",work:"",fund:"cy",reim:"amb",trans:"on"}[x.kind]||"";
+    var lbl={pay:"lg.pay",cost:"lg.cost",fundspend:"fund.spent",fundcharge:"lg.funddue",adv:"lg.adv",out:"lg.out",work:"lg.work",fund:"lg.fundpay",reim:"lg.reim",trans:"lg.trans"}[x.kind]||"lg.pay";
+    var pill={pay:"on",cost:"",fundspend:"",adv:"cy",out:"amb",work:"",fund:"cy",fundcharge:"amb",reim:"amb",trans:"on"}[x.kind]||"";
     var editAllowed=x.kind==="work"&&can("work");
     h+='<tr><td>'+n(esc(x.date))+'</td>'
       +'<td><span class="pill '+pill+'">'+t(lbl)+'</span></td>'
@@ -2996,11 +3014,11 @@ function vLedgerSafe(){
   return h+'</tbody></table></div></div>';
 }
 function ledgerTimelineRow(x,showMoney){
-  var lbl={pay:"lg.pay",cost:"lg.cost",fundspend:"fund.spent",adv:"lg.adv",repay:"lg.adv",out:"lg.out",work:"lg.work",fund:"lg.fund",reim:"lg.reim",trans:"lg.trans"}[x.kind]||"lg.pay";
+  var lbl={pay:"lg.pay",cost:"lg.cost",fundspend:"fund.spent",fundcharge:"lg.funddue",adv:"lg.adv",repay:"lg.adv",out:"lg.out",work:"lg.work",fund:"lg.fundpay",reim:"lg.reim",trans:"lg.trans"}[x.kind]||"lg.pay";
   var cls=(x.dir>0?"in":(x.dir<0?"out":"neutral"));
   var canEdit=can(x.sec)&&(!(x.kind==="pay")||canSeeMoney());
   return '<div class="timeline-item '+cls+'"><span class="timeline-dot"></span><div class="timeline-copy"><div class="timeline-top"><b>'+esc(x.who||"—")+'</b>'
-    +(showMoney&&x.dir!==0?'<strong class="num '+(x.dir>0?"pos":"neg")+'">'+(x.dir>0?"+":"−")+money(x.amt)+'</strong>':'')+'</div>'
+    +(showMoney&&(x.dir!==0||x.kind==="fundcharge")?'<strong class="num '+(x.kind==="fundcharge"?"":(x.dir>0?"pos":"neg"))+'"'+(x.kind==="fundcharge"?' style="color:#d88a63"':'')+'>'+(x.kind==="fundcharge"?"+":(x.dir>0?"+":"−"))+money(x.amt)+'</strong>':'')+'</div>'
     +'<div class="timeline-sub"><span class="pill">'+t(lbl)+'</span><span>'+esc(x.date||"")+'</span></div>'
     +(x.note?'<small>'+esc(x.note)+'</small>':'')+'</div>'
     +(canEdit?'<button class="timeline-edit" data-act="'+x.act+'" data-id="'+x.id+'" aria-label="'+(LANG==="ar"?"خيارات":"Options")+'"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>':'')+'</div>';
@@ -3035,7 +3053,7 @@ function filteredLedgerRows(){
     if(LGTYPE==="money") rows=rows.filter(function(x){return x.kind!=="work";});
     else rows=rows.filter(function(x){
       if(LGTYPE==="wage") return x.kind==="out"||x.kind==="reim";
-      if(LGTYPE==="fund") return x.kind==="fund"||x.kind==="fundspend";
+      if(LGTYPE==="fund") return x.kind==="fund"||x.kind==="fundcharge"||x.kind==="fundspend";
       return x.kind===LGTYPE;
     });
   }
@@ -3621,7 +3639,11 @@ function printInvoice(c,invoice){
   if(invoice){
     var ipaid=invoicePaid(invoice), itotal=invoiceTotal(invoice);
     st={lines:effectiveInvoiceItems(invoice).map(function(x){return{date:invoice.date,desc:x.description,charge:+x.amount||0,paid:0};}),billed:itotal,paid:ipaid,balance:itotal-ipaid};
-    S.payments.filter(function(p){return p.invoiceId===invoice.id&&p.kind!=="funding";}).forEach(function(p){st.lines.push({date:p.date,desc:t("line.pay"),charge:0,paid:+p.amount||0});});
+    invoicePayments(invoice).forEach(function(p){st.lines.push({
+      date:transactionDate(p),
+      desc:p.kind==="funding"?t("lg.fundpay"):t("line.pay"),
+      charge:0,paid:+p.amount||0
+    });});
   }else st=stmt(c,MONTH);
   var co=S.settings.company||BRAND_NAME;
   var logo=S.settings.logo||"";
@@ -3762,13 +3784,34 @@ function clientPackageLabel(c){
   if(+c.designs) parts.push((+c.designs)+" "+t("d.design"));
   return (LANG==="ar"?"الباقة الشهرية":"Monthly package")+(parts.length?" — "+parts.join(" + "):"");
 }
+function fundingInvoiceItemsForClient(c,period,legacyAds){
+  var p=period||MONTH;
+  var rows=(S.fundings||[]).filter(function(f){
+    return f.customerId===c.id&&f.status!=="cancelled"&&accountingMonthOf(f)===p;
+  });
+  var total=rows.reduce(function(sum,f){return sum+fundingTotal(f);},0);
+  var replacesLegacy=rows.length>0&&(+legacyAds||0)>0&&Math.abs(total-(+legacyAds||0))<0.005;
+  return {
+    replacesLegacy:replacesLegacy,
+    items:rows.map(function(f){
+      return {
+        kind:"funding",
+        fundingId:f.id,
+        description:(LANG==="ar"?"تمويل ":"Ad funding · ")+(f.platform||"Meta"),
+        amount:fundingTotal(f)
+      };
+    })
+  };
+}
 function rootInvoiceItemsForClient(c,period){
   var items=[],p=period||MONTH;
+  var legacyAds=c.billing==="package"?(+c.adSpend||0):0;
+  var fundingItems=fundingInvoiceItemsForClient(c,p,legacyAds);
   if(c.billing==="package"){
-    var total=+c.monthlyFee||0,ads=+c.adSpend||0;
+    var total=+c.monthlyFee||0,ads=legacyAds;
     var service=Math.max(0,total-ads);
     if(service) items.push({kind:"service",description:clientPackageLabel(c),amount:service});
-    if(ads) items.push({kind:"ads",description:t("inv.ads"),amount:ads});
+    if(ads&&!fundingItems.replacesLegacy) items.push({kind:"ads",description:t("inv.ads"),amount:ads});
   }else{
     var dm=delivered(c,p);
     if(c.billing==="per_design"){
@@ -3781,11 +3824,12 @@ function rootInvoiceItemsForClient(c,period){
       if(dq2&&dr2) items.push({kind:"design",description:dq2+" × "+t("d.design")+" @ "+money(dr2),qty:dq2,rate:dr2,amount:dq2*dr2});
     }
   }
+  items=items.concat(fundingItems.items);
   return items;
 }
 function isInvoiceRootItem(item){
   var k=item&&item.kind||"",d=String(item&&item.description||"").toLowerCase();
-  if(["service","ads","video","design"].indexOf(k)>=0) return true;
+  if(["service","ads","video","design","funding"].indexOf(k)>=0) return true;
   return /باقة|اشتراك|package|monthly package|service \/ package/.test(d);
 }
 function syncClientOpenInvoices(c,fromMonth){
