@@ -188,7 +188,7 @@ function monthlyPay(e,m){
 function staffEarned(e,m){
   if(e.payType==="monthly")return monthlyPay(e,m);
   if(e.payType==="percent")return null;
-  return (DATA.work||[]).filter(function(w){return inMonth(w.date,m)&&(e.payType!=="per_video"||w.type==="video")}).reduce(function(a,w){
+  return (DATA.work||[]).filter(function(w){return countsInPackage(w)&&inAccountingMonth(w,m)&&(e.payType!=="per_video"||w.type==="video")}).reduce(function(a,w){
     if(w.amount!==""&&w.amount!=null)return a+(+w.amount||0);
     return a+(+w.qty||0)*(+e.rate||0)
   },0)
@@ -196,8 +196,8 @@ function staffEarned(e,m){
 function staffBalance(){
   var e=DATA.employee,m=currentMonth(),earned=staffEarned(e,m);
   if(earned==null)return null;
-  var adv=(DATA.advances||[]).filter(function(x){return inMonth(x.date,m)}).reduce(function(a,x){return a+(+x.amount||0)},0);
-  var paid=(DATA.payouts||[]).filter(function(x){return inMonth(x.date,m)}).reduce(function(a,x){return a+(+x.amount||0)},0);
+  var adv=(DATA.advances||[]).filter(function(x){return inAccountingMonth(x,m)}).reduce(function(a,x){return a+(+x.amount||0)},0);
+  var paid=(DATA.payouts||[]).filter(function(x){return inAccountingMonth(x,m)}).reduce(function(a,x){return a+(+x.amount||0)},0);
   return {earned:earned,adv:adv,paid:paid,balance:earned-adv-paid}
 }
 var STAFF_DRAFT_KEY="riwa_staff_delivery_draft_v2";
@@ -558,7 +558,7 @@ function fileKindLabel(file){
   return "ملف";
 }
 function renderStaff(){
-  var e=DATA.employee||{},m=currentMonth(),bal=staffBalance(),monthWork=(DATA.work||[]).filter(function(w){return inMonth(w.date,m)});
+  var e=DATA.employee||{},m=currentMonth(),bal=staffBalance(),monthWork=(DATA.work||[]).filter(function(w){return countsInPackage(w)&&inAccountingMonth(w,m)});
   var customerMap={};(DATA.customers||[]).forEach(function(c){customerMap[c.id]=c.name});
   var delivered=monthWork.reduce(function(a,w){return a+(+w.qty||0)},0);
   var submissions=DATA.submissions||[],pending=submissions.filter(function(x){return x.status==="pending"}).length;
