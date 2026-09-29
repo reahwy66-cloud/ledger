@@ -797,7 +797,7 @@ function clientArchiveSection(){
     var files=workFilesList(w);
     totalFiles+=files.length;
     var designImages=[];
-    if(w.type==="design"){
+    if(w.type==="design"||w.type==="post"){
       files.forEach(function(f,index){
         if(String(f&&f.mimeType||"").indexOf("image/")===0)designImages.push(f);
       });
@@ -805,7 +805,7 @@ function clientArchiveSection(){
     }
     files.forEach(function(f,index){
       var mime=String(f&&f.mimeType||"");
-      if(w.type==="design"&&mime.indexOf("image/")===0)return;
+      if((w.type==="design"||w.type==="post")&&mime.indexOf("image/")===0)return;
       var mediaUrl=archiveMediaUrl(w,index,false),downloadUrl=archiveMediaUrl(w,index,true),preview="",itemClass="";
       if(mime.indexOf("video/")===0){
         itemClass=" video-item";
