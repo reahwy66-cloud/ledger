@@ -25,9 +25,13 @@ function $(q){return document.querySelector(q)}
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]})}
 function money(v){return "$"+Number(v||0).toFixed(2)}
 function ym(d){return String(d||"").slice(0,7)}
+function txDate(x){return String((x&&x.transaction_date)||(x&&x.date)||"")}
+function acctMonth(x){return String((x&&x.accounting_month)||ym(txDate(x)))}
+function countsInPackage(w){return !(w&&w.archived===true&&w.countInPackage===false)}
 function today(){return new Date().toISOString().slice(0,10)}
 function currentMonth(){return today().slice(0,7)}
 function inMonth(d,m){return ym(d)===m}
+function inAccountingMonth(x,m){return acctMonth(x)===m}
 function addMonth(m,n){var p=m.split("-"),d=new Date(+p[0],+p[1]-1+n,1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")}
 function daysInMonth(m){var p=m.split("-");return new Date(+p[0],+p[1],0).getDate()}
 function applyTheme(){var h=new Date().getHours();document.documentElement.setAttribute("data-theme",(h>=7&&h<19)?"light":"dark")}
@@ -116,7 +120,21 @@ function bindGlobal(){
     if(act==="designprev"&&KIND==="client") moveDesignCarousel(a.closest("[data-design-carousel]"),-1);
     if(act==="designnext"&&KIND==="client") moveDesignCarousel(a.closest("[data-design-carousel]"),1);
     if(act==="designslide"&&KIND==="client") setDesignCarousel(a.closest("[data-design-carousel]"),Number(a.dataset.index||0));
+    if(act==="designopen"&&KIND==="client") openDesignViewer(a.closest("[data-design-carousel]"),Number(a.dataset.index||0));
   });
+  var swipeStart=null;
+  document.addEventListener("touchstart",function(e){
+    if(KIND!=="client")return;
+    var root=e.target.closest&&e.target.closest("[data-design-carousel]");
+    if(!root||!e.touches||e.touches.length!==1)return;
+    swipeStart={root:root,x:e.touches[0].clientX,y:e.touches[0].clientY};
+  },{passive:true});
+  document.addEventListener("touchend",function(e){
+    if(!swipeStart||!e.changedTouches||!e.changedTouches.length){swipeStart=null;return;}
+    var s=swipeStart;swipeStart=null;
+    var dx=e.changedTouches[0].clientX-s.x,dy=e.changedTouches[0].clientY-s.y;
+    if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.2) moveDesignCarousel(s.root,dx<0?1:-1);
+  },{passive:true});
 }
 
 function renderLogin(){
@@ -595,17 +613,17 @@ function clientStatement(){
     if((+w.charge||0)>0){billed+=+w.charge;lines.push({date:w.date,desc:(TYPES[w.type]||w.type)+(w.note?" — "+w.note:""),charge:+w.charge,paid:0})}
   });
   explicit.forEach(function(inv){(inv.items||[]).forEach(function(i){var a=+i.amount||0;if(a){billed+=a;lines.push({date:inv.date||((inv.period||thru)+"-01"),desc:(inv.number?inv.number+" · ":"")+(i.description||"بند فاتورة"),charge:a,paid:0})}})});
-  (DATA.fundings||[]).filter(function(x){return x.status!=="cancelled"&&ym(x.date)<=thru&&!invoicedMonth(ym(x.date))}).forEach(function(x){var a=fundingTotal(x);billed+=a;lines.push({date:x.date,desc:"تمويل "+(x.platform||"Meta"),charge:a,paid:0})});
+  (DATA.fundings||[]).filter(function(x){return x.status!=="cancelled"&&acctMonth(x)<=thru}).forEach(function(x){var a=fundingTotal(x);billed+=a;lines.push({date:txDate(x),desc:"تمويل "+(x.platform||"Meta"),charge:a,paid:0})});
   (DATA.salaryCharges||[]).forEach(function(x){var a=+x.amount||0;if(a&&!invoicedMonth(ym(x.date))){billed+=a;lines.push({date:x.date,desc:x.description||"حصة تشغيل",charge:a,paid:0})}});
-  (DATA.payments||[]).filter(function(x){return ym(x.date)<=thru}).forEach(function(x){var a=+x.amount||0;paid+=a;lines.push({date:x.date,desc:"دفعة"+(x.note?" — "+x.note:""),charge:0,paid:a})});
+  (DATA.payments||[]).filter(function(x){return acctMonth(x)<=thru}).forEach(function(x){var a=+x.amount||0;paid+=a;lines.push({date:txDate(x),desc:(x.kind==="funding"?"دفعة تمويل":"دفعة")+(x.note?" — "+x.note:""),charge:0,paid:a})});
   lines.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0});var run=0;lines.forEach(function(l){run+=l.charge-l.paid;l.run=run});
   return {lines:lines,billed:billed,paid:paid,balance:billed-paid}
 }
 function deliveredSummary(){
-  var o={};Object.keys(TYPES).forEach(function(k){o[k]=0});(DATA.work||[]).forEach(function(w){o[w.type]=(o[w.type]||0)+(+w.qty||0)});return o
+  var o={};Object.keys(TYPES).forEach(function(k){o[k]=0});(DATA.work||[]).filter(countsInPackage).forEach(function(w){o[w.type]=(o[w.type]||0)+(+w.qty||0)});return o
 }
 function clientPricingSection(){
-  var c=DATA.customer||{},m=currentMonth(),work=(DATA.work||[]).filter(function(w){return inMonth(w.date,m);});
+  var c=DATA.customer||{},m=currentMonth(),work=(DATA.work||[]).filter(function(w){return countsInPackage(w)&&inAccountingMonth(w,m);});
   var services=(DATA.salaryCharges||[]).filter(function(x){return ym(x.date||x.month)===m;});
   var h='<section class="card full pricing-card"><h2>تفاصيل التسعير</h2><p class="sub">كيف عم ينحسب حسابك لهذا الشهر.</p>';
 
@@ -700,7 +718,7 @@ function designPostCard(w,files){
   var count=imageEntries.length;
   var slides=imageEntries.map(function(entry,i){
     var src=archiveMediaUrl(w,entry.index,false),download=archiveMediaUrl(w,entry.index,true);
-    return '<div class="design-slide'+(i===0?' active':'')+'" data-design-slide="'+i+'" data-download="'+esc(download)+'">'
+    return '<div class="design-slide'+(i===0?' active':'')+'" data-design-slide="'+i+'" data-download="'+esc(download)+'" data-act="designopen" data-index="'+i+'" role="button" tabindex="0">'
       +'<img src="'+esc(src)+'" alt="'+esc(entry.f.name||("تصميم "+(i+1)))+'" loading="lazy"></div>';
   }).join("");
   var dots=count>1?'<div class="design-dots">'+imageEntries.map(function(_entry,i){
@@ -730,6 +748,42 @@ function setDesignCarousel(root,index){
 function moveDesignCarousel(root,delta){
   if(!root)return;
   setDesignCarousel(root,Number(root.dataset.index||0)+delta);
+}
+function openDesignViewer(root,startIndex){
+  if(!root)return;
+  var slides=Array.prototype.slice.call(root.querySelectorAll("[data-design-slide]"));
+  if(!slides.length)return;
+  var entries=slides.map(function(slide){
+    var img=slide.querySelector("img");
+    return {src:img?img.src:"",alt:img?img.alt:"",download:slide.dataset.download||""};
+  }).filter(function(x){return x.src});
+  if(!entries.length)return;
+  var old=document.querySelector(".archive-viewer-overlay");if(old)old.remove();
+  var wrap=document.createElement("div"),index=Math.max(0,Math.min(entries.length-1,Number(startIndex||0)));
+  wrap.className="archive-viewer-overlay design-viewer-overlay";
+  wrap.innerHTML='<div class="archive-viewer-modal design-viewer-modal"><div class="archive-viewer-head"><div><b>التصاميم</b><small class="design-viewer-count"></small></div><button type="button" class="archive-viewer-close">×</button></div>'
+    +'<div class="design-viewer-body"><button type="button" class="design-viewer-nav prev" aria-label="السابق">‹</button><img alt=""><button type="button" class="design-viewer-nav next" aria-label="التالي">›</button></div>'
+    +'<div class="design-viewer-dots"></div><div class="design-viewer-actions"><a class="btn primary" target="_blank" rel="noopener">تحميل الصورة</a></div></div>';
+  document.body.appendChild(wrap);
+  var img=wrap.querySelector(".design-viewer-body img"),count=wrap.querySelector(".design-viewer-count"),dots=wrap.querySelector(".design-viewer-dots"),dl=wrap.querySelector(".design-viewer-actions a");
+  function paint(){
+    index=((index%entries.length)+entries.length)%entries.length;
+    var item=entries[index];img.src=item.src;img.alt=item.alt||"";
+    count.textContent=(index+1)+" / "+entries.length;
+    dl.href=item.download||item.src;
+    dots.innerHTML=entries.length>1?entries.map(function(_x,i){return '<button type="button" data-vi="'+i+'" class="'+(i===index?'active':'')+'"></button>';}).join(""):"";
+    wrap.querySelectorAll(".design-viewer-nav").forEach(function(b){b.style.display=entries.length>1?"grid":"none"});
+  }
+  function close(){wrap.remove()}
+  wrap.querySelector(".archive-viewer-close").onclick=close;
+  wrap.querySelector(".design-viewer-nav.prev").onclick=function(){index--;paint()};
+  wrap.querySelector(".design-viewer-nav.next").onclick=function(){index++;paint()};
+  dots.addEventListener("click",function(e){var b=e.target.closest("[data-vi]");if(b){index=Number(b.dataset.vi||0);paint()}});
+  wrap.addEventListener("click",function(e){if(e.target===wrap)close()});
+  var sx=0,sy=0;
+  wrap.addEventListener("touchstart",function(e){if(e.touches&&e.touches[0]){sx=e.touches[0].clientX;sy=e.touches[0].clientY}},{passive:true});
+  wrap.addEventListener("touchend",function(e){if(!e.changedTouches||!e.changedTouches[0])return;var dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.2){index+=dx<0?1:-1;paint()}},{passive:true});
+  paint();
 }
 function clientArchiveSection(){
   var cards=[],totalFiles=0;
