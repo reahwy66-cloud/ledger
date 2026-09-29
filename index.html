@@ -1805,14 +1805,17 @@ function step(a,b,amt,base,k,total){
 
 /* ═════════════ INVOICES ═════════════ */
 function invoiceTotal(inv){return effectiveInvoiceItems(inv).reduce(function(a,x){return a+(+x.amount||0);},0);}
-function invoicePaid(inv){
+function invoicePayments(inv){
   var fundingIds=(inv&&inv.items||[]).filter(function(item){return item&&item.kind==="funding"&&item.fundingId;})
     .map(function(item){return item.fundingId;});
   return S.payments.filter(function(p){
     if(p.invoiceId===inv.id&&p.kind!=="funding")return true;
     if(p.kind==="funding"&&p.fundingId&&fundingIds.indexOf(p.fundingId)>=0)return true;
     return false;
-  }).reduce(function(a,p){return a+(+p.amount||0);},0);
+  });
+}
+function invoicePaid(inv){
+  return invoicePayments(inv).reduce(function(a,p){return a+(+p.amount||0);},0);
 }
 function invoiceCustomer(inv){
   return S.customers.filter(function(c){return c.id===inv.customerId;})[0]||null;
@@ -3636,7 +3639,11 @@ function printInvoice(c,invoice){
   if(invoice){
     var ipaid=invoicePaid(invoice), itotal=invoiceTotal(invoice);
     st={lines:effectiveInvoiceItems(invoice).map(function(x){return{date:invoice.date,desc:x.description,charge:+x.amount||0,paid:0};}),billed:itotal,paid:ipaid,balance:itotal-ipaid};
-    S.payments.filter(function(p){return p.invoiceId===invoice.id&&p.kind!=="funding";}).forEach(function(p){st.lines.push({date:p.date,desc:t("line.pay"),charge:0,paid:+p.amount||0});});
+    invoicePayments(invoice).forEach(function(p){st.lines.push({
+      date:transactionDate(p),
+      desc:p.kind==="funding"?t("lg.fundpay"):t("line.pay"),
+      charge:0,paid:+p.amount||0
+    });});
   }else st=stmt(c,MONTH);
   var co=S.settings.company||BRAND_NAME;
   var logo=S.settings.logo||"";
