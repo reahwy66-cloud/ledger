@@ -694,7 +694,7 @@ function clientDeliverySection(){
   return '<section class="card"><h2>شو تسلّم</h2><p class="sub">كل الأعمال المعتمدة والمسجلة على حسابك.</p><div class="list">'
     +(work.length?work.slice(0,40).map(function(w){
       var rate=0,label=TYPES[w.type]||w.type;
-      if(c.billing!=="package"){
+      if(countsInPackage(w)&&c.billing!=="package"){
         if(w.type==="video")rate=+c.rate||0;
         else if(w.type==="design")rate=+c.drate||(c.billing==="per_design"?+c.rate:0)||0;
       }
