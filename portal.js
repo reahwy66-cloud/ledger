@@ -604,7 +604,7 @@ function clientStatement(){
     while(m<=stop&&guard++<180){var fee=+c.monthlyFee||0;if(fee&&!invoicedMonth(m)){billed+=fee;lines.push({date:m+"-01",desc:"الاشتراك الشهري",charge:fee,paid:0})}m=addMonth(m,1)}
   }
   var vr=+c.rate||0,dr=+c.drate||0;if(c.billing==="per_design")dr=+c.drate||+c.rate||0;
-  (DATA.work||[]).filter(function(w){return ym(w.date)<=thru&&!invoicedMonth(ym(w.date))}).forEach(function(w){
+  (DATA.work||[]).filter(function(w){return countsInPackage(w)&&acctMonth(w)<=thru&&!invoicedMonth(acctMonth(w))}).forEach(function(w){
     var amt=0;if(c.billing==="per_design"&&w.type==="design")amt=(+w.qty||0)*dr;
     else if(c.billing!=="package"&&w.type==="video")amt=(+w.qty||0)*vr;
     else if(c.billing!=="package"&&w.type==="design"&&dr)amt=(+w.qty||0)*dr;
@@ -613,7 +613,13 @@ function clientStatement(){
     if((+w.charge||0)>0){billed+=+w.charge;lines.push({date:w.date,desc:(TYPES[w.type]||w.type)+(w.note?" — "+w.note:""),charge:+w.charge,paid:0})}
   });
   explicit.forEach(function(inv){(inv.items||[]).forEach(function(i){var a=+i.amount||0;if(a){billed+=a;lines.push({date:inv.date||((inv.period||thru)+"-01"),desc:(inv.number?inv.number+" · ":"")+(i.description||"بند فاتورة"),charge:a,paid:0})}})});
-  (DATA.fundings||[]).filter(function(x){return x.status!=="cancelled"&&acctMonth(x)<=thru}).forEach(function(x){var a=fundingTotal(x);billed+=a;lines.push({date:txDate(x),desc:"تمويل "+(x.platform||"Meta"),charge:a,paid:0})});
+  (DATA.fundings||[]).filter(function(x){return x.status!=="cancelled"&&acctMonth(x)<=thru}).forEach(function(x){
+    var covered=explicit.some(function(inv){return (inv.items||[]).some(function(item){
+      return item&&((item.fundingId&&item.fundingId===x.id)||(item.kind==="funding"&&(!item.fundingId||item.fundingId===x.id)));
+    })});
+    if(covered)return;
+    var a=fundingTotal(x);billed+=a;lines.push({date:txDate(x),desc:"تمويل "+(x.platform||"Meta"),charge:a,paid:0})
+  });
   (DATA.salaryCharges||[]).forEach(function(x){var a=+x.amount||0;if(a&&!invoicedMonth(ym(x.date))){billed+=a;lines.push({date:x.date,desc:x.description||"حصة تشغيل",charge:a,paid:0})}});
   (DATA.payments||[]).filter(function(x){return acctMonth(x)<=thru}).forEach(function(x){var a=+x.amount||0;paid+=a;lines.push({date:txDate(x),desc:(x.kind==="funding"?"دفعة تمويل":"دفعة")+(x.note?" — "+x.note:""),charge:0,paid:a})});
   lines.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0});var run=0;lines.forEach(function(l){run+=l.charge-l.paid;l.run=run});
