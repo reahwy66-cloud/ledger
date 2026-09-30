@@ -982,6 +982,12 @@ async function pushEverything(){
   await push(); await pull(); render();
 }
 
+async function saveWorkDirect(row){
+  if(MODE!=="cloud"||!SB||!can("work")) return;
+  var d=Object.assign({},row); delete d.id; delete d.updatedAt;
+  var r=await SB.from("work").upsert({id:row.id,data:d,updated_at:new Date().toISOString()});
+  if(r&&r.error) throw r.error;
+}
 async function safeSaveWork(row){
   if(!SAFE_API||MODE!=="cloud"||canSeeMoney()) return;
   try{
@@ -1305,7 +1311,7 @@ function workCounts(empId,m,isOwner){
   var w=S.work.filter(function(x){
     return countsInPackage(x)&&inAccountingMonth(x,m)&&(x.editorId===empId||(isOwner&&!x.editorId));});
   var o={};
-  ["video","post","design","shoot","voice","script","task"].forEach(function(k){
+  ["video","post","design","shoot","voice","script","ad_face","task"].forEach(function(k){
     o[k]=w.filter(function(x){return x.type===k;}).reduce(function(a,x){return a+(+x.qty||0);},0);});
   return o;
 }
@@ -1536,12 +1542,12 @@ function stmt(c,thru){
 function delivered(c,month){
   var w=S.work.filter(function(x){return countsInPackage(x)&&x.customerId===c.id&&(month?inAccountingMonth(x,month):true);});
   var o={};
-  ["video","post","design","shoot","voice","task"].forEach(function(k){
+  ["video","post","design","shoot","voice","ad_face","task"].forEach(function(k){
     o[k]=w.filter(function(x){return x.type===k;}).reduce(function(a,x){return a+(+x.qty||0);},0);});
   return o;
 }
 function deliveredChips(o){
-  var out=["video","post","design","shoot","voice","task"].filter(function(k){return o[k]>0;})
+  var out=["video","post","design","shoot","voice","ad_face","task"].filter(function(k){return o[k]>0;})
     .map(function(k){return '<span class="pill">'+o[k]+' '+t("d."+k)+'</span>';});
   return out.length?out.join(" "):'<span class="mut">'+t("cd.none")+'</span>';
 }
@@ -3622,11 +3628,18 @@ function form(title,fields,vals,onSave,extra,saveLabel){
     catch(err){alert((LANG==="ar"?"تعذّر الحذف: ":"Delete failed: ")+String(err&&err.message||err));return;}
     close();save();render();await deleteCloudRow(cloudRow);
   }};
-  el("fSave").onclick=function(){
-    var out={};
+  el("fSave").onclick=async function(){
+    var btn=this,out={};
     fields.forEach(function(f){var q=el("formBody").querySelector('[name="'+f.k+'"]');
       out[f.k]=f.type==="check"?q.checked:(f.type==="number"?(q.value===""?"":+q.value):q.value);});
-    close(); onSave(out); save(); if(ROLE||ME) render();
+    btn.disabled=true;
+    try{
+      await Promise.resolve(onSave(out));
+      close(); save(); if(ROLE||ME) render();
+    }catch(err){
+      btn.disabled=false;
+      alert((LANG==="ar"?"تعذّر الحفظ: ":"Save failed: ")+String(err&&err.message||err));
+    }
   };
   function close(){el("modalHost").innerHTML="";applyTheme();}
 }
@@ -3963,11 +3976,15 @@ function workForm(w){
     delete v.adFaceCharge;
     ensureAccountingFields(v,MONTH);
     if(w){
+      var updated=Object.assign({},w,v,{id:w.id});
+      if(canSeeMoney()) await saveWorkDirect(updated);
+      else if(SAFE_API) await safeSaveWork(updated);
       Object.assign(w,v);
-      if(SAFE_API&&!canSeeMoney()) safeSaveWork(Object.assign({id:w.id},v));
     }else{
-      v.id=uid();S.work.push(v);
-      if(SAFE_API&&!canSeeMoney()) safeSaveWork(v);
+      v.id=uid();
+      if(canSeeMoney()) await saveWorkDirect(v);
+      else if(SAFE_API) await safeSaveWork(v);
+      S.work.push(v);
     }
   });
 }
