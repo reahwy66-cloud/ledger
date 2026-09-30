@@ -7,7 +7,7 @@ var KIND=document.body.getAttribute("data-portal")||"staff";
 var PORTAL_API="https://studio-ledger-mcp.reahwy66.workers.dev";
 var SB=null,DATA=null;
 var TOKEN_KEY="riwa_portal_"+KIND+"_token";
-var TYPES={video:"فيديو",post:"بوست",design:"تصميم",shoot:"تصوير",voice:"فويس",script:"سكربت",task:"مهمة"};
+var TYPES={video:"فيديو",post:"بوست",design:"تصميم",shoot:"تصوير",voice:"فويس",script:"سكربت",task:"مهمة",ad_face:"وجوه إعلانية"};
 function roleWorkTypes(role){
   var r=String(role||"").toLowerCase().replace(/[أإآ]/g,"ا").replace(/ة/g,"ه");
   var out=[];
