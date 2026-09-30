@@ -463,7 +463,7 @@ en:{
  "tm.note":"Partners on a percentage share the profit once company costs are covered, instead of taking a salary. Their percentages should total 100%.",
  "wk.t":"Work log — {m}","wk.s":"Every delivery logged pays an editor and bills a client at the same time.",
  "wk.add":"Log a delivery","wk.edit":"Edit delivery","wk.none":"Nothing logged for {m} yet.","wk.inpack":"in package",
- "d.video":"Video","d.post":"Post","d.design":"Design","d.script":"Script","d.task":"Task","d.shoot":"Photo shoot","d.voice":"Voice recording",
+ "d.video":"Video","d.post":"Post","d.design":"Design","d.script":"Script","d.task":"Task","d.shoot":"Photo shoot","d.voice":"Voice recording","d.ad_face":"Advertising faces",
  "cs.t":"Running costs — {m}","cs.s":"These come off before the profit is split, so the manager carries his share of them.",
  "cs.add":"Add cost","cs.edit":"Edit cost","cs.none":"Nothing recorded for this month.","cs.tot":"Total",
  "cs.note":"Rent is not listed here; it comes out of the owner's share.",
@@ -496,7 +496,7 @@ en:{
  "f.rate":"Rate per video","f.exp":"Videos expected each month","f.credit":"Amount paid up front","f.note":"Note","f.activecli":"Active client",
  "f.role":"Role","f.roleH":"Editor, designer, manager…","f.howpaid":"How they are paid","f.rate2":"Rate","f.rateH":"For a profit share, put the percentage here.","f.onbooks":"Currently on the books",
  "f.date":"Date","f.client":"Client","f.delivered":"What was delivered","f.howmany":"How many","f.whodid":"Who did it","f.nobody":"Nobody / me",
- "f.override":"Override their pay","f.overrideH":"Leave empty to use their normal rate.","f.clientcharge":"Extra client charge","f.clientchargeH":"For an on-demand shoot, voice recording, or another item outside the package.",
+ "f.override":"Override their pay","f.overrideH":"Leave empty to use their normal rate.","f.clientcharge":"Extra client charge","f.clientchargeH":"For an on-demand shoot, voice recording, or another item outside the package.","f.adfaceamount":"Advertising faces amount","f.adfaceamountH":"Enter the amount to bill the client for this delivery.",
  "f.startDate":"Start date","f.endDate":"End date","f.sharedClient":"Salary shared with client","f.sharedPct":"Client share %","f.sharedH":"Charged to the selected client and deducted from the company's wage cost.",
  "f.whatis":"What is it","f.cat":"Category","f.amount":"Amount","f.repeats":"Repeats every month from this date",
  "f.time":"Time","f.shooting":"Appointment title","f.hours":"Hours it will take","f.notes":"Notes",
@@ -654,7 +654,7 @@ ar:{
  "emp.hist":"السُّلف","emp.thismonth":"مستحق نهاية {m}",
  "wk.t":"سجل الأعمال — {m}","wk.s":"كل تسليم يُحتسب للمونتير ويُفوتر على العميل.",
  "wk.add":"تسجيل تسليم","wk.edit":"تعديل","wk.none":"لا توجد تسليمات في {m}.","wk.inpack":"ضمن الباقة",
- "d.video":"فيديو","d.post":"منشور","d.design":"تصميم","d.task":"مهمة","d.shoot":"جلسة تصوير","d.voice":"تسجيل صوتي",
+ "d.video":"فيديو","d.post":"منشور","d.design":"تصميم","d.task":"مهمة","d.shoot":"جلسة تصوير","d.voice":"تسجيل صوتي","d.script":"سكريبت","d.ad_face":"وجوه إعلانية",
  "cs.t":"مصروفات التشغيل — {m}","cs.s":"تُخصم قبل تقسيم الربح.",
  "cs.add":"إضافة مصروف","cs.edit":"تعديل","cs.none":"لا توجد مصروفات.","cs.tot":"الإجمالي",
  "cs.note":"الإيجار غير مُدرج هنا لأنه يُخصم من حصة صاحب الشركة.",
@@ -723,7 +723,7 @@ ar:{
  "f.rate":"سعر الفيديو","f.exp":"العدد المتوقع شهرياً","f.credit":"مدفوع مقدماً","f.note":"ملاحظة","f.activecli":"عميل نشط",
  "f.role":"الدور","f.roleH":"مونتير، مصمم، مدير…","f.howpaid":"طريقة الدفع","f.rate2":"السعر","f.rateH":"للحصة من الربح أدخل النسبة.","f.onbooks":"نشط",
  "f.date":"التاريخ","f.client":"العميل","f.delivered":"البند","f.howmany":"العدد","f.whodid":"المنفّذ","f.nobody":"بدون",
- "f.override":"تعديل الأجر","f.overrideH":"اتركه فارغاً لاستخدام السعر المعتاد.","f.clientcharge":"إضافة على حساب العميل","f.clientchargeH":"لجلسة تصوير أو تسجيل صوتي أو أي خدمة خارج الباقة.",
+ "f.override":"تعديل الأجر","f.overrideH":"اتركه فارغاً لاستخدام السعر المعتاد.","f.clientcharge":"إضافة على حساب العميل","f.clientchargeH":"لجلسة تصوير أو تسجيل صوتي أو أي خدمة خارج الباقة.","f.adfaceamount":"مبلغ الوجوه الإعلانية","f.adfaceamountH":"حدّد المبلغ الذي تريد احتسابه على العميل لهذا التسليم.",
  "f.startDate":"تاريخ البدء","f.endDate":"تاريخ التوقف","f.sharedClient":"عميل مشارك بالراتب","f.sharedPct":"حصة العميل %","f.sharedH":"تُضاف حصة العميل إلى حسابه وتخفّض تكلفة الراتب على الشركة.",
  "f.whatis":"البيان","f.cat":"التصنيف","f.amount":"المبلغ","f.repeats":"يتكرر شهرياً",
  "f.time":"الوقت","f.shooting":"عنوان الموعد","f.hours":"عدد الساعات","f.notes":"ملاحظات",
@@ -3657,7 +3657,7 @@ function printInvoice(c,invoice){
   var charges=st.lines.filter(function(l){return (+l.charge||0)>0;});
   var pays=st.lines.filter(function(l){return (+l.paid||0)>0;});
   var da=delivered(c,null);
-  var chips=["video","design","post","shoot","voice","task"].filter(function(k){return da[k]>0;})
+  var chips=["video","design","post","shoot","voice","task","ad_face"].filter(function(k){return da[k]>0;})
     .map(function(k){return da[k]+" "+t("d."+k);}).join(" · ");
 
   var status = st.balance<0.005 ? {txt:t("inv.status.paid"),c:"#3f7a5c",bg:"#e8f2ec"}
@@ -3931,16 +3931,18 @@ function workForm(w){
     {k:"date",label:t("f.date"),type:"date",def:todayISO()},
     {k:"accounting_month",label:(LANG==="ar"?"الشهر المحاسبي":"Accounting month"),type:"month",def:w?accountingMonthOf(w):MONTH},
     {k:"customerId",label:t("f.client"),type:"select",options:S.customers.map(function(c){return [c.id,c.name];})},
-    {k:"type",label:t("f.delivered"),type:"select",options:[["video",t("d.video")],["post",t("d.post")],["design",t("d.design")],["shoot",t("d.shoot")],["voice",t("d.voice")],["script",t("d.script")],["task",t("d.task")]]},
+    {k:"type",label:t("f.delivered"),type:"select",options:[["video",t("d.video")],["ad_face",t("d.ad_face")],["post",t("d.post")],["design",t("d.design")],["shoot",t("d.shoot")],["voice",t("d.voice")],["script",t("d.script")],["task",t("d.task")]]},
     {k:"qty",label:t("f.howmany"),type:"number",def:1},
     {k:"editorId",label:t("f.whodid"),type:"select",options:[["",t("wk.mine")]].concat(S.employees.filter(function(e){return e.payType!=="percent";}).map(function(e){return [e.id,e.name];}))}
   ];
   if(canSeeMoney()){
     fields.push({k:"amount",label:t("f.override"),type:"number",step:"0.01",hint:t("f.overrideH")});
-    fields.push({k:"charge",label:t("f.clientcharge"),type:"number",step:"0.01",hint:t("f.clientchargeH")});
+    fields.push({k:"charge",label:t("f.clientcharge"),type:"number",step:"0.01",hint:t("f.clientchargeH"),showIf:{k:"type",in:["video","post","design","shoot","voice","script","task"]}});
+    fields.push({k:"adFaceCharge",label:t("f.adfaceamount"),type:"number",step:"0.01",hint:t("f.adfaceamountH"),showIf:{k:"type",in:["ad_face"]}});
   }
   fields.push({k:"note",label:t("f.note"),type:"textarea"});
-  form(w?t("wk.edit"):t("wk.add"),fields,w,async function(v){
+  var formVals=(w&&w.type==="ad_face")?Object.assign({},w,{adFaceCharge:w.charge==null?"":w.charge}):w;
+  form(w?t("wk.edit"):t("wk.add"),fields,formVals,async function(v){
     if(v===null){
       if(w&&w.file&&w.file.driveFileId){
         var removeDrive=confirm(LANG==="ar"
@@ -3954,6 +3956,11 @@ function workForm(w){
       S.work=S.work.filter(function(x){return !w||x.id!==w.id;});
       return;
     }
+    if(v.type==="ad_face"&&canSeeMoney()){
+      if(v.adFaceCharge===""||!Number.isFinite(+v.adFaceCharge)||+v.adFaceCharge<=0) throw new Error(LANG==="ar"?"حدد مبلغ الوجوه الإعلانية":"Enter the advertising faces amount");
+      v.charge=+v.adFaceCharge;
+    }
+    delete v.adFaceCharge;
     ensureAccountingFields(v,MONTH);
     if(w){
       Object.assign(w,v);
