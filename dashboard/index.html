@@ -983,10 +983,11 @@ async function pushEverything(){
 }
 
 async function saveWorkDirect(row){
-  if(MODE!=="cloud"||!SB||!can("work")) return;
-  var d=Object.assign({},row); delete d.id; delete d.updatedAt;
-  var r=await SB.from("work").upsert({id:row.id,data:d,updated_at:new Date().toISOString()});
+  if(MODE!=="cloud"||!SB||!can("work")) throw new Error(LANG==="ar"?"لا توجد صلاحية لحفظ التسليم":"No permission to save delivery");
+  var r=await SB.rpc("owner_save_work",{p:row});
   if(r&&r.error) throw r.error;
+  if(!r||!r.data||r.data.ok!==true) throw new Error(LANG==="ar"?"لم تؤكد قاعدة البيانات الحفظ":"Database did not confirm the save");
+  return r.data.work||row;
 }
 async function safeSaveWork(row){
   if(!SAFE_API||MODE!=="cloud"||canSeeMoney()) return;
@@ -3950,7 +3951,7 @@ function workForm(w){
   ];
   if(canSeeMoney()){
     fields.push({k:"amount",label:t("f.override"),type:"number",step:"0.01",hint:t("f.overrideH")});
-    fields.push({k:"charge",label:t("f.clientcharge"),type:"number",step:"0.01",hint:t("f.clientchargeH"),showIf:{k:"type",in:["video","post","design","shoot","voice","script","task"]}});
+    fields.push({k:"charge",label:t("f.clientcharge"),type:"number",step:"0.01",hint:t("f.clientchargeH"),showIf:{k:"type",in:["video","post","design","shoot","voice","script","ad_face","task"]}});
     fields.push({k:"adFaceCharge",label:t("f.adfaceamount"),type:"number",step:"0.01",hint:t("f.adfaceamountH"),showIf:{k:"type",in:["ad_face"]}});
   }
   fields.push({k:"note",label:t("f.note"),type:"textarea"});
