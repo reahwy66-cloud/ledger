@@ -654,7 +654,7 @@ ar:{
  "emp.hist":"السُّلف","emp.thismonth":"مستحق نهاية {m}",
  "wk.t":"سجل الأعمال — {m}","wk.s":"كل تسليم يُحتسب للمونتير ويُفوتر على العميل.",
  "wk.add":"تسجيل تسليم","wk.edit":"تعديل","wk.none":"لا توجد تسليمات في {m}.","wk.inpack":"ضمن الباقة",
- "d.video":"فيديو","d.post":"منشور","d.design":"تصميم","d.task":"مهمة","d.shoot":"جلسة تصوير","d.voice":"تسجيل صوتي","d.ad_face":"وجوه إعلانية",
+ "d.video":"فيديو","d.post":"منشور","d.design":"تصميم","d.task":"مهمة","d.shoot":"جلسة تصوير","d.voice":"تسجيل صوتي","d.script":"سكريبت","d.ad_face":"وجوه إعلانية",
  "cs.t":"مصروفات التشغيل — {m}","cs.s":"تُخصم قبل تقسيم الربح.",
  "cs.add":"إضافة مصروف","cs.edit":"تعديل","cs.none":"لا توجد مصروفات.","cs.tot":"الإجمالي",
  "cs.note":"الإيجار غير مُدرج هنا لأنه يُخصم من حصة صاحب الشركة.",
@@ -3931,7 +3931,7 @@ function workForm(w){
     {k:"date",label:t("f.date"),type:"date",def:todayISO()},
     {k:"accounting_month",label:(LANG==="ar"?"الشهر المحاسبي":"Accounting month"),type:"month",def:w?accountingMonthOf(w):MONTH},
     {k:"customerId",label:t("f.client"),type:"select",options:S.customers.map(function(c){return [c.id,c.name];})},
-    {k:"type",label:t("f.delivered"),type:"select",options:[["video",t("d.video")],["post",t("d.post")],["design",t("d.design")],["shoot",t("d.shoot")],["voice",t("d.voice")],["script",t("d.script")],["task",t("d.task")],["ad_face",t("d.ad_face")]]},
+    {k:"type",label:t("f.delivered"),type:"select",options:[["video",t("d.video")],["ad_face",t("d.ad_face")],["post",t("d.post")],["design",t("d.design")],["shoot",t("d.shoot")],["voice",t("d.voice")],["script",t("d.script")],["task",t("d.task")]]},
     {k:"qty",label:t("f.howmany"),type:"number",def:1},
     {k:"editorId",label:t("f.whodid"),type:"select",options:[["",t("wk.mine")]].concat(S.employees.filter(function(e){return e.payType!=="percent";}).map(function(e){return [e.id,e.name];}))}
   ];
