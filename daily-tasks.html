@@ -28,6 +28,21 @@ async function call(method,body){
  const r=await fetch(API+"/daily-tasks",{method,headers:{"authorization":"Bearer "+token,...(body?{"content-type":"application/json"}:{})},body:body?JSON.stringify(body):undefined});
  const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"تعذّر تنفيذ الطلب");return d;
 }
+async function createTask(body){
+ try{return await call("POST",body)}
+ catch(primaryError){
+   if(portal||!body||body.action!=="create")throw primaryError;
+   const {data,error}=await sb.rpc("owner_create_daily_task",{
+     p_title:body.title,
+     p_start_at:body.startAt,
+     p_assigned_employee_id:body.assignedEmployeeId||null,
+     p_priority:body.priority||"normal",
+     p_note:body.note||""
+   });
+   if(error)throw new Error("تعذّر حفظ المهمة: "+(error.message||primaryError.message||"خطأ غير معروف"));
+   return data||{ok:true};
+ }
+}
 async function loadEmployees(){
  if(portal)return;
  const r=await sb.from("employees").select("id,data"); if(r.error)return;
@@ -50,7 +65,7 @@ document.querySelector("#createForm").onsubmit=async e=>{e.preventDefault();cons
  const dayOffset=Number(document.querySelector("#taskDay").value||0);
  const parts=time.split(":").map(Number),start=new Date();
  start.setSeconds(0,0);start.setDate(start.getDate()+dayOffset);start.setHours(parts[0]||0,parts[1]||0,0,0);
- await call("POST",{action:"create",title:document.querySelector("#title").value,startAt:start.toISOString(),assignedEmployeeId:document.querySelector("#employee").value,priority:document.querySelector("#priority").value});
+ await createTask({action:"create",title:document.querySelector("#title").value,startAt:start.toISOString(),assignedEmployeeId:document.querySelector("#employee").value,priority:document.querySelector("#priority").value});
  e.target.reset();document.querySelector("#taskDay").value="0";await load()
 }catch(err){m.textContent=err.message}};
 if(await auth()){await loadEmployees();await load();setInterval(load,30000)}
