@@ -920,7 +920,12 @@ async function pull(){
     PULLED.settings=true;
   }
   normalizeStateShape();
-  if(applyBrandDefaults()) setTimeout(save,0);
+  var currencyMigrated=false;
+  if(!S.settings.fxRates["2026-10-01"]){
+    S.settings.fxRates["2026-10-01"]=137;
+    currencyMigrated=true;
+  }
+  if(applyBrandDefaults()||currencyMigrated) setTimeout(save,0);
   await loadPortalPending();
   if(canSeeMoney()&&syncAllOpenInvoiceRoots(MONTH)){
     Store.save(S);
@@ -1172,6 +1177,63 @@ function ymNow(){return new Date().toISOString().slice(0,7);}
 function todayISO(){return new Date().toISOString().slice(0,10);}
 function money(n){var neg=n<0;n=Math.abs(+n||0);
   return (neg?"−":"")+S.settings.currency+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");}
+function moneySYP(n){
+  var neg=n<0;n=Math.abs(+n||0);
+  var dec=Math.abs(n-Math.round(n))>0.0001?2:0;
+  return (neg?"−":"")+n.toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:2})+" ل.س";
+}
+function currencyOf(x){return String((x&&x.currency)||"USD").toUpperCase()==="SYP"?"SYP":"USD";}
+function originalAmountOf(x){
+  if(x&&x.originalAmount!=null&&x.originalAmount!=="") return +x.originalAmount||0;
+  return +(x&&x.amount)||0;
+}
+function exchangeRateOf(x){return currencyOf(x)==="SYP"?(+x.exchangeRate||0):1;}
+function exactFxRate(date){
+  var d=String(date||todayISO()).slice(0,10),rates=S.settings&&S.settings.fxRates;
+  return rates&&(+rates[d]>0)?+rates[d]:0;
+}
+function latestFxEntry(date){
+  var d=String(date||todayISO()).slice(0,10),rates=(S.settings&&S.settings.fxRates)||{},best="";
+  Object.keys(rates).forEach(function(k){if(k<=d&&+rates[k]>0&&k>best)best=k;});
+  return best?{date:best,rate:+rates[best]}:null;
+}
+function inferLegacyMoneyFields(x){
+  if(!x||typeof x!=="object"||x.currency)return x;
+  var note=String(x.note||"");
+  if(!/(?:ليرة\s*سوري|ل\.\s*س)/i.test(note))return x;
+  var am=note.match(/([\d,.]+)\s*(?:ليرة\s*سوري(?:ة)?|ل\.\s*س)/i);
+  var rm=note.match(/سعر(?:\s+صرف)?\s*([\d,.]+)/i);
+  var original=am?parseFloat(am[1].replace(/,/g,"")):0;
+  var rate=rm?parseFloat(rm[1].replace(/,/g,"")):0;
+  if(original>0&&rate>0){
+    x.currency="SYP";x.originalAmount=original;x.exchangeRate=rate;x.amount=original/rate;
+  }
+  return x;
+}
+function ensureMoneyFields(x){
+  if(!x||typeof x!=="object")return x;
+  inferLegacyMoneyFields(x);
+  if(!x.currency)x.currency="USD";
+  x.currency=currencyOf(x);
+  if(x.originalAmount==null||x.originalAmount==="")x.originalAmount=+x.amount||0;
+  if(x.currency==="USD"){x.exchangeRate=1;if(x.amount==null||x.amount==="")x.amount=+x.originalAmount||0;}
+  else if((x.amount==null||x.amount==="")&&+x.exchangeRate>0)x.amount=(+x.originalAmount||0)/(+x.exchangeRate);
+  return x;
+}
+function applyMoneyFields(v,existing){
+  var cur=String(v.currency||currencyOf(existing)||"USD").toUpperCase()==="SYP"?"SYP":"USD";
+  var original=+(v.originalAmount!=null?v.originalAmount:v.amount);
+  if(!(original>0))throw new Error(LANG==="ar"?"أدخل مبلغاً أكبر من صفر.":"Enter an amount greater than zero.");
+  var rate=cur==="SYP"?(+v.exchangeRate||exactFxRate(v.date)):1;
+  if(cur==="SYP"&&!(rate>0))throw new Error(LANG==="ar"?"حدد سعر صرف الليرة لهذا التاريخ أولاً.":"Set the SYP exchange rate for this date first.");
+  v.currency=cur;v.originalAmount=original;v.exchangeRate=rate;v.amount=cur==="SYP"?original/rate:original;
+  return v;
+}
+function movementMoney(x){
+  return (x&&x.currency==="SYP")
+    ? moneySYP(x.nativeAmt!=null?x.nativeAmt:x.originalAmount)+' <span class="mut">≈ '+money(x.amt)+"</span>"
+    : money(x&&x.amt||0);
+}
 function monthName(y){var p=y.split("-");return t("months")[+p[1]-1]+" "+p[0];}
 function addMonth(y,n){var p=y.split("-"),d=new Date(+p[0],+p[1]-1+n,1);
   return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
@@ -1208,7 +1270,7 @@ function n(v){return '<span class="num">'+v+'</span>';}
 /* ═════════════ seed ═════════════ */
 function seed(){return{
  settings:{company:BRAND_NAME,currency:"$",managerPct:30,rentMode:"myshare",rentSharePct:20,
-   rentFlat:300,rentAnnual:3000,rentMonthsLeft:10,rentSetAside:0,openingCash:0,basis:"cash",dayCapacity:6,offDay:5,lang:"ar",theme:"dark",accent:"#9DA79F",logo:LOGO,
+   rentFlat:300,rentAnnual:3000,rentMonthsLeft:10,rentSetAside:0,openingCash:0,openingCashSYP:0,fxRates:{"2026-10-01":137},currencyTransfers:[],basis:"cash",dayCapacity:6,offDay:5,lang:"ar",theme:"dark",accent:"#9DA79F",logo:LOGO,
    pins:{owner:"",manager:"",accountant:""}},
  employees:[
   {id:uid(),name:"المدير (الشريك)",role:"Manager",payType:"percent",rate:30,active:true,note:"بدون راتب — بياخد 30% من الربح بعد كل مصاريف الشركة. ما بيشارك بالإيجار."},
@@ -1258,8 +1320,14 @@ function normalizeStateShape(){
   S.invoices.forEach(function(inv){
     if(inv&&typeof inv==="object"&&!Array.isArray(inv.items)) inv.items=[];
   });
+  if(!S.settings.fxRates||typeof S.settings.fxRates!=="object"||Array.isArray(S.settings.fxRates))S.settings.fxRates={};
+  if(!Array.isArray(S.settings.currencyTransfers))S.settings.currencyTransfers=[];
+  if(S.settings.openingCashSYP==null)S.settings.openingCashSYP=0;
   ["work","payments","fundings","advances","payouts","costs","transfers","osadvances","debts"].forEach(function(k){
     (S[k]||[]).forEach(function(x){ensureAccountingFields(x);});
+  });
+  ["payments","advances","payouts","costs","transfers"].forEach(function(k){
+    (S[k]||[]).forEach(function(x){ensureMoneyFields(x);});
   });
 }
 normalizeStateShape();
@@ -1744,7 +1812,7 @@ function vFlowDesktop(){
   return h;
 }
 function vFlowMobile(){
-  var r=calc(MONTH), box=cashBox(MONTH), due=totalDue(MONTH), wages=boxAroundWages(MONTH);
+  var r=calc(MONTH), box=cashBox(MONTH), boxes=cashBoxes(MONTH), due=totalDue(MONTH), wages=boxAroundWages(MONTH);
   var h=greeting();
   if(amOwner()&&PENDING_PORTAL.length){
     h+='<button class="portal-alert-card" data-act="notifications"><span><b>'+(LANG==="ar"?"طلبات تسليم جديدة":"New delivery requests")+'</b><small>'+(LANG==="ar"?"بانتظار موافقتك قبل ما تدخل بالحساب":"Waiting for your approval before entering the ledger")+'</small></span><strong class="num">'+PENDING_PORTAL.length+'</strong></button>';
@@ -1754,7 +1822,13 @@ function vFlowMobile(){
     +'<div class="hero-label">'+t("k.net")+'</div>'
     +'<div class="hero-value num '+(r.net<0?"neg":"")+'">'+money(r.net)+'</div>'
     +'<p class="hero-note">'+(r.net>0?t("k.net.n",{p:r.mp}):t("k.net.none"))+'</p>'
-    +'<div class="hero-footer"><span>'+t("box.t")+'</span><b class="num">'+money(box.balance)+'</b></div>'
+    +'<div class="hero-footer"><span>'+t("box.t")+'</span><b class="num">'+money(boxes.usd)+' · '+moneySYP(boxes.syp)+'</b></div>'
+    +'<div class="inline-actions" style="margin-top:12px">'
+      +(can("setup")?'<button class="btn sm '+(boxes.isToday?"ghost":"primary")+'" data-act="fxrate">'+(boxes.isToday?(LANG==="ar"?"سعر اليوم: 1$ = ":"Today: $1 = ")+boxes.rate+" "+(LANG==="ar"?"ل.س":"SYP"):(LANG==="ar"?"حدد سعر صرف اليوم":"Set today’s FX rate"))+'</button>':'')
+      +(can("setup")?'<button class="btn sm ghost" data-act="fxtransfer">'+(LANG==="ar"?"تحويل بين الصناديق":"Exchange cash")+'</button>':'')
+    +'</div>'
+    +(boxes.syp&&boxes.rate>0?'<p class="hero-note" style="margin-top:8px">'+(LANG==="ar"?"الإجمالي التقريبي: ":"Approx. total: ")+money(boxes.totalUSD)+(boxes.isToday?"":' · '+(LANG==="ar"?"آخر سعر محفوظ ":"Last saved rate ")+esc(boxes.rateDate))+'</p>':'')
+    +(boxes.syp&&!boxes.rate?'<p class="hero-note neg" style="margin-top:8px">'+(LANG==="ar"?"يوجد رصيد سوري بدون سعر صرف محفوظ.":"SYP balance exists without a saved FX rate.")+'</p>':'')
     +'</section>';
 
   h+='<section class="mobile-stat-grid">'
@@ -2026,8 +2100,9 @@ function movements(upto){
   /* client money — a plain payment, or funding earmarked for the ad platforms */
   S.payments.forEach(function(x){
     var c=S.customers.filter(function(y){return y.id===x.customerId;})[0];
+    ensureMoneyFields(x);
     out.push({date:transactionDate(x),accountingMonth:accountingMonthOf(x),kind:x.kind==="funding"?"fund":"pay",who:c?c.name:"—",note:x.note||"",
-      amt:+x.amount||0,dir:1,id:x.id,act:"editpay",sec:"payments",customerId:x.customerId||""});
+      amt:+x.amount||0,currency:currencyOf(x),nativeAmt:originalAmountOf(x),exchangeRate:exchangeRateOf(x),dir:1,id:x.id,act:"editpay",sec:"payments",customerId:x.customerId||""});
   });
   /* funding creates a receivable on the client first; this does not move cash */
   (S.fundings||[]).forEach(function(x){
@@ -2048,8 +2123,9 @@ function movements(upto){
     var pe=payer==="box"?null:S.employees.filter(function(y){return y.id===payer;})[0];
     var tag=payer==="box"?"":(payer==="client_direct"?" · "+t("cost.client"):" · "+t("cost.owner",{n:pe?pe.name:"—"}));
     var push=function(d,am){
+      ensureMoneyFields(x);
       out.push({date:d,accountingMonth:am||accountingMonthOf(x),kind:"cost",who:t("c."+x.category),note:(x.note||"")+tag,
-        amt:+x.amount||0,dir:payer==="box"?-1:0,id:x.id,act:"editcost",sec:"costs",customerId:x.customerId||"",employeeId:(payer&&payer!=="box"&&payer!=="client_direct")?payer:""});
+        amt:+x.amount||0,currency:currencyOf(x),nativeAmt:originalAmountOf(x),exchangeRate:exchangeRateOf(x),dir:payer==="box"?-1:0,id:x.id,act:"editcost",sec:"costs",customerId:x.customerId||"",employeeId:(payer&&payer!=="box"&&payer!=="client_direct")?payer:""});
     };
     if(x.recurring){
       var m=(x.date||"").slice(0,7),guard=0;
@@ -2059,23 +2135,44 @@ function movements(upto){
   S.advances.forEach(function(x){
     var e=S.employees.filter(function(y){return y.id===x.employeeId;})[0];
     var back=x.kind==="repay";
+    ensureMoneyFields(x);
     out.push({date:transactionDate(x),accountingMonth:accountingMonthOf(x),kind:back?"repay":"adv",who:e?e.name:"—",note:x.note||"",
-      amt:+x.amount||0,dir:back?1:-1,id:x.id,act:"editadv",sec:"advances",employeeId:x.employeeId||""});
+      amt:+x.amount||0,currency:currencyOf(x),nativeAmt:originalAmountOf(x),exchangeRate:exchangeRateOf(x),dir:back?1:-1,id:x.id,act:"editadv",sec:"advances",employeeId:x.employeeId||""});
   });
   S.payouts.forEach(function(x){
     var e=S.employees.filter(function(y){return y.id===x.employeeId;})[0];
+    ensureMoneyFields(x);
     out.push({date:transactionDate(x),accountingMonth:accountingMonthOf(x),kind:x.kind==="reimb"?"reim":"out",who:e?e.name:"—",note:x.note||"",
-      amt:+x.amount||0,dir:-1,id:x.id,act:"editpayout",sec:"advances",employeeId:x.employeeId||""});
+      amt:+x.amount||0,currency:currencyOf(x),nativeAmt:originalAmountOf(x),exchangeRate:exchangeRateOf(x),dir:-1,id:x.id,act:"editpayout",sec:"advances",employeeId:x.employeeId||""});
   });
   S.transfers.forEach(function(x){
     var e=S.employees.filter(function(y){return y.id===x.empId;})[0];
+    ensureMoneyFields(x);
     out.push({date:transactionDate(x),accountingMonth:accountingMonthOf(x),kind:"trans",who:e?e.name:"—",note:x.note||"",
-      amt:+x.amount||0,dir:1,id:x.id,act:"edittransfer",sec:"outside",employeeId:x.empId||""});
+      amt:+x.amount||0,currency:currencyOf(x),nativeAmt:originalAmountOf(x),exchangeRate:exchangeRateOf(x),dir:1,id:x.id,act:"edittransfer",sec:"outside",employeeId:x.empId||""});
+  });
+  (S.settings.currencyTransfers||[]).forEach(function(x){
+    var rate=+x.rate||0,from=String(x.fromCurrency||"USD"),to=String(x.toCurrency||"SYP");
+    var fromAmount=+x.fromAmount||0,toAmount=+x.toAmount||0;
+    if(!(rate>0&&fromAmount>0&&toAmount>0))return;
+    var usdEq=from==="USD"?fromAmount:fromAmount/rate;
+    var label=from+" → "+to;
+    out.push({date:x.date||"",accountingMonth:(x.accounting_month||String(x.date||"").slice(0,7)),kind:"fx",who:label,note:x.note||"",
+      amt:usdEq,currency:from,nativeAmt:fromAmount,exchangeRate:rate,dir:-1,id:x.id,act:"editfxtransfer",sec:"setup"});
+    out.push({date:x.date||"",accountingMonth:(x.accounting_month||String(x.date||"").slice(0,7)),kind:"fx",who:label,note:x.note||"",
+      amt:usdEq,currency:to,nativeAmt:toAmount,exchangeRate:rate,dir:1,id:x.id,act:"editfxtransfer",sec:"setup"});
   });
   out=out.filter(function(x){return (x.accountingMonth||String(x.date||"").slice(0,7))<=upto;});
   out.sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:0);});
-  var run=+S.settings.openingCash||0;
-  out.forEach(function(x){ run+=x.dir*x.amt; x.run=run; });
+  var runUSD=+S.settings.openingCash||0,runSYP=+S.settings.openingCashSYP||0;
+  var live=latestFxEntry(todayISO()),liveRate=live?live.rate:0;
+  out.forEach(function(x){
+    if(x.dir){
+      if((x.currency||"USD")==="SYP")runSYP+=x.dir*(x.nativeAmt!=null?+x.nativeAmt:+x.amt||0);
+      else runUSD+=x.dir*(+x.amt||0);
+    }
+    x.runUSD=runUSD;x.runSYP=runSYP;x.run=runUSD+(liveRate>0?runSYP/liveRate:0);
+  });
   return out;
 }
 /* ad funding sits in the box but belongs to the platforms */
@@ -2150,13 +2247,22 @@ function boxAroundWages(m){
   });
   return {before:box+paid, after:box-owed, paid:paid, owed:owed};
 }
+function cashBoxes(upto){
+  var all=movements(upto),usd=+S.settings.openingCash||0,syp=+S.settings.openingCashSYP||0;
+  all.forEach(function(x){
+    if(!x.dir)return;
+    if((x.currency||"USD")==="SYP")syp+=x.dir*(x.nativeAmt!=null?+x.nativeAmt:+x.amt||0);
+    else usd+=x.dir*(+x.amt||0);
+  });
+  var exact=exactFxRate(todayISO()),latest=latestFxEntry(todayISO()),rate=exact||(latest?latest.rate:0);
+  return {rows:all,usd:usd,syp:syp,rate:rate,rateDate:exact?todayISO():(latest?latest.date:""),isToday:!!exact,
+    totalUSD:usd+(rate>0?syp/rate:0),
+    month:all.filter(function(x){return (x.accountingMonth||String(x.date||"").slice(0,7))===upto;})};
+}
 function cashBox(upto){
-  var all=movements(upto);
-  var inn=0,outp=0;
-  all.forEach(function(x){ if(x.dir>0) inn+=x.amt; else if(x.dir<0) outp+=x.amt; });
-  return {rows:all,inn:inn,out:outp,
-          balance:(+S.settings.openingCash||0)+inn-outp,
-          month:all.filter(function(x){return (x.accountingMonth||String(x.date||"").slice(0,7))===upto;})};
+  var boxes=cashBoxes(upto),inn=0,outp=0;
+  boxes.rows.forEach(function(x){if(x.dir>0)inn+=+x.amt||0;else if(x.dir<0)outp+=+x.amt||0;});
+  return {rows:boxes.rows,inn:inn,out:outp,balance:boxes.totalUSD,usd:boxes.usd,syp:boxes.syp,rate:boxes.rate,rateDate:boxes.rateDate,isToday:boxes.isToday,month:boxes.month};
 }
 /* what a person has actually been handed, versus what they were owed */
 function paidTo(empId,upto){
@@ -2859,7 +2965,7 @@ function ledgerQuickAction(act,label,icon,primary,extra){
   return '<button class="ledger-action'+(primary?" primary":"")+'" data-act="'+act+'"'+(extra||"")+'><span class="ledger-action-icon">'+(icons[icon]||"")+'</span><span>'+label+'</span></button>';
 }
 function vLedgerFull(){
-  var box=cashBox(MONTH), fu=funding(MONTH);
+  var box=cashBox(MONTH), boxes=cashBoxes(MONTH), fu=funding(MONTH);
   var r=calc(MONTH);
   var rows=box.rows.filter(function(x){return (x.accountingMonth||String(x.date||"").slice(0,7))===MONTH;});
   if(LGTYPE!=="all"){
@@ -2894,7 +3000,8 @@ function vLedgerFull(){
   var ob=rentEmp?owedBack(rentEmp.id,MONTH):{due:0};
 
   var h='<div class="sec"><div class="kpis">'
-   +kpi("net",t("box.t"),money(box.balance),t("box.n"))
+   +kpi("net",(LANG==="ar"?"صندوق الدولار":"USD cash"),money(boxes.usd),t("box.n"))
+   +kpi("net",(LANG==="ar"?"صندوق السوري":"SYP cash"),moneySYP(boxes.syp),boxes.rate?("≈ "+money(boxes.syp/boxes.rate)):(LANG==="ar"?"حدد سعر اليوم":"Set today’s rate"))
    +kpi("in",t("box.in"),money(mIn),monthName(MONTH))
    +kpi("out",t("box.out"),money(mOut),monthName(MONTH))
    +(fu.left>0.005?kpi("you",t("fund.left"),money(fu.left),t("fund.n")):"")
@@ -2929,6 +3036,8 @@ function vLedgerFull(){
    +(wc?ledgerQuickAction("newcost",t("cs.add"),"cost",false,""):"")
    +(wa?ledgerQuickAction("newadv",t("ad.take"),"advance",false,""):"")
    +(wa?ledgerQuickAction("newpayout",t("po.add"),"payout",false,""):"")
+   +(can("setup")?ledgerQuickAction("fxrate",(LANG==="ar"?"سعر الصرف":"FX rate"),"fund",false,""):"")
+   +(can("setup")?ledgerQuickAction("fxtransfer",(LANG==="ar"?"تحويل عملة":"Exchange"),"fund",false,""):"")
    +(wa&&ob.due>0.005?ledgerQuickAction("newreimb",t("reim.add"),"reimburse",true,' data-id="'+rentEmp.id+'"'):"")
    +'</div><div class="tbl-wrap"><table><thead><tr>'
    +'<th>'+t("th.date")+'</th><th>'+t("th.action")+'</th><th>'+t("th.who")+'</th>'
@@ -2937,14 +3046,14 @@ function vLedgerFull(){
   if(!rows.length) h+='<tr><td colspan="7" class="empty">'+t("lg.none")+'</td></tr>';
   rows.forEach(function(x){
     var lbl={pay:"lg.pay",cost:"lg.cost",fundspend:"fund.spent",fundcharge:"lg.funddue",adv:"lg.adv",out:"lg.out",work:"lg.work",fund:"lg.fundpay",reim:"lg.reim",trans:"lg.trans"}[x.kind]||"lg.pay";
-    var pill={pay:"on",cost:"",fundspend:"",adv:"cy",out:"amb",work:"",fund:"cy",fundcharge:"amb",reim:"amb",trans:"on"}[x.kind]||"";
+    var pill={pay:"on",cost:"",fundspend:"",adv:"cy",out:"amb",work:"",fund:"cy",fundcharge:"amb",reim:"amb",trans:"on",fx:"cy"}[x.kind]||"";
     var can_=can(x.sec);
     h+='<tr><td>'+n(esc(x.date))+'</td>'
-     +'<td><span class="pill '+pill+'">'+t(lbl)+'</span></td>'
+     +'<td><span class="pill '+pill+'">'+(x.kind==="fx"?(LANG==="ar"?"تحويل عملة":"Currency exchange"):t(lbl))+'</span></td>'
      +'<td>'+esc(x.who)+(x.note?'<div class="mut" style="font-size:11.5px">'+esc(x.note)+'</div>':'')+'</td>'
-     +'<td class="r">'+(x.dir>0?'<span class="num pos">+'+money(x.amt)+'</span>':(x.kind==="fundcharge"?'<span class="num" style="color:#d88a63">+'+money(x.amt)+'</span>':''))+'</td>'
-     +'<td class="r">'+(x.dir<0?'<span class="num neg">−'+money(x.amt)+'</span>':(x.kind==="cost"?'<span class="mut" style="font-size:11.5px">'+money(x.amt)+'</span>':''))+'</td>'
-     +'<td class="r">'+(x.dir!==0?'<span class="num '+(x.run<0?"neg":"")+'">'+money(x.run)+'</span>':'')+'</td>'
+     +'<td class="r">'+(x.dir>0?'<span class="num pos">+'+movementMoney(x)+'</span>':(x.kind==="fundcharge"?'<span class="num" style="color:#d88a63">+'+money(x.amt)+'</span>':''))+'</td>'
+     +'<td class="r">'+(x.dir<0?'<span class="num neg">−'+movementMoney(x)+'</span>':(x.kind==="cost"?'<span class="mut" style="font-size:11.5px">'+movementMoney(x)+'</span>':''))+'</td>'
+     +'<td class="r">'+(x.dir!==0?'<span class="num">'+money(x.runUSD)+' · '+moneySYP(x.runSYP)+'</span>':'')+'</td>'
      +'<td class="r">'+(can_?'<button class="btn sm ghost" data-act="'+x.act+'" data-id="'+x.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
   });
   h+='<tr class="sum"><td colspan="3" class="r mut">'+t("box.t")+'</td>'
@@ -4060,13 +4169,16 @@ function costForm(x){
      options:[["box",t("cost.box")],["client_direct",t("cost.client")]].concat(S.employees.filter(function(e){return e.payType==="percent";})
        .map(function(e){return [e.id,t("cost.owner",{n:e.name})];}))},
     {k:"customerId",label:t("f.client"),type:"select",options:[["","—"]].concat(S.customers.map(function(c){return [c.id,c.name];})),showIf:{k:"payer",in:["client_direct"]}},
-    {k:"amount",label:t("f.amount"),type:"number",step:"0.01"},
+    {k:"currency",label:(LANG==="ar"?"العملة":"Currency"),type:"select",options:[["USD","USD · دولار"],["SYP","SYP · ليرة سورية"]],def:currencyOf(x)},
+    {k:"originalAmount",label:t("f.amount"),type:"number",step:"0.01",def:x?originalAmountOf(x):""},
+    {k:"exchangeRate",label:(LANG==="ar"?"سعر الصرف · ل.س لكل 1$":"Exchange rate · SYP per $1"),type:"number",step:"0.01",def:(x&&currencyOf(x)==="SYP")?exchangeRateOf(x):(exactFxRate(todayISO())||""),showIf:{k:"currency",in:["SYP"]}},
     {k:"date",label:t("f.date"),type:"date",def:todayISO()},
     {k:"accounting_month",label:(LANG==="ar"?"الشهر المحاسبي":"Accounting month"),type:"month",def:x?accountingMonthOf(x):MONTH},
     {k:"recurring",label:"",type:"check",checkLabel:t("f.repeats")}
   ],x,function(v){
     if(v===null){S.costs=S.costs.filter(function(y){return y.id!==x.id;});return;}
-    ensureAccountingFields(v,MONTH);
+    if(v.recurring&&v.currency==="SYP")throw new Error(LANG==="ar"?"المصروف المتكرر بالليرة سجّله كحركة منفصلة لكل تاريخ حتى يُحفظ سعر الصرف الصحيح.":"Record recurring SYP costs separately so each date keeps its own FX rate.");
+    applyMoneyFields(v,x);ensureAccountingFields(v,MONTH);
     if(x) Object.assign(x,v); else {v.id=uid();S.costs.push(v);}});
 }
 function shootForm(s,date){
@@ -4158,11 +4270,13 @@ function payoutForm(x,empId,suggest){
     {k:"date",label:t("f.date"),type:"date",def:todayISO()},
     {k:"accounting_month",label:(LANG==="ar"?"الشهر المحاسبي":"Accounting month"),type:"month",def:x?accountingMonthOf(x):MONTH},
     {k:"employeeId",label:t("f.who"),type:"select",options:S.employees.map(function(e){return [e.id,e.name];}),def:empId||""},
-    {k:"amount",label:t("f.payamount"),type:"number",step:"0.01",def:(suggest!=null&&suggest>0)?suggest.toFixed(2):""},
+    {k:"currency",label:(LANG==="ar"?"العملة":"Currency"),type:"select",options:[["USD","USD · دولار"],["SYP","SYP · ليرة سورية"]],def:currencyOf(x)},
+    {k:"originalAmount",label:t("f.payamount"),type:"number",step:"0.01",def:x?originalAmountOf(x):((suggest!=null&&suggest>0)?suggest.toFixed(2):"")},
+    {k:"exchangeRate",label:(LANG==="ar"?"سعر الصرف · ل.س لكل 1$":"Exchange rate · SYP per $1"),type:"number",step:"0.01",def:(x&&currencyOf(x)==="SYP")?exchangeRateOf(x):(exactFxRate(todayISO())||""),showIf:{k:"currency",in:["SYP"]}},
     {k:"note",label:t("f.paynote"),type:"textarea"}
   ],x,function(v){
     if(v===null){S.payouts=S.payouts.filter(function(y){return y.id!==x.id;});return;}
-    ensureAccountingFields(v,MONTH);
+    applyMoneyFields(v,x);ensureAccountingFields(v,MONTH);
     if(x) Object.assign(x,v); else {v.id=uid();v.kind="wage";S.payouts.push(v);}});
 }
 function advForm(a,empId){
@@ -4170,11 +4284,13 @@ function advForm(a,empId){
     {k:"date",label:t("f.date"),type:"date",def:todayISO()},
     {k:"accounting_month",label:(LANG==="ar"?"الشهر المحاسبي":"Accounting month"),type:"month",def:a?accountingMonthOf(a):MONTH},
     {k:"employeeId",label:t("f.who"),type:"select",options:S.employees.map(function(e){return [e.id,e.name];}),def:empId||""},
-    {k:"amount",label:t("f.advamount"),type:"number",step:"0.01"},
+    {k:"currency",label:(LANG==="ar"?"العملة":"Currency"),type:"select",options:[["USD","USD · دولار"],["SYP","SYP · ليرة سورية"]],def:currencyOf(a)},
+    {k:"originalAmount",label:t("f.advamount"),type:"number",step:"0.01",def:a?originalAmountOf(a):""},
+    {k:"exchangeRate",label:(LANG==="ar"?"سعر الصرف · ل.س لكل 1$":"Exchange rate · SYP per $1"),type:"number",step:"0.01",def:(a&&currencyOf(a)==="SYP")?exchangeRateOf(a):(exactFxRate(todayISO())||""),showIf:{k:"currency",in:["SYP"]}},
     {k:"note",label:t("f.advnote"),type:"textarea"}
   ],a,function(v){
     if(v===null){S.advances=S.advances.filter(function(x){return x.id!==a.id;});return;}
-    ensureAccountingFields(v,MONTH);
+    applyMoneyFields(v,a);ensureAccountingFields(v,MONTH);
     if(a) Object.assign(a,v); else {v.id=uid();S.advances.push(v);}});
 }
 function payForm(pay,custId,defaults){
@@ -4205,12 +4321,14 @@ function payForm(pay,custId,defaults){
     {k:"kind",label:t("f.paykind"),type:"select",options:[["payment",t("k.payment")],["funding",t("k.funding")]],def:defaults.kind||"payment"},
     {k:"invoiceId",label:t("inv.number"),type:"select",options:[["","—"]].concat((S.invoices||[]).filter(function(i){return !custId||i.customerId===custId;}).map(function(i){return [i.id,i.number||i.id];})),showIf:{k:"kind",in:["payment"]}},
     {k:"fundingId",label:t("fund.t"),type:"select",def:defaults.fundingId||"",options:[["","—"]].concat((S.fundings||[]).filter(function(i){return !custId||i.customerId===custId;}).map(function(i){return [i.id,(i.platform||"Meta")+" · "+money(fundingTotal(i))];})),showIf:{k:"kind",in:["funding"]}},
-    {k:"amount",label:t("f.amountpaid"),type:"number",step:"0.01",def:defaults.amount||""},
+    {k:"currency",label:(LANG==="ar"?"العملة":"Currency"),type:"select",options:[["USD","USD · دولار"],["SYP","SYP · ليرة سورية"]],def:currencyOf(pay)},
+    {k:"originalAmount",label:t("f.amountpaid"),type:"number",step:"0.01",def:pay?originalAmountOf(pay):(defaults.amount||"")},
+    {k:"exchangeRate",label:(LANG==="ar"?"سعر الصرف · ل.س لكل 1$":"Exchange rate · SYP per $1"),type:"number",step:"0.01",def:(pay&&currencyOf(pay)==="SYP")?exchangeRateOf(pay):(exactFxRate(todayISO())||""),showIf:{k:"currency",in:["SYP"]}},
     {k:"method",label:t("f.method"),type:"select",options:[["cash",t("m.cash")],["bank",t("m.bank")],["other",t("m.other")]]},
     {k:"note",label:t("f.note"),type:"textarea"}
   ],pay,function(v){
     if(v===null){S.payments=S.payments.filter(function(x){return x.id!==pay.id;});return;}
-    ensureAccountingFields(v,MONTH);
+    applyMoneyFields(v,pay);ensureAccountingFields(v,MONTH);
     if(pay) Object.assign(pay,v); else {v.id=uid();S.payments.push(v);}
   });
 }
@@ -4251,12 +4369,36 @@ function transferForm(x){
     {k:"empId",label:t("trf.settle"),type:"select",
      options:S.employees.filter(function(e){return e.payType==="percent";}).map(function(e){return [e.id,e.name];}),
      def:owner||""},
-    {k:"amount",label:t("th.amt"),type:"number",step:"0.01",def:over>0?over.toFixed(2):"",hint:t("trf.n")},
+    {k:"currency",label:(LANG==="ar"?"العملة":"Currency"),type:"select",options:[["USD","USD · دولار"],["SYP","SYP · ليرة سورية"]],def:currencyOf(x)},
+    {k:"originalAmount",label:t("th.amt"),type:"number",step:"0.01",def:x?originalAmountOf(x):(over>0?over.toFixed(2):""),hint:t("trf.n")},
+    {k:"exchangeRate",label:(LANG==="ar"?"سعر الصرف · ل.س لكل 1$":"Exchange rate · SYP per $1"),type:"number",step:"0.01",def:(x&&currencyOf(x)==="SYP")?exchangeRateOf(x):(exactFxRate(todayISO())||""),showIf:{k:"currency",in:["SYP"]}},
     {k:"note",label:t("f.note"),type:"textarea"}
   ],x,function(v){
     if(v===null){S.transfers=S.transfers.filter(function(y){return y.id!==x.id;});return;}
-    ensureAccountingFields(v,MONTH);
+    applyMoneyFields(v,x);ensureAccountingFields(v,MONTH);
     if(x) Object.assign(x,v); else {v.id=uid();S.transfers.push(v);}});
+}
+function fxTransferForm(x){
+  if(!x)x=null;
+  var date=(x&&x.date)||todayISO(),rate=(x&&x.rate)||exactFxRate(date)||"";
+  form(x?(LANG==="ar"?"تعديل تحويل العملة":"Edit currency exchange"):(LANG==="ar"?"تحويل بين الصناديق":"Exchange between cash boxes"),[
+    {k:"date",label:t("f.date"),type:"date",def:date},
+    {k:"accounting_month",label:(LANG==="ar"?"الشهر المحاسبي":"Accounting month"),type:"month",def:x?(x.accounting_month||String(x.date||"").slice(0,7)):MONTH},
+    {k:"fromCurrency",label:(LANG==="ar"?"من صندوق":"From cash box"),type:"select",options:[["USD","USD · دولار"],["SYP","SYP · ليرة سورية"]],def:x?x.fromCurrency:"USD"},
+    {k:"toCurrency",label:(LANG==="ar"?"إلى صندوق":"To cash box"),type:"select",options:[["SYP","SYP · ليرة سورية"],["USD","USD · دولار"]],def:x?x.toCurrency:"SYP"},
+    {k:"fromAmount",label:(LANG==="ar"?"المبلغ المحوّل":"Amount exchanged"),type:"number",step:"0.01",def:x?x.fromAmount:""},
+    {k:"rate",label:(LANG==="ar"?"سعر الصرف · ل.س لكل 1$":"Exchange rate · SYP per $1"),type:"number",step:"0.01",def:rate},
+    {k:"note",label:t("f.note"),type:"textarea",def:x?x.note:""}
+  ],x,function(v){
+    if(v===null){S.settings.currencyTransfers=(S.settings.currencyTransfers||[]).filter(function(y){return y.id!==x.id;});return;}
+    if(v.fromCurrency===v.toCurrency)throw new Error(LANG==="ar"?"اختر صندوقين مختلفين.":"Choose two different cash boxes.");
+    if(!(v.fromAmount>0))throw new Error(LANG==="ar"?"أدخل مبلغ التحويل.":"Enter the exchange amount.");
+    var fx=+v.rate||exactFxRate(v.date);
+    if(!(fx>0))throw new Error(LANG==="ar"?"حدد سعر صرف هذا التاريخ أولاً.":"Set the exchange rate for this date first.");
+    v.rate=fx;
+    v.toAmount=v.fromCurrency==="USD"?(+v.fromAmount*fx):(+v.fromAmount/fx);
+    if(x)Object.assign(x,v);else{v.id=uid();if(!Array.isArray(S.settings.currencyTransfers))S.settings.currencyTransfers=[];S.settings.currencyTransfers.push(v);}
+  },'<div class="note">'+(LANG==="ar"?"التحويل لا يُحسب دخلاً أو مصروفاً؛ ينقل الرصيد فقط بين الصندوقين.":"This is not income or an expense; it only moves value between cash boxes.")+'</div>');
 }
 function projForm(p){
   var st=["In discussion","Agreed","Building","Free support month","Paid support","Closed"];
@@ -4336,8 +4478,22 @@ document.addEventListener("click",function(ev){
       {k:"basis",label:t("basis.t"),type:"select",options:[["cash",t("basis.cash")],["billed",t("basis.billed")]],def:S.settings.basis||"cash"}
     ],null,function(v){S.settings.basis=v.basis;});
   else if(act==="editbox") form(t("box.set"),[
-      {k:"openingCash",label:t("box.open"),type:"number",step:"0.01",def:S.settings.openingCash||0}
-    ],null,function(v){S.settings.openingCash=+v.openingCash||0;});
+      {k:"openingCash",label:(LANG==="ar"?"الرصيد الافتتاحي · USD":"Opening balance · USD"),type:"number",step:"0.01",def:S.settings.openingCash||0},
+      {k:"openingCashSYP",label:(LANG==="ar"?"الرصيد الافتتاحي · SYP":"Opening balance · SYP"),type:"number",step:"0.01",def:S.settings.openingCashSYP||0}
+    ],null,function(v){S.settings.openingCash=+v.openingCash||0;S.settings.openingCashSYP=+v.openingCashSYP||0;});
+  else if(act==="fxrate"){
+    var rateDate=todayISO();
+    form((LANG==="ar"?"سعر صرف الليرة":"SYP exchange rate"),[
+      {k:"date",label:t("f.date"),type:"date",def:rateDate},
+      {k:"rate",label:(LANG==="ar"?"1 دولار = كم ليرة سورية؟":"How many SYP for $1?"),type:"number",step:"0.01",def:exactFxRate(rateDate)||""}
+    ],null,function(v){
+      if(!(v.rate>0))throw new Error(LANG==="ar"?"أدخل سعر صرف صحيح.":"Enter a valid exchange rate.");
+      if(!S.settings.fxRates||typeof S.settings.fxRates!=="object")S.settings.fxRates={};
+      S.settings.fxRates[v.date]=+v.rate;
+    });
+  }
+  else if(act==="fxtransfer") fxTransferForm(null);
+  else if(act==="editfxtransfer") fxTransferForm((S.settings.currencyTransfers||[]).filter(function(x){return x.id===id;})[0]);
   else if(act==="newadv") advForm(null,id);
   else if(act==="editadv") advForm(f(S.advances));
   else if(act==="newpay") payForm(null,id);
