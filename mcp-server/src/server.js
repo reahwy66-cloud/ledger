@@ -639,6 +639,32 @@ async function upsert(resource, recordId, data, action = 'upsert') {
   return { id: record.id, ...data };
 }
 
+async function readSettings() {
+  const { data, error } = await db.from('settings').select('data').eq('id', 1).maybeSingle();
+  if (error) throw error;
+  return data?.data && typeof data.data === 'object' ? data.data : {};
+}
+
+async function writeSettings(next, action = 'update_settings') {
+  const record = { id: 1, data: next, updated_at: new Date().toISOString() };
+  const { error } = await db.from('settings').upsert(record);
+  if (error) throw error;
+  await audit(action, 'settings', '1', { fxRates: next.fxRates || {}, currencyTransfers: next.currencyTransfers || [] });
+  return next;
+}
+
+async function moneyInput({ amount, currency = 'USD', date = today(), exchangeRate }) {
+  const cur = String(currency || 'USD').toUpperCase() === 'SYP' ? 'SYP' : 'USD';
+  const originalAmount = Number(amount || 0);
+  if (!(originalAmount > 0)) throw new Error('Amount must be greater than zero');
+  if (cur === 'USD') return { amount: originalAmount, originalAmount, currency: 'USD', exchangeRate: 1 };
+  const settings = await readSettings();
+  const saved = Number(settings?.fxRates?.[date] || 0);
+  const rate = Number(exchangeRate || saved || 0);
+  if (!(rate > 0)) throw new Error(`No SYP/USD exchange rate is saved for ${date}. Set the daily exchange rate first.`);
+  return { amount: originalAmount / rate, originalAmount, currency: 'SYP', exchangeRate: rate };
+}
+
 async function queueNotification(appointment, customer) {
   const notification = {
     id: id(),
@@ -696,9 +722,37 @@ async function queueNotification(appointment, customer) {
 
 function buildServer() {
   const server = new McpServer(
-    { name: 'riwa-studio', version: '1.0.0' },
-    { instructions: 'Resolve names with list_records before writes. Never record a client payment or wage payment without explicit user confirmation. Never delete without explicit confirmation. Creating an invoice or appointment is allowed when the requested details are complete.' }
+    { name: 'riwa-studio', version: '1.1.0' },
+    { instructions: 'Resolve names with list_records before writes. Financial records support USD and SYP. For SYP, use the saved exchange rate for the exact transaction date; never silently reuse an older rate. Never record a client payment or wage payment without explicit user confirmation. Never delete without explicit confirmation. Creating an invoice or appointment is allowed when the requested details are complete.' }
   );
+
+  server.registerTool('get_daily_exchange_rate', {
+    title: 'Get daily exchange rate',
+    description: 'Read the saved Syrian-lira exchange rate for an exact date. The rate is SYP per 1 USD.',
+    inputSchema: { date: z.string().default(today()) },
+    annotations: { readOnlyHint: true, openWorldHint: false }
+  }, async ({ date }) => {
+    const settings = await readSettings();
+    const rate = Number(settings?.fxRates?.[date] || 0);
+    return text({ date, found: rate > 0, sypPerUsd: rate > 0 ? rate : null });
+  });
+
+  server.registerTool('set_daily_exchange_rate', {
+    title: 'Set daily exchange rate',
+    description: 'Save the Syrian-lira exchange rate for a date. This does not rewrite historical transactions, because each SYP movement freezes its own rate.',
+    inputSchema: {
+      date: z.string().default(today()),
+      sypPerUsd: z.number().positive(),
+      confirmed: z.boolean().describe('Must be true after the user explicitly provides or confirms the rate')
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false }
+  }, async ({ date, sypPerUsd, confirmed }) => {
+    if (!confirmed) return text({ needsConfirmation: true, message: 'Confirm the date and SYP per USD rate before saving.' });
+    const settings = await readSettings();
+    const fxRates = { ...(settings.fxRates || {}), [date]: sypPerUsd };
+    await writeSettings({ ...settings, fxRates }, 'set_daily_exchange_rate');
+    return text({ date, sypPerUsd, saved: true });
+  });
 
   server.registerTool('company_snapshot', {
     title: 'Company snapshot',
