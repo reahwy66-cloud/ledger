@@ -1859,14 +1859,26 @@ function vFlowMobile(){
   if(amOwner()&&PENDING_PORTAL.length){
     h+='<button class="portal-alert-card" data-act="notifications"><span><b>'+(LANG==="ar"?"طلبات تسليم جديدة":"New delivery requests")+'</b><small>'+(LANG==="ar"?"بانتظار موافقتك قبل ما تدخل بالحساب":"Waiting for your approval before entering the ledger")+'</small></span><strong class="num">'+PENDING_PORTAL.length+'</strong></button>';
   }
-  h+='<section class="mobile-hero finance-hero">'
-    +'<div class="hero-top"><span class="eyebrow">'+monthName(MONTH)+'</span><span class="hero-status">'+t("box.t")+'</span></div>'
-    +'<div class="hero-label">'+(LANG==="ar"?"الصندوق الحالي":"Current cash")+'</div>'
-    +'<div class="hero-value" style="display:flex;gap:12px;flex-wrap:wrap;align-items:baseline"><span class="num">'+money(boxes.usd)+'</span><span class="num">'+moneySYP(boxes.syp)+'</span></div>'
-    +'<p class="hero-note">'+(boxes.rate>0?((LANG==="ar"?"سعر الصرف المستخدم: 1$ = ":"FX rate: $1 = ")+boxes.rate+" "+(LANG==="ar"?"ل.س":"SYP")):(LANG==="ar"?"حدد سعر صرف اليوم عند استخدام الليرة.":"Set today's FX rate when using SYP."))+'</p>'
-    +'<div class="inline-actions" style="margin-top:12px">'
-      +(can("setup")?'<button class="btn sm '+(boxes.isToday?"ghost":"primary")+'" data-act="fxrate">'+(boxes.isToday?(LANG==="ar"?"سعر اليوم: 1$ = ":"Today: $1 = ")+boxes.rate+" "+(LANG==="ar"?"ل.س":"SYP"):(LANG==="ar"?"حدد سعر صرف اليوم":"Set today’s FX rate"))+'</button>':'')
-      +(can("setup")?'<button class="btn sm ghost" data-act="fxtransfer">'+(LANG==="ar"?"تحويل بين الصناديق":"Exchange cash")+'</button>':'')
+  h+='<section class="mobile-hero finance-hero" style="padding:26px 24px">'
+    +'<div class="hero-top" style="margin-bottom:22px"><span class="eyebrow">'+monthName(MONTH)+'</span><span class="hero-status">'+t("box.t")+'</span></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">'
+      +'<div style="min-width:0;padding:22px 20px;border:1px solid var(--line);border-radius:22px;background:rgba(255,255,255,.025)">'
+        +'<div class="hero-label" style="margin:0 0 10px">'+(LANG==="ar"?"صندوق الدولار":"USD cash")+'</div>'
+        +'<div class="num" style="font-size:clamp(30px,5vw,54px);font-weight:700;line-height:1;letter-spacing:-.035em">'+money(boxes.usd)+'</div>'
+        +'<div class="hero-note" style="margin:12px 0 0;font-size:13px">'+(boxes.rate>0?((LANG==="ar"?"يساوي تقريبًا ":"Approx. ")+moneySYP(boxes.usd*boxes.rate)):"—")+'</div>'
+      +'</div>'
+      +'<div style="min-width:0;padding:22px 20px;border:1px solid var(--line);border-radius:22px;background:rgba(255,255,255,.025)">'
+        +'<div class="hero-label" style="margin:0 0 10px">'+(LANG==="ar"?"صندوق السوري":"SYP cash")+'</div>'
+        +'<div class="num" style="font-size:clamp(30px,5vw,54px);font-weight:700;line-height:1;letter-spacing:-.035em">'+moneySYP(boxes.syp)+'</div>'
+        +'<div class="hero-note" style="margin:12px 0 0;font-size:13px">'+(boxes.rate>0?((LANG==="ar"?"يساوي تقريبًا ":"Approx. ")+money(boxes.syp/boxes.rate)):"—")+'</div>'
+      +'</div>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)">'
+      +'<p class="hero-note" style="margin:0">'+(boxes.rate>0?((LANG==="ar"?"سعر الصرف: 1$ = ":"FX rate: $1 = ")+boxes.rate+" "+(LANG==="ar"?"ل.س":"SYP")):(LANG==="ar"?"حدد سعر صرف اليوم عند استخدام الليرة.":"Set today's FX rate when using SYP."))+'</p>'
+      +'<div class="inline-actions" style="margin:0">'
+        +(can("setup")?'<button class="btn sm '+(boxes.isToday?"ghost":"primary")+'" data-act="fxrate">'+(boxes.isToday?(LANG==="ar"?"تعديل سعر اليوم":"Edit today’s rate"):(LANG==="ar"?"حدد سعر صرف اليوم":"Set today’s FX rate"))+'</button>':'')
+        +(can("setup")?'<button class="btn sm ghost" data-act="fxtransfer">'+(LANG==="ar"?"تحويل بين الصناديق":"Exchange cash")+'</button>':'')
+      +'</div>'
     +'</div>'
     +'</section>';
 
