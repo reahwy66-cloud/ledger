@@ -3032,7 +3032,7 @@ function vLedgerFull(){
    +(wa?ledgerQuickAction("newadv",t("ad.take"),"advance",false,""):"")
    +(wa?ledgerQuickAction("newpayout",t("po.add"),"payout",false,""):"")
    +(can("setup")?ledgerQuickAction("fxrate",(LANG==="ar"?"سعر الصرف":"FX rate"),"fund",false,""):"")
-   +(can("setup")?ledgerQuickAction("fxtransfer",(LANG==="ar"?"تحويل عملة":"Exchange"),"transfer",false,""):"")
+   +(can("setup")?ledgerQuickAction("fxtransfer",(LANG==="ar"?"تحويل عملة":"Exchange"),"fund",false,""):"")
    +(wa&&ob.due>0.005?ledgerQuickAction("newreimb",t("reim.add"),"reimburse",true,' data-id="'+rentEmp.id+'"'):"")
    +'</div><div class="tbl-wrap"><table><thead><tr>'
    +'<th>'+t("th.date")+'</th><th>'+t("th.action")+'</th><th>'+t("th.who")+'</th>'
