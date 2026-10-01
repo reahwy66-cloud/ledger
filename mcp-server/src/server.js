@@ -754,6 +754,43 @@ function buildServer() {
     return text({ date, sypPerUsd, saved: true });
   });
 
+  server.registerTool('record_currency_exchange', {
+    title: 'Record currency exchange between cash boxes',
+    description: 'Move cash between the USD and SYP boxes without recording income or an expense. Uses the exact saved daily SYP-per-USD rate unless an explicit rate is provided.',
+    inputSchema: {
+      fromCurrency: z.enum(['USD', 'SYP']),
+      toCurrency: z.enum(['USD', 'SYP']),
+      amount: z.number().positive().describe('Amount removed from the source cash box'),
+      date: z.string().default(today()),
+      exchangeRate: z.number().positive().optional().describe('SYP per 1 USD override; otherwise use the exact saved daily rate'),
+      note: z.string().optional(),
+      confirmed: z.boolean()
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false }
+  }, async args => {
+    if (!args.confirmed) return text({ needsConfirmation: true, message: 'Confirm source currency, destination currency, amount and date before recording.' });
+    if (args.fromCurrency === args.toCurrency) throw new Error('Source and destination currencies must be different');
+    const settings = await readSettings();
+    const rate = Number(args.exchangeRate || settings?.fxRates?.[args.date] || 0);
+    if (!(rate > 0)) throw new Error(`No SYP/USD exchange rate is saved for ${args.date}. Set the daily exchange rate first.`);
+    const fromAmount = Number(args.amount);
+    const toAmount = args.fromCurrency === 'USD' ? fromAmount * rate : fromAmount / rate;
+    const exchange = {
+      id: id(),
+      date: args.date,
+      accounting_month: String(args.date).slice(0, 7),
+      fromCurrency: args.fromCurrency,
+      toCurrency: args.toCurrency,
+      fromAmount,
+      toAmount,
+      rate,
+      note: args.note || ''
+    };
+    const currencyTransfers = [...(Array.isArray(settings.currencyTransfers) ? settings.currencyTransfers : []), exchange];
+    await writeSettings({ ...settings, currencyTransfers }, 'record_currency_exchange');
+    return text({ ...exchange, saved: true });
+  });
+
   server.registerTool('company_snapshot', {
     title: 'Company snapshot',
     description: 'Read a compact summary of clients, team, invoices, payments, costs and appointments.',
