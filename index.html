@@ -1226,7 +1226,7 @@ function applyMoneyFields(v,existing){
 }
 function movementMoney(x){
   return (x&&x.currency==="SYP")
-    ? moneySYP(x.nativeAmt!=null?x.nativeAmt:x.originalAmount)+" <span class=\\"mut\\">≈ "+money(x.amt)+"</span>"
+    ? moneySYP(x.nativeAmt!=null?x.nativeAmt:x.originalAmount)+' <span class="mut">≈ '+money(x.amt)+"</span>"
     : money(x&&x.amt||0);
 }
 function monthName(y){var p=y.split("-");return t("months")[+p[1]-1]+" "+p[0];}
