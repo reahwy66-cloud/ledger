@@ -1172,6 +1172,63 @@ function ymNow(){return new Date().toISOString().slice(0,7);}
 function todayISO(){return new Date().toISOString().slice(0,10);}
 function money(n){var neg=n<0;n=Math.abs(+n||0);
   return (neg?"−":"")+S.settings.currency+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");}
+function moneySYP(n){
+  var neg=n<0;n=Math.abs(+n||0);
+  var dec=Math.abs(n-Math.round(n))>0.0001?2:0;
+  return (neg?"−":"")+n.toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:2})+" ل.س";
+}
+function currencyOf(x){return String((x&&x.currency)||"USD").toUpperCase()==="SYP"?"SYP":"USD";}
+function originalAmountOf(x){
+  if(x&&x.originalAmount!=null&&x.originalAmount!=="") return +x.originalAmount||0;
+  return +(x&&x.amount)||0;
+}
+function exchangeRateOf(x){return currencyOf(x)==="SYP"?(+x.exchangeRate||0):1;}
+function exactFxRate(date){
+  var d=String(date||todayISO()).slice(0,10),rates=S.settings&&S.settings.fxRates;
+  return rates&&(+rates[d]>0)?+rates[d]:0;
+}
+function latestFxEntry(date){
+  var d=String(date||todayISO()).slice(0,10),rates=(S.settings&&S.settings.fxRates)||{},best="";
+  Object.keys(rates).forEach(function(k){if(k<=d&&+rates[k]>0&&k>best)best=k;});
+  return best?{date:best,rate:+rates[best]}:null;
+}
+function inferLegacyMoneyFields(x){
+  if(!x||typeof x!=="object"||x.currency)return x;
+  var note=String(x.note||"");
+  if(!/(?:ليرة\s*سوري|ل\.\s*س)/i.test(note))return x;
+  var am=note.match(/([\d,.]+)\s*(?:ليرة\s*سوري(?:ة)?|ل\.\s*س)/i);
+  var rm=note.match(/سعر(?:\s+صرف)?\s*([\d,.]+)/i);
+  var original=am?parseFloat(am[1].replace(/,/g,"")):0;
+  var rate=rm?parseFloat(rm[1].replace(/,/g,"")):0;
+  if(original>0&&rate>0){
+    x.currency="SYP";x.originalAmount=original;x.exchangeRate=rate;x.amount=original/rate;
+  }
+  return x;
+}
+function ensureMoneyFields(x){
+  if(!x||typeof x!=="object")return x;
+  inferLegacyMoneyFields(x);
+  if(!x.currency)x.currency="USD";
+  x.currency=currencyOf(x);
+  if(x.originalAmount==null||x.originalAmount==="")x.originalAmount=+x.amount||0;
+  if(x.currency==="USD"){x.exchangeRate=1;if(x.amount==null||x.amount==="")x.amount=+x.originalAmount||0;}
+  else if((x.amount==null||x.amount==="")&&+x.exchangeRate>0)x.amount=(+x.originalAmount||0)/(+x.exchangeRate);
+  return x;
+}
+function applyMoneyFields(v,existing){
+  var cur=String(v.currency||currencyOf(existing)||"USD").toUpperCase()==="SYP"?"SYP":"USD";
+  var original=+(v.originalAmount!=null?v.originalAmount:v.amount);
+  if(!(original>0))throw new Error(LANG==="ar"?"أدخل مبلغاً أكبر من صفر.":"Enter an amount greater than zero.");
+  var rate=cur==="SYP"?(+v.exchangeRate||exactFxRate(v.date)):1;
+  if(cur==="SYP"&&!(rate>0))throw new Error(LANG==="ar"?"حدد سعر صرف الليرة لهذا التاريخ أولاً.":"Set the SYP exchange rate for this date first.");
+  v.currency=cur;v.originalAmount=original;v.exchangeRate=rate;v.amount=cur==="SYP"?original/rate:original;
+  return v;
+}
+function movementMoney(x){
+  return (x&&x.currency==="SYP")
+    ? moneySYP(x.nativeAmt!=null?x.nativeAmt:x.originalAmount)+" <span class=\\"mut\\">≈ "+money(x.amt)+"</span>"
+    : money(x&&x.amt||0);
+}
 function monthName(y){var p=y.split("-");return t("months")[+p[1]-1]+" "+p[0];}
 function addMonth(y,n){var p=y.split("-"),d=new Date(+p[0],+p[1]-1+n,1);
   return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
