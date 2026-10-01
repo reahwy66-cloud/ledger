@@ -797,11 +797,14 @@ function buildServer() {
     inputSchema: { month: z.string().regex(/^\d{4}-\d{2}$/).optional() },
     annotations: { readOnlyHint: true, openWorldHint: false }
   }, async ({ month = today().slice(0, 7) }) => {
-    const [clients, team, invoices, payments, fundings, costs, appointments] = await Promise.all([
-      rows('clients'), rows('team'), rows('invoices'), rows('client_payments'), rows('ad_funding'), rows('costs'), rows('appointments')
+    const [clients, team, invoices, payments, fundings, costs, appointments, settings] = await Promise.all([
+      rows('clients'), rows('team'), rows('invoices'), rows('client_payments'), rows('ad_funding'), rows('costs'), rows('appointments'), readSettings()
     ]);
     const inMonth = item => String(item.date || '').slice(0, 7) === month;
+    const rateDate = today(), savedRate = Number(settings?.fxRates?.[rateDate] || 0);
     return text({
+      connectorVersion: '1.1.0',
+      todayExchangeRate: { date: rateDate, sypPerUsd: savedRate > 0 ? savedRate : null },
       month,
       activeClients: clients.filter(x => x.active !== false).length,
       activeTeam: team.filter(x => x.active !== false).length,
