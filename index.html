@@ -4464,8 +4464,22 @@ document.addEventListener("click",function(ev){
       {k:"basis",label:t("basis.t"),type:"select",options:[["cash",t("basis.cash")],["billed",t("basis.billed")]],def:S.settings.basis||"cash"}
     ],null,function(v){S.settings.basis=v.basis;});
   else if(act==="editbox") form(t("box.set"),[
-      {k:"openingCash",label:t("box.open"),type:"number",step:"0.01",def:S.settings.openingCash||0}
-    ],null,function(v){S.settings.openingCash=+v.openingCash||0;});
+      {k:"openingCash",label:(LANG==="ar"?"الرصيد الافتتاحي · USD":"Opening balance · USD"),type:"number",step:"0.01",def:S.settings.openingCash||0},
+      {k:"openingCashSYP",label:(LANG==="ar"?"الرصيد الافتتاحي · SYP":"Opening balance · SYP"),type:"number",step:"0.01",def:S.settings.openingCashSYP||0}
+    ],null,function(v){S.settings.openingCash=+v.openingCash||0;S.settings.openingCashSYP=+v.openingCashSYP||0;});
+  else if(act==="fxrate"){
+    var rateDate=todayISO();
+    form((LANG==="ar"?"سعر صرف الليرة":"SYP exchange rate"),[
+      {k:"date",label:t("f.date"),type:"date",def:rateDate},
+      {k:"rate",label:(LANG==="ar"?"1 دولار = كم ليرة سورية؟":"How many SYP for $1?"),type:"number",step:"0.01",def:exactFxRate(rateDate)||""}
+    ],null,function(v){
+      if(!(v.rate>0))throw new Error(LANG==="ar"?"أدخل سعر صرف صحيح.":"Enter a valid exchange rate.");
+      if(!S.settings.fxRates||typeof S.settings.fxRates!=="object")S.settings.fxRates={};
+      S.settings.fxRates[v.date]=+v.rate;
+    });
+  }
+  else if(act==="fxtransfer") fxTransferForm(null);
+  else if(act==="editfxtransfer") fxTransferForm((S.settings.currencyTransfers||[]).filter(function(x){return x.id===id;})[0]);
   else if(act==="newadv") advForm(null,id);
   else if(act==="editadv") advForm(f(S.advances));
   else if(act==="newpay") payForm(null,id);
