@@ -1265,7 +1265,7 @@ function n(v){return '<span class="num">'+v+'</span>';}
 /* ═════════════ seed ═════════════ */
 function seed(){return{
  settings:{company:BRAND_NAME,currency:"$",managerPct:30,rentMode:"myshare",rentSharePct:20,
-   rentFlat:300,rentAnnual:3000,rentMonthsLeft:10,rentSetAside:0,openingCash:0,basis:"cash",dayCapacity:6,offDay:5,lang:"ar",theme:"dark",accent:"#9DA79F",logo:LOGO,
+   rentFlat:300,rentAnnual:3000,rentMonthsLeft:10,rentSetAside:0,openingCash:0,openingCashSYP:0,fxRates:{},currencyTransfers:[],basis:"cash",dayCapacity:6,offDay:5,lang:"ar",theme:"dark",accent:"#9DA79F",logo:LOGO,
    pins:{owner:"",manager:"",accountant:""}},
  employees:[
   {id:uid(),name:"المدير (الشريك)",role:"Manager",payType:"percent",rate:30,active:true,note:"بدون راتب — بياخد 30% من الربح بعد كل مصاريف الشركة. ما بيشارك بالإيجار."},
@@ -1315,8 +1315,14 @@ function normalizeStateShape(){
   S.invoices.forEach(function(inv){
     if(inv&&typeof inv==="object"&&!Array.isArray(inv.items)) inv.items=[];
   });
+  if(!S.settings.fxRates||typeof S.settings.fxRates!=="object"||Array.isArray(S.settings.fxRates))S.settings.fxRates={};
+  if(!Array.isArray(S.settings.currencyTransfers))S.settings.currencyTransfers=[];
+  if(S.settings.openingCashSYP==null)S.settings.openingCashSYP=0;
   ["work","payments","fundings","advances","payouts","costs","transfers","osadvances","debts"].forEach(function(k){
     (S[k]||[]).forEach(function(x){ensureAccountingFields(x);});
+  });
+  ["payments","advances","payouts","costs","transfers"].forEach(function(k){
+    (S[k]||[]).forEach(function(x){ensureMoneyFields(x);});
   });
 }
 normalizeStateShape();
