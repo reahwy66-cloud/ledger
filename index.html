@@ -2960,7 +2960,7 @@ function ledgerQuickAction(act,label,icon,primary,extra){
   return '<button class="ledger-action'+(primary?" primary":"")+'" data-act="'+act+'"'+(extra||"")+'><span class="ledger-action-icon">'+(icons[icon]||"")+'</span><span>'+label+'</span></button>';
 }
 function vLedgerFull(){
-  var box=cashBox(MONTH), fu=funding(MONTH);
+  var box=cashBox(MONTH), boxes=cashBoxes(MONTH), fu=funding(MONTH);
   var r=calc(MONTH);
   var rows=box.rows.filter(function(x){return (x.accountingMonth||String(x.date||"").slice(0,7))===MONTH;});
   if(LGTYPE!=="all"){
@@ -2995,7 +2995,8 @@ function vLedgerFull(){
   var ob=rentEmp?owedBack(rentEmp.id,MONTH):{due:0};
 
   var h='<div class="sec"><div class="kpis">'
-   +kpi("net",t("box.t"),money(box.balance),t("box.n"))
+   +kpi("net",(LANG==="ar"?"صندوق الدولار":"USD cash"),money(boxes.usd),t("box.n"))
+   +kpi("net",(LANG==="ar"?"صندوق السوري":"SYP cash"),moneySYP(boxes.syp),boxes.rate?("≈ "+money(boxes.syp/boxes.rate)):(LANG==="ar"?"حدد سعر اليوم":"Set today’s rate"))
    +kpi("in",t("box.in"),money(mIn),monthName(MONTH))
    +kpi("out",t("box.out"),money(mOut),monthName(MONTH))
    +(fu.left>0.005?kpi("you",t("fund.left"),money(fu.left),t("fund.n")):"")
@@ -3030,6 +3031,8 @@ function vLedgerFull(){
    +(wc?ledgerQuickAction("newcost",t("cs.add"),"cost",false,""):"")
    +(wa?ledgerQuickAction("newadv",t("ad.take"),"advance",false,""):"")
    +(wa?ledgerQuickAction("newpayout",t("po.add"),"payout",false,""):"")
+   +(can("setup")?ledgerQuickAction("fxrate",(LANG==="ar"?"سعر الصرف":"FX rate"),"fund",false,""):"")
+   +(can("setup")?ledgerQuickAction("fxtransfer",(LANG==="ar"?"تحويل عملة":"Exchange"),"transfer",false,""):"")
    +(wa&&ob.due>0.005?ledgerQuickAction("newreimb",t("reim.add"),"reimburse",true,' data-id="'+rentEmp.id+'"'):"")
    +'</div><div class="tbl-wrap"><table><thead><tr>'
    +'<th>'+t("th.date")+'</th><th>'+t("th.action")+'</th><th>'+t("th.who")+'</th>'
@@ -3038,14 +3041,14 @@ function vLedgerFull(){
   if(!rows.length) h+='<tr><td colspan="7" class="empty">'+t("lg.none")+'</td></tr>';
   rows.forEach(function(x){
     var lbl={pay:"lg.pay",cost:"lg.cost",fundspend:"fund.spent",fundcharge:"lg.funddue",adv:"lg.adv",out:"lg.out",work:"lg.work",fund:"lg.fundpay",reim:"lg.reim",trans:"lg.trans"}[x.kind]||"lg.pay";
-    var pill={pay:"on",cost:"",fundspend:"",adv:"cy",out:"amb",work:"",fund:"cy",fundcharge:"amb",reim:"amb",trans:"on"}[x.kind]||"";
+    var pill={pay:"on",cost:"",fundspend:"",adv:"cy",out:"amb",work:"",fund:"cy",fundcharge:"amb",reim:"amb",trans:"on",fx:"cy"}[x.kind]||"";
     var can_=can(x.sec);
     h+='<tr><td>'+n(esc(x.date))+'</td>'
-     +'<td><span class="pill '+pill+'">'+t(lbl)+'</span></td>'
+     +'<td><span class="pill '+pill+'">'+(x.kind==="fx"?(LANG==="ar"?"تحويل عملة":"Currency exchange"):t(lbl))+'</span></td>'
      +'<td>'+esc(x.who)+(x.note?'<div class="mut" style="font-size:11.5px">'+esc(x.note)+'</div>':'')+'</td>'
-     +'<td class="r">'+(x.dir>0?'<span class="num pos">+'+money(x.amt)+'</span>':(x.kind==="fundcharge"?'<span class="num" style="color:#d88a63">+'+money(x.amt)+'</span>':''))+'</td>'
-     +'<td class="r">'+(x.dir<0?'<span class="num neg">−'+money(x.amt)+'</span>':(x.kind==="cost"?'<span class="mut" style="font-size:11.5px">'+money(x.amt)+'</span>':''))+'</td>'
-     +'<td class="r">'+(x.dir!==0?'<span class="num '+(x.run<0?"neg":"")+'">'+money(x.run)+'</span>':'')+'</td>'
+     +'<td class="r">'+(x.dir>0?'<span class="num pos">+'+movementMoney(x)+'</span>':(x.kind==="fundcharge"?'<span class="num" style="color:#d88a63">+'+money(x.amt)+'</span>':''))+'</td>'
+     +'<td class="r">'+(x.dir<0?'<span class="num neg">−'+movementMoney(x)+'</span>':(x.kind==="cost"?'<span class="mut" style="font-size:11.5px">'+movementMoney(x)+'</span>':''))+'</td>'
+     +'<td class="r">'+(x.dir!==0?'<span class="num">'+money(x.runUSD)+' · '+moneySYP(x.runSYP)+'</span>':'')+'</td>'
      +'<td class="r">'+(can_?'<button class="btn sm ghost" data-act="'+x.act+'" data-id="'+x.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
   });
   h+='<tr class="sum"><td colspan="3" class="r mut">'+t("box.t")+'</td>'
