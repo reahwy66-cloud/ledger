@@ -2089,8 +2089,9 @@ function movements(upto){
   /* client money — a plain payment, or funding earmarked for the ad platforms */
   S.payments.forEach(function(x){
     var c=S.customers.filter(function(y){return y.id===x.customerId;})[0];
+    ensureMoneyFields(x);
     out.push({date:transactionDate(x),accountingMonth:accountingMonthOf(x),kind:x.kind==="funding"?"fund":"pay",who:c?c.name:"—",note:x.note||"",
-      amt:+x.amount||0,dir:1,id:x.id,act:"editpay",sec:"payments",customerId:x.customerId||""});
+      amt:+x.amount||0,currency:currencyOf(x),nativeAmt:originalAmountOf(x),exchangeRate:exchangeRateOf(x),dir:1,id:x.id,act:"editpay",sec:"payments",customerId:x.customerId||""});
   });
   /* funding creates a receivable on the client first; this does not move cash */
   (S.fundings||[]).forEach(function(x){
@@ -2111,8 +2112,9 @@ function movements(upto){
     var pe=payer==="box"?null:S.employees.filter(function(y){return y.id===payer;})[0];
     var tag=payer==="box"?"":(payer==="client_direct"?" · "+t("cost.client"):" · "+t("cost.owner",{n:pe?pe.name:"—"}));
     var push=function(d,am){
+      ensureMoneyFields(x);
       out.push({date:d,accountingMonth:am||accountingMonthOf(x),kind:"cost",who:t("c."+x.category),note:(x.note||"")+tag,
-        amt:+x.amount||0,dir:payer==="box"?-1:0,id:x.id,act:"editcost",sec:"costs",customerId:x.customerId||"",employeeId:(payer&&payer!=="box"&&payer!=="client_direct")?payer:""});
+        amt:+x.amount||0,currency:currencyOf(x),nativeAmt:originalAmountOf(x),exchangeRate:exchangeRateOf(x),dir:payer==="box"?-1:0,id:x.id,act:"editcost",sec:"costs",customerId:x.customerId||"",employeeId:(payer&&payer!=="box"&&payer!=="client_direct")?payer:""});
     };
     if(x.recurring){
       var m=(x.date||"").slice(0,7),guard=0;
@@ -2122,23 +2124,44 @@ function movements(upto){
   S.advances.forEach(function(x){
     var e=S.employees.filter(function(y){return y.id===x.employeeId;})[0];
     var back=x.kind==="repay";
+    ensureMoneyFields(x);
     out.push({date:transactionDate(x),accountingMonth:accountingMonthOf(x),kind:back?"repay":"adv",who:e?e.name:"—",note:x.note||"",
-      amt:+x.amount||0,dir:back?1:-1,id:x.id,act:"editadv",sec:"advances",employeeId:x.employeeId||""});
+      amt:+x.amount||0,currency:currencyOf(x),nativeAmt:originalAmountOf(x),exchangeRate:exchangeRateOf(x),dir:back?1:-1,id:x.id,act:"editadv",sec:"advances",employeeId:x.employeeId||""});
   });
   S.payouts.forEach(function(x){
     var e=S.employees.filter(function(y){return y.id===x.employeeId;})[0];
+    ensureMoneyFields(x);
     out.push({date:transactionDate(x),accountingMonth:accountingMonthOf(x),kind:x.kind==="reimb"?"reim":"out",who:e?e.name:"—",note:x.note||"",
-      amt:+x.amount||0,dir:-1,id:x.id,act:"editpayout",sec:"advances",employeeId:x.employeeId||""});
+      amt:+x.amount||0,currency:currencyOf(x),nativeAmt:originalAmountOf(x),exchangeRate:exchangeRateOf(x),dir:-1,id:x.id,act:"editpayout",sec:"advances",employeeId:x.employeeId||""});
   });
   S.transfers.forEach(function(x){
     var e=S.employees.filter(function(y){return y.id===x.empId;})[0];
+    ensureMoneyFields(x);
     out.push({date:transactionDate(x),accountingMonth:accountingMonthOf(x),kind:"trans",who:e?e.name:"—",note:x.note||"",
-      amt:+x.amount||0,dir:1,id:x.id,act:"edittransfer",sec:"outside",employeeId:x.empId||""});
+      amt:+x.amount||0,currency:currencyOf(x),nativeAmt:originalAmountOf(x),exchangeRate:exchangeRateOf(x),dir:1,id:x.id,act:"edittransfer",sec:"outside",employeeId:x.empId||""});
+  });
+  (S.settings.currencyTransfers||[]).forEach(function(x){
+    var rate=+x.rate||0,from=String(x.fromCurrency||"USD"),to=String(x.toCurrency||"SYP");
+    var fromAmount=+x.fromAmount||0,toAmount=+x.toAmount||0;
+    if(!(rate>0&&fromAmount>0&&toAmount>0))return;
+    var usdEq=from==="USD"?fromAmount:fromAmount/rate;
+    var label=from+" → "+to;
+    out.push({date:x.date||"",accountingMonth:(x.accounting_month||String(x.date||"").slice(0,7)),kind:"fx",who:label,note:x.note||"",
+      amt:usdEq,currency:from,nativeAmt:fromAmount,exchangeRate:rate,dir:-1,id:x.id,act:"editfxtransfer",sec:"setup"});
+    out.push({date:x.date||"",accountingMonth:(x.accounting_month||String(x.date||"").slice(0,7)),kind:"fx",who:label,note:x.note||"",
+      amt:usdEq,currency:to,nativeAmt:toAmount,exchangeRate:rate,dir:1,id:x.id,act:"editfxtransfer",sec:"setup"});
   });
   out=out.filter(function(x){return (x.accountingMonth||String(x.date||"").slice(0,7))<=upto;});
   out.sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:0);});
-  var run=+S.settings.openingCash||0;
-  out.forEach(function(x){ run+=x.dir*x.amt; x.run=run; });
+  var runUSD=+S.settings.openingCash||0,runSYP=+S.settings.openingCashSYP||0;
+  var live=latestFxEntry(todayISO()),liveRate=live?live.rate:0;
+  out.forEach(function(x){
+    if(x.dir){
+      if((x.currency||"USD")==="SYP")runSYP+=x.dir*(x.nativeAmt!=null?+x.nativeAmt:+x.amt||0);
+      else runUSD+=x.dir*(+x.amt||0);
+    }
+    x.runUSD=runUSD;x.runSYP=runSYP;x.run=runUSD+(liveRate>0?runSYP/liveRate:0);
+  });
   return out;
 }
 /* ad funding sits in the box but belongs to the platforms */
@@ -2213,13 +2236,22 @@ function boxAroundWages(m){
   });
   return {before:box+paid, after:box-owed, paid:paid, owed:owed};
 }
+function cashBoxes(upto){
+  var all=movements(upto),usd=+S.settings.openingCash||0,syp=+S.settings.openingCashSYP||0;
+  all.forEach(function(x){
+    if(!x.dir)return;
+    if((x.currency||"USD")==="SYP")syp+=x.dir*(x.nativeAmt!=null?+x.nativeAmt:+x.amt||0);
+    else usd+=x.dir*(+x.amt||0);
+  });
+  var exact=exactFxRate(todayISO()),latest=latestFxEntry(todayISO()),rate=exact||(latest?latest.rate:0);
+  return {rows:all,usd:usd,syp:syp,rate:rate,rateDate:exact?todayISO():(latest?latest.date:""),isToday:!!exact,
+    totalUSD:usd+(rate>0?syp/rate:0),
+    month:all.filter(function(x){return (x.accountingMonth||String(x.date||"").slice(0,7))===upto;})};
+}
 function cashBox(upto){
-  var all=movements(upto);
-  var inn=0,outp=0;
-  all.forEach(function(x){ if(x.dir>0) inn+=x.amt; else if(x.dir<0) outp+=x.amt; });
-  return {rows:all,inn:inn,out:outp,
-          balance:(+S.settings.openingCash||0)+inn-outp,
-          month:all.filter(function(x){return (x.accountingMonth||String(x.date||"").slice(0,7))===upto;})};
+  var boxes=cashBoxes(upto),inn=0,outp=0;
+  boxes.rows.forEach(function(x){if(x.dir>0)inn+=+x.amt||0;else if(x.dir<0)outp+=+x.amt||0;});
+  return {rows:boxes.rows,inn:inn,out:outp,balance:boxes.totalUSD,usd:boxes.usd,syp:boxes.syp,rate:boxes.rate,rateDate:boxes.rateDate,isToday:boxes.isToday,month:boxes.month};
 }
 /* what a person has actually been handed, versus what they were owed */
 function paidTo(empId,upto){
