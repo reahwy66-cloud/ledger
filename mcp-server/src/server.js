@@ -807,6 +807,15 @@ function buildServer() {
     annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false }
   }, async ({ resource, id: recordId, data }) => {
     let merged = data;
+    if (resource === 'costs' && data && Number(data.amount || 0) > 0 && String(data.currency || 'USD').toUpperCase() === 'SYP') {
+      const normalized = await moneyInput({
+        amount: Number(data.originalAmount || data.amount),
+        currency: 'SYP',
+        date: String(data.date || today()),
+        exchangeRate: data.exchangeRate ? Number(data.exchangeRate) : undefined
+      });
+      merged = { ...data, ...normalized };
+    }
     if (recordId) {
       const existing = (await rows(resource)).find(item => item.id === recordId);
       if (!existing) throw new Error(`Record not found: ${recordId}`);
@@ -929,7 +938,9 @@ function buildServer() {
     description: 'Record money received from a client. This records a payment; it does not move money at a bank.',
     inputSchema: {
       customer: z.string(),
-      amount: z.number().positive(),
+      amount: z.number().positive().describe('Amount in the selected currency'),
+      currency: z.enum(['USD', 'SYP']).default('USD'),
+      exchangeRate: z.number().positive().optional().describe('SYP per 1 USD override. For SYP, omit this to use the exact saved daily rate.'),
       date: z.string().default(today()),
       method: z.enum(['cash', 'bank', 'other']).default('bank'),
       invoice: z.string().optional().describe('Invoice id or invoice number'),
@@ -949,8 +960,9 @@ function buildServer() {
     if (args.funding && !funding) throw new Error(`Ad funding not found: ${args.funding}`);
     if (invoice && invoice.customerId !== customer.id) throw new Error('The invoice belongs to a different client');
     if (funding && funding.customerId !== customer.id) throw new Error('The ad funding belongs to a different client');
+    const normalized = await moneyInput(args);
     const payment = await upsert('client_payments', null, {
-      customerId: customer.id, amount: args.amount, date: args.date, method: args.method,
+      customerId: customer.id, ...normalized, date: args.date, method: args.method,
       invoiceId: invoice?.id || '', fundingId: funding?.id || '', note: args.note || '', kind: funding ? 'funding' : 'payment'
     }, 'record_payment');
     if (invoice) {
@@ -968,7 +980,10 @@ function buildServer() {
     title: 'Record a wage payment',
     description: 'Record a salary or wage handed to a team member. This does not initiate a bank transfer.',
     inputSchema: {
-      employee: z.string(), amount: z.number().positive(), date: z.string().default(today()),
+      employee: z.string(), amount: z.number().positive().describe('Amount in the selected currency'),
+      currency: z.enum(['USD', 'SYP']).default('USD'),
+      exchangeRate: z.number().positive().optional().describe('SYP per 1 USD override. For SYP, omit this to use the exact saved daily rate.'),
+      date: z.string().default(today()),
       note: z.string().optional(), confirmed: z.boolean()
     },
     annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false }
@@ -976,8 +991,9 @@ function buildServer() {
     if (!args.confirmed) return text({ needsConfirmation: true, message: 'Confirm employee, amount and date before recording.' });
     const employee = await resolveByName('team', args.employee);
     if (!employee) throw new Error(`Team member not found: ${args.employee}`);
+    const normalized = await moneyInput(args);
     return text(await upsert('wage_payments', null, {
-      employeeId: employee.id, amount: args.amount, date: args.date, note: args.note || '', kind: 'wage'
+      employeeId: employee.id, ...normalized, date: args.date, note: args.note || '', kind: 'wage'
     }, 'record_wage_payment'));
   });
 
@@ -985,7 +1001,10 @@ function buildServer() {
     title: 'Record an advance or owner draw',
     description: 'Record an employee salary advance or a partner draw against their share. This does not initiate a transfer.',
     inputSchema: {
-      employee: z.string(), kind: z.enum(['advance', 'draw']).default('advance'), amount: z.number().positive(),
+      employee: z.string(), kind: z.enum(['advance', 'draw']).default('advance'),
+      amount: z.number().positive().describe('Amount in the selected currency'),
+      currency: z.enum(['USD', 'SYP']).default('USD'),
+      exchangeRate: z.number().positive().optional().describe('SYP per 1 USD override. For SYP, omit this to use the exact saved daily rate.'),
       date: z.string().default(today()), note: z.string().optional(), confirmed: z.boolean()
     },
     annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false }
@@ -993,8 +1012,9 @@ function buildServer() {
     if (!args.confirmed) return text({ needsConfirmation: true, message: 'Confirm person, type, amount and date before recording.' });
     const employee = await resolveByName('team', args.employee);
     if (!employee) throw new Error(`Team member not found: ${args.employee}`);
+    const normalized = await moneyInput(args);
     return text(await upsert('advances', null, {
-      employeeId: employee.id, kind: args.kind, amount: args.amount, date: args.date, note: args.note || ''
+      employeeId: employee.id, kind: args.kind, ...normalized, date: args.date, note: args.note || ''
     }, args.kind === 'draw' ? 'record_draw' : 'record_advance'));
   });
 
