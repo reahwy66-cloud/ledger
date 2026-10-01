@@ -920,7 +920,12 @@ async function pull(){
     PULLED.settings=true;
   }
   normalizeStateShape();
-  if(applyBrandDefaults()) setTimeout(save,0);
+  var currencyMigrated=false;
+  if(!S.settings.fxRates["2026-10-01"]){
+    S.settings.fxRates["2026-10-01"]=137;
+    currencyMigrated=true;
+  }
+  if(applyBrandDefaults()||currencyMigrated) setTimeout(save,0);
   await loadPortalPending();
   if(canSeeMoney()&&syncAllOpenInvoiceRoots(MONTH)){
     Store.save(S);
@@ -1265,7 +1270,7 @@ function n(v){return '<span class="num">'+v+'</span>';}
 /* ═════════════ seed ═════════════ */
 function seed(){return{
  settings:{company:BRAND_NAME,currency:"$",managerPct:30,rentMode:"myshare",rentSharePct:20,
-   rentFlat:300,rentAnnual:3000,rentMonthsLeft:10,rentSetAside:0,openingCash:0,openingCashSYP:0,fxRates:{},currencyTransfers:[],basis:"cash",dayCapacity:6,offDay:5,lang:"ar",theme:"dark",accent:"#9DA79F",logo:LOGO,
+   rentFlat:300,rentAnnual:3000,rentMonthsLeft:10,rentSetAside:0,openingCash:0,openingCashSYP:0,fxRates:{"2026-10-01":137},currencyTransfers:[],basis:"cash",dayCapacity:6,offDay:5,lang:"ar",theme:"dark",accent:"#9DA79F",logo:LOGO,
    pins:{owner:"",manager:"",accountant:""}},
  employees:[
   {id:uid(),name:"المدير (الشريك)",role:"Manager",payType:"percent",rate:30,active:true,note:"بدون راتب — بياخد 30% من الربح بعد كل مصاريف الشركة. ما بيشارك بالإيجار."},
