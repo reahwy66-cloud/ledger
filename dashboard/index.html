@@ -315,7 +315,7 @@ en:{
  "b.per_designL":"A price for each design",
  "f.drate":"Design price","f.drateH":"Charged per design delivered. Leave empty if you don't bill designs.",
  "cli.pd":"{v} / design","cd.designs":"{v} designs",
- "b.packageL":"Fixed monthly package","b.per_videoL":"Per video","b.prepaidL":"Paid up front, drawing down",
+ "b.packageL":"Package cycle","b.per_videoL":"Per video","b.prepaidL":"Paid up front, drawing down",
  "th.billed2":"Billed","th.paid":"Paid","th.balance":"Balance","th.desc":"Detail","th.charge":"Charge","th.run":"Running",
  "k.due":"Owed by clients","k.due.n":"{n} clients with a balance",
  "cd.open":"Open statement","cd.back":"All clients","cd.invoice":"Create invoice","cd.preview":"Account invoice",
@@ -627,7 +627,7 @@ ar:{
  "b.per_designL":"سعر لكل تصميم",
  "f.drate":"سعر التصميم","f.drateH":"يُحتسب لكل تصميم مُسلَّم. اتركه فارغاً إن كنت لا تفوتر التصاميم.",
  "cli.pd":"{v} / تصميم","cd.designs":"{v} تصاميم",
- "b.packageL":"باقة شهرية ثابتة","b.per_videoL":"سعر لكل فيديو","b.prepaidL":"مدفوع مقدماً ويُخصم",
+ "b.packageL":"باقة بدورة مستقلة","b.per_videoL":"سعر لكل فيديو","b.prepaidL":"مدفوع مقدماً ويُخصم",
  "cli.month":"{v} / شهر","cli.pv":"{v} / فيديو","cli.inc":"{v} فيديو · {p} منشور","cli.left":"متبقٍّ {v}","cli.over":"تجاوز {v}","cli.exp":"{n} فيديو",
  "cli.ads":"منها {v} إعلانات","st.active":"نشط","st.paused":"موقوف","cli.total":"إجمالي المستحق",
  "cd.open":"كشف الحساب","cd.back":"العملاء","cd.invoice":"إنشاء فاتورة","cd.preview":"فاتورة كشف الحساب",
@@ -893,6 +893,7 @@ async function pull(){
           S.settings=Object.assign({},S.settings,d.settings,localOnly);
         }
         PULLED.shoots=true;
+        normalizeStateShape();
         clearCalc();
         setSync("cl.synced");
         return;
@@ -919,13 +920,13 @@ async function pull(){
     S.settings=Object.assign({},S.settings,st.data.data,localOnly2);
     PULLED.settings=true;
   }
-  normalizeStateShape();
+  var packageMigrated=normalizeStateShape();
   var currencyMigrated=false;
   if(!S.settings.fxRates["2026-10-01"]){
     S.settings.fxRates["2026-10-01"]=137;
     currencyMigrated=true;
   }
-  if(applyBrandDefaults()||currencyMigrated) setTimeout(save,0);
+  if(applyBrandDefaults()||currencyMigrated||packageMigrated) setTimeout(save,0);
   await loadPortalPending();
   if(canSeeMoney()&&syncAllOpenInvoiceRoots(MONTH)){
     Store.save(S);
@@ -1371,6 +1372,7 @@ function normalizeStateShape(){
   ["payments","advances","payouts","costs","transfers"].forEach(function(k){
     (S[k]||[]).forEach(function(x){ensureMoneyFields(x);});
   });
+  return normalizePackageCycles();
 }
 normalizeStateShape();
 function isMobileUI(){return !!(window.matchMedia&&window.matchMedia("(max-width: 820px)").matches);}
@@ -1390,6 +1392,138 @@ function ensureAccountingFields(x,defMonth){
   if(!x.accounting_month)x.accounting_month=defMonth||(td?td.slice(0,7):"");
   return x;
 }
+/* Package cycles are independent from calendar/accounting months.
+   A package is charged once when it is opened and stays current until a new
+   package is opened manually. */
+function clientPackages(c){
+  if(!c)return [];
+  if(!Array.isArray(c.packages))c.packages=[];
+  return c.packages.slice().sort(function(a,b){
+    var ad=String(a.startDate||""),bd=String(b.startDate||"");
+    if(ad===bd)return String(a.id||"").localeCompare(String(b.id||""));
+    return ad<bd?-1:1;
+  });
+}
+function currentPackage(c){
+  var rows=clientPackages(c).filter(function(p){return p.status!=="closed"&&p.status!=="cancelled";});
+  return rows.length?rows[rows.length-1]:null;
+}
+function latestPackage(c){
+  var rows=clientPackages(c);return rows.length?rows[rows.length-1]:null;
+}
+function packageForPeriod(c,m){
+  var rows=clientPackages(c).filter(function(p){return String(p.startDate||"").slice(0,7)===m&&p.status!=="cancelled";});
+  return rows.length?rows[rows.length-1]:null;
+}
+function packageById(c,id){
+  if(!id)return null;
+  return clientPackages(c).filter(function(p){return p.id===id;})[0]||null;
+}
+function packageForDate(c,date){
+  var d=String(date||todayISO()).slice(0,10),rows=clientPackages(c),hit=null;
+  rows.forEach(function(p){
+    if(p.status==="cancelled")return;
+    var s=String(p.startDate||"").slice(0,10);
+    if(s&&s<=d)hit=p;
+  });
+  return hit||currentPackage(c)||latestPackage(c);
+}
+function packageDelivered(pkg){
+  var out={video:0,post:0,design:0,shoot:0,voice:0,ad_face:0,task:0};
+  if(!pkg)return out;
+  var c=S.customers.filter(function(x){return x.id===pkg.customerId;})[0];
+  (S.work||[]).forEach(function(w){
+    if(!countsInPackage(w)||w.customerId!==pkg.customerId)return;
+    var belongs=w.packageId===pkg.id;
+    if(!w.packageId&&c){
+      var inferred=packageForDate(c,transactionDate(w)||((accountingMonthOf(w)||MONTH)+"-01"));
+      belongs=!!(inferred&&inferred.id===pkg.id);
+    }
+    if(!belongs)return;
+    var k=w.type||"task";
+    if(out[k]==null)out[k]=0;
+    out[k]+=+w.qty||0;
+  });
+  return out;
+}
+function packageRemaining(pkg){
+  var d=packageDelivered(pkg),r={};
+  ["video","post","design"].forEach(function(k){r[k]=Math.max(0,(+pkg[k+"s"]||0)-(+d[k]||0));});
+  return r;
+}
+function packageIsComplete(pkg){
+  if(!pkg)return false;
+  var r=packageRemaining(pkg);
+  return r.video<=0&&r.post<=0&&r.design<=0;
+}
+function packageFeeInMonth(c,m){
+  return clientPackages(c).filter(function(p){return p.status!=="cancelled"&&String(p.startDate||"").slice(0,7)===m;})
+    .reduce(function(a,p){return a+(+p.fee||0);},0);
+}
+function packageAdsInMonth(c,m){
+  return clientPackages(c).filter(function(p){return p.status!=="cancelled"&&String(p.startDate||"").slice(0,7)===m;})
+    .reduce(function(a,p){return a+(+p.adSpend||0);},0);
+}
+function packageForInvoice(c,inv){
+  if(!c||!inv||c.billing!=="package")return null;
+  var direct=packageById(c,inv.packageId);
+  if(direct)return direct;
+  var itemId="";
+  (inv.items||[]).some(function(item){
+    if(item&&item.packageId){itemId=item.packageId;return true;}
+    return false;
+  });
+  direct=packageById(c,itemId);
+  if(direct)return direct;
+  var byDate=packageForDate(c,inv.date||((inv.period||MONTH)+"-01"));
+  if(byDate&&String(byDate.startDate||"").slice(0,7)===(inv.period||inv.date||MONTH).slice(0,7))return byDate;
+  return packageForPeriod(c,(inv.period||inv.date||MONTH).slice(0,7));
+}
+function invoiceCoversPackage(inv,pkg){
+  if(!inv||!pkg)return false;
+  if(inv.packageId&&inv.packageId===pkg.id)return true;
+  if((inv.items||[]).some(function(item){return item&&item.packageId===pkg.id;}))return true;
+  var per=String(inv.period||inv.date||"").slice(0,7);
+  var pm=String(pkg.startDate||"").slice(0,7);
+  return per===pm&&(inv.items||[]).some(function(item){return item&&isInvoiceRootItem(item)&&item.kind!=="funding";});
+}
+function normalizePackageCycles(){
+  var changed=false;
+  (S.customers||[]).forEach(function(c){
+    if(!Array.isArray(c.packages)){c.packages=[];changed=true;}
+    c.packages.forEach(function(p){
+      if(!p.id){p.id=uid();changed=true;}
+      if(!p.customerId){p.customerId=c.id;changed=true;}
+      if(!p.startDate){p.startDate=c.packageStartDate||((c.startMonth||ymNow())+"-01");changed=true;}
+      if(p.status==null){p.status="open";changed=true;}
+      if(p.fee==null){p.fee=+c.monthlyFee||0;changed=true;}
+      if(p.videos==null){p.videos=+c.videos||0;changed=true;}
+      if(p.posts==null){p.posts=+c.posts||0;changed=true;}
+      if(p.designs==null){p.designs=+c.designs||0;changed=true;}
+      if(p.adSpend==null){p.adSpend=+c.adSpend||0;changed=true;}
+      if(p.note==null){p.note="";changed=true;}
+    });
+    if(c.billing==="package"&&!c.packages.length){
+      c.packages.push({
+        id:"pkg_"+c.id+"_legacy",customerId:c.id,
+        startDate:c.packageStartDate||((c.startMonth||ymNow())+"-01"),
+        endDate:"",status:"open",fee:+c.monthlyFee||0,
+        videos:+c.videos||0,posts:+c.posts||0,designs:+c.designs||0,
+        adSpend:+c.adSpend||0,note:""
+      });
+      changed=true;
+    }
+  });
+  (S.work||[]).forEach(function(w){
+    if(w.packageId||!countsInPackage(w))return;
+    var c=(S.customers||[]).filter(function(x){return x.id===w.customerId;})[0];
+    if(!c||c.billing!=="package")return;
+    var p=packageForDate(c,transactionDate(w)||((accountingMonthOf(w)||MONTH)+"-01"));
+    if(p){w.packageId=p.id;changed=true;}
+  });
+  return changed;
+}
+
 function selectedMonth(){
   try{
     var m=localStorage.getItem("riwa_accounting_month")||"";
@@ -1478,9 +1612,13 @@ function _calc(m){
       basis=monthInvoices.map(function(inv){return inv.number||t("inv.title");}).join(", ");
     }
     else if(c.billing==="package"){
-      amt=(+c.monthlyFee||0)+designs*(+c.drate||0)+extras+salaryCharges+fundingBilled;
-      adSpend+=+c.adSpend||0;
-      basis=t("b.packageL")+(designs&&(+c.drate)?(" + "+designs+" × "+money(+c.drate||0)):"");
+      var pkgFee=packageFeeInMonth(c,m),pkgAds=packageAdsInMonth(c,m);
+      amt=pkgFee+designs*(+c.drate||0)+extras+salaryCharges+fundingBilled;
+      adSpend+=pkgAds;
+      basis=pkgFee
+        ? ((LANG==="ar"?"باقة فُتحت هذا الشهر":"Package opened this month")+" · "+money(pkgFee))
+        : (LANG==="ar"?"الباقة الحالية مستمرة — لا توجد باقة جديدة":"Current package continues — no new package");
+      if(designs&&(+c.drate))basis+=" + "+designs+" × "+money(+c.drate||0);
     }
     else if(c.billing==="per_design"){amt=designs*(+c.drate||+c.rate||0)+extras+salaryCharges+fundingBilled;basis=designs+" × "+money(+c.drate||+c.rate||0);}
     else{
@@ -1568,16 +1706,17 @@ function stmt(c,thru){
   if(adv)  {lines.push({date:(c.startMonth||thru)+"-01",desc:t("line.adv"),charge:0,paid:adv}); paid+=adv;}
 
   if(c.billing==="package"){
-    var m=c.startMonth||thru, guard=0, stop=c.endMonth&&c.endMonth<thru?c.endMonth:thru;
-    while(m<=stop && guard++<180){
-      var fee=+c.monthlyFee||0;
-      if(fee&&!invoicedMonth(m)){
-        var ad=+c.adSpend||0;
-        var desc=t("line.sub",{m:monthName(m)})+(ad?" · "+t("inv.ads")+" "+money(ad):"");
-        lines.push({date:m+"-01",desc:desc,charge:fee,paid:0}); billed+=fee;
+    clientPackages(c).forEach(function(pkg){
+      if(pkg.status==="cancelled"||String(pkg.startDate||"").slice(0,7)>thru)return;
+      var fee=+pkg.fee||0;
+      var covered=explicit.some(function(inv){return invoiceCoversPackage(inv,pkg);});
+      if(fee&&!covered){
+        var ad=+pkg.adSpend||0;
+        var desc=clientPackageLabel(c,pkg)+(ad?" · "+t("inv.ads")+" "+money(ad):"");
+        lines.push({date:pkg.startDate||((c.startMonth||thru)+"-01"),desc:desc,charge:fee,paid:0,packageId:pkg.id});
+        billed+=fee;
       }
-      m=addMonth(m,1);
-    }
+    });
   }
   var vRate=+c.rate||0, dRate=+c.drate||0;
   if(c.billing!=="package"){
@@ -1671,32 +1810,49 @@ function earnedIn(e,m){
   var hit=calc(m).people.filter(function(x){return x.e.id===e.id;})[0];
   return hit?hit.pay:0;
 }
-/* Month-by-month ledger: earned − advances, with unrecovered advances carried forward.
-   Assumes you settle the net due at the end of each month. */
+/* Month-by-month employee account.
+   Positive balance = the studio still owes the person.
+   Negative balance = the person is prepaid / has already received money ahead.
+   Unpaid wages and prepayments both carry forward until future payments/earnings clear them. */
 function empLedger(e,thru){
   var ds=[];
+  if(e.startDate)ds.push(String(e.startDate).slice(0,7));
   S.advances.filter(function(a){return a.employeeId===e.id;}).forEach(function(a){ds.push(accountingMonthOf(a));});
+  S.payouts.filter(function(p){return p.employeeId===e.id&&p.kind!=="reimb";}).forEach(function(p){ds.push(accountingMonthOf(p));});
+  S.transfers.filter(function(x){return x.empId===e.id;}).forEach(function(x){ds.push(accountingMonthOf(x));});
   S.work.filter(function(w){return countsInPackage(w)&&w.editorId===e.id;}).forEach(function(w){ds.push(accountingMonthOf(w));});
-  ds.sort();
+  ds=ds.filter(Boolean).sort();
   var first=ds.length?ds[0]:thru;
   var floor=addMonth(thru,-23);
   if(first<floor) first=floor;
   if(first>thru) first=thru;
-  var rows=[],carry=0,m=first,guard=0;
+  var rows=[],balance=0,m=first,guard=0;
   while(m<=thru&&guard++<40){
     var earned=earnedIn(e,m);
     var adv=S.advances.filter(function(a){return a.employeeId===e.id&&inAccountingMonth(a,m);})
-      .reduce(function(s2,a){return s2+(+a.amount||0);},0);
-    /* money the partner put back in from his own pocket pays the draw down */
-    adv-=S.transfers.filter(function(x){return x.empId===e.id&&inAccountingMonth(x,m);})
+      .reduce(function(s2,a){return s2+(a.kind==="repay"?-(+a.amount||0):(+a.amount||0));},0);
+    var paid=S.payouts.filter(function(p){return p.employeeId===e.id&&p.kind!=="reimb"&&inAccountingMonth(p,m);})
+      .reduce(function(s2,p){return s2+(+p.amount||0);},0);
+    /* money put back into the company reverses an earlier draw/prepayment */
+    var topup=S.transfers.filter(function(x){return x.empId===e.id&&inAccountingMonth(x,m);})
       .reduce(function(s2,x){return s2+(+x.amount||0);},0);
-    var due=earned-adv-carry;
-    var payout=due>0?due:0, out=due<0?-due:0;
-    rows.push({month:m,earned:earned,adv:adv,carryIn:carry,payout:payout,carryOut:out});
-    carry=out; m=addMonth(m,1);
+    var balanceIn=balance;
+    balance=balanceIn+earned-adv-paid+topup;
+    if(Math.abs(balance)<0.005)balance=0;
+    rows.push({
+      month:m,earned:earned,adv:adv,paid:paid,topup:topup,balanceIn:balanceIn,balance:balance,
+      owedIn:balanceIn>0?balanceIn:0,carryIn:balanceIn<0?-balanceIn:0,
+      payout:balance>0?balance:0,carryOut:balance<0?-balance:0
+    });
+    m=addMonth(m,1);
   }
-  var cur=rows[rows.length-1]||{month:thru,earned:0,adv:0,carryIn:0,payout:0,carryOut:0};
+  var cur=rows[rows.length-1]||{month:thru,earned:0,adv:0,paid:0,topup:0,balanceIn:0,balance:0,owedIn:0,carryIn:0,payout:0,carryOut:0};
   return {rows:rows,cur:cur};
+}
+function empBalanceText(lg){
+  return lg.carryOut>0.005
+    ? (LANG==="ar"?"مدفوع مقدماً ":"Prepaid ")+money(lg.carryOut)
+    : money(lg.payout);
 }
 function totalDue(thru){
   var sum=0,cnt=0;
@@ -1707,11 +1863,28 @@ function carryoverSummary(m){
   var prev=addMonth(m,-1),items=[],sum=0;
   S.customers.forEach(function(c){
     var b=stmt(c,prev).balance;
+    /* A payment received after month-end clears the oldest carried balance first.
+       Keep its real transaction/accounting month everywhere else; only the
+       carryover reminder is reduced here so paid clients disappear immediately. */
+    if(b>0.005){
+      var laterPaid=S.payments.filter(function(x){
+        var am=accountingMonthOf(x);
+        return x.customerId===c.id&&am>prev&&am<=m;
+      }).reduce(function(a,x){return a+(+x.amount||0);},0);
+      b=Math.max(0,b-laterPaid);
+    }
     if(b>0.005){items.push({kind:"client",name:c.name,amount:b});sum+=b;}
   });
   S.employees.forEach(function(e){
     if(e.payType==="percent"||!e.active)return;
-    var L=empLedger(e,prev),owed=L.rows.reduce(function(a,r){return a+r.payout;},0)-paidTo(e.id,prev);
+    var L=empLedger(e,prev),owed=L.cur.payout;
+    if(owed>0.005){
+      var laterPaid=S.payouts.filter(function(x){
+        var am=accountingMonthOf(x);
+        return x.employeeId===e.id&&x.kind!=="reimb"&&am>prev&&am<=m;
+      }).reduce(function(a,x){return a+(+x.amount||0);},0);
+      owed=Math.max(0,owed-laterPaid);
+    }
     if(owed>0.005){items.push({kind:"team",name:e.name,amount:owed});sum+=owed;}
   });
   return {month:prev,items:items,count:items.length,sum:sum};
@@ -1847,7 +2020,7 @@ function vFlowDesktop(){
        +'<td class="r"><span class="num">'+money(lg.earned)+'</span></td>'
        +'<td class="r">'+(ded?'<span class="num neg">−'+money(ded)+'</span>':'—')+'</td>'
        +'<td class="r"><span class="num '+(lg.carryOut?"neg":"acc")+'" style="font-weight:600">'
-       +(lg.carryOut?t("ad.owes")+" "+money(lg.carryOut):money(lg.payout))+'</span></td></tr>';}).join("")
+       +empBalanceText(lg)+'</span></td></tr>';}).join("")
    +'<tr class="sum"><td colspan="4" class="r mut">'+t("tm.total")+'</td>'
    +'<td class="r"><span class="num" style="font-weight:600">'+money(payTot)+'</span></td></tr>'
    +'</tbody></table></div></div>';
@@ -1921,7 +2094,7 @@ function vFlowMobile(){
   active.slice(0,6).forEach(function(e){
     var lg=empLedger(e,MONTH).cur;
     h+='<button class="summary-row tap-row" data-act="openemp" data-id="'+e.id+'"><div class="summary-main"><b>'+esc(e.name)+'</b><small>'+esc(e.role||t("sec.team"))+'</small></div>'
-      +'<div class="summary-meta"><span>'+t("th.net")+'</span><b class="num '+(lg.carryOut?"neg":"")+'">'+(lg.carryOut?t("ad.owes")+" "+money(lg.carryOut):money(lg.payout))+'</b></div></button>';
+      +'<div class="summary-meta"><span>'+t("th.net")+'</span><b class="num '+(lg.carryOut?"neg":"")+'">'+empBalanceText(lg)+'</b></div></button>';
   });
   h+='</div></section>';
   return '<div class="mobile-dashboard">'+h+'</div>';
@@ -1961,7 +2134,7 @@ function effectiveInvoiceItems(inv){
 
   var per=(inv.period||inv.date||MONTH).slice(0,7);
   var keep=(inv.items||[]).filter(function(item){return !isInvoiceRootItem(item);});
-  return rootInvoiceItemsForClient(c,per).concat(keep);
+  return rootInvoiceItemsForClient(c,per,inv.packageId||"",inv.date||"").concat(keep);
 }
 function invoiceTotalStored(inv){
   return (inv&&inv.items||[]).reduce(function(a,x){return a+(+x.amount||0);},0);
@@ -1981,10 +2154,12 @@ function nextInvoiceNumber(){
 function invoiceForm(inv,custId){
   var c=S.customers.filter(function(x){return x.id===(inv?inv.customerId:custId);})[0]||S.customers[0];
   var dm=c?delivered(c,MONTH):{video:0,design:0};
+  var defaultPkg=c&&c.billing==="package"?packageForPeriod(c,MONTH):null;
   var defaults=inv||{
     number:nextInvoiceNumber(),customerId:c?c.id:"",date:todayISO(),dueDate:(function(){var d=new Date();d.setDate(d.getDate()+14);return d.toISOString().slice(0,10);})(),
-    period:MONTH,status:"draft",serviceAmount:c&&c.billing==="package"?Math.max(0,(+c.monthlyFee||0)-(+c.adSpend||0)):0,
-    adAmount:c?(+c.adSpend||0):0,videoQty:c&&c.billing!=="package"?(+dm.video||0):0,videoRate:c?(+c.rate||0):0,
+    period:MONTH,status:"draft",packageId:defaultPkg?defaultPkg.id:"",
+    serviceAmount:defaultPkg?Math.max(0,(+defaultPkg.fee||0)-(+defaultPkg.adSpend||0)):0,
+    adAmount:defaultPkg?(+defaultPkg.adSpend||0):0,videoQty:c&&c.billing!=="package"?(+dm.video||0):0,videoRate:c?(+c.rate||0):0,
     designQty:c&&(+c.drate||0)?(+dm.design||0):0,designRate:c?(+c.drate||0):0,extraDesc:"",extraAmount:0,notes:""
   };
   form(inv?t("inv.edit"):t("inv.new"),[
@@ -2006,14 +2181,16 @@ function invoiceForm(inv,custId){
   ],inv?defaults:null,function(v){
     if(v===null){S.invoices=S.invoices.filter(function(x){return x.id!==inv.id;});return;}
     var items=[],chosen=S.customers.filter(function(x){return x.id===v.customerId;})[0];
+    var chosenPkg=chosen&&chosen.billing==="package"?packageForPeriod(chosen,v.period||MONTH):null;
     var autoFunding=chosen?fundingInvoiceItemsForClient(chosen,v.period||MONTH,+v.adAmount||0):{replacesLegacy:false,items:[]};
-    if(+v.serviceAmount)items.push({kind:"service",description:t("inv.service"),amount:+v.serviceAmount});
-    if(+v.adAmount&&!autoFunding.replacesLegacy)items.push({kind:"ads",description:t("inv.ads"),amount:+v.adAmount});
+    if(+v.serviceAmount)items.push({kind:"service",packageId:chosenPkg?chosenPkg.id:"",description:chosenPkg?clientPackageLabel(chosen,chosenPkg):t("inv.service"),amount:+v.serviceAmount});
+    if(+v.adAmount&&!autoFunding.replacesLegacy)items.push({kind:"ads",packageId:chosenPkg?chosenPkg.id:"",description:t("inv.ads"),amount:+v.adAmount});
     if((+v.videoQty||0)*(+v.videoRate||0))items.push({kind:"video",description:v.videoQty+" × "+t("d.video"),qty:+v.videoQty,rate:+v.videoRate,amount:+v.videoQty*+v.videoRate});
     if((+v.designQty||0)*(+v.designRate||0))items.push({kind:"design",description:v.designQty+" × "+t("d.design"),qty:+v.designQty,rate:+v.designRate,amount:+v.designQty*+v.designRate});
     items=items.concat(autoFunding.items);
     var keep=inv?(inv.items||[]).filter(function(item){return !isInvoiceRootItem(item);}):[];
     if(+v.extraAmount)keep.push({kind:"other",description:v.extraDesc||t("inv.extra"),amount:+v.extraAmount});
+    v.packageId=chosenPkg?chosenPkg.id:"";
     v.items=items.concat(keep); v.updatedAt=new Date().toISOString();
     if(inv)Object.assign(inv,v);else{v.id=uid();v.createdAt=v.updatedAt;S.invoices.push(v);}
   });
@@ -2114,7 +2291,7 @@ function vClients(){
   var tot=0;
   S.customers.forEach(function(c){
     var st=stmt(c,MONTH); tot+=st.balance;
-    var rate=c.billing==="package"?t("cli.month",{v:money(c.monthlyFee)})
+    var rate=c.billing==="package"?((LANG==="ar"?"باقة ":"Package ")+money((currentPackage(c)||latestPackage(c)||{fee:c.monthlyFee}).fee))
              :(c.billing==="per_design"?t("cli.pd",{v:money(c.drate||c.rate)}):t("cli.pv",{v:money(c.rate)}));
     var bal=Math.abs(st.balance)<0.005
       ? '<span class="mut">'+money(0)+'</span>'
@@ -2242,7 +2419,7 @@ function commitments(upto,exceptId){
   S.employees.forEach(function(e){
     if(!e.active||e.id===exceptId) return;
     var lg=empLedger(e,upto);
-    var owed=lg.rows.reduce(function(a,r){return a+r.payout;},0)-paidTo(e.id,upto);
+    var owed=lg.cur.payout;
     if(owed>0) sum+=owed;
   });
   S.employees.forEach(function(e){
@@ -2293,7 +2470,7 @@ function boxAroundWages(m){
     paid+=paidTo(e.id,m);
     if(!e.active) return;
     var lg=empLedger(e,m);
-    var due=lg.rows.reduce(function(a,r){return a+r.payout;},0)-paidTo(e.id,m);
+    var due=lg.cur.payout;
     if(due>0) owed+=due;
   });
   return {before:box+paid, after:box-owed, paid:paid, owed:owed};
@@ -2321,6 +2498,52 @@ function paidTo(empId,upto){
     .reduce(function(a,x){return a+(+x.amount||0);},0);
 }
 
+function packageSuggestedEnd(startDate){
+  var s=String(startDate||"");
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return "";
+  var p=s.split("-"),y=+p[0],m=+p[1]-1,d=+p[2],n=new Date(y,m+1,1);
+  var last=new Date(n.getFullYear(),n.getMonth()+1,0).getDate();
+  return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(Math.min(d,last)).padStart(2,"0");
+}
+function packageProgressHTML(c,w){
+  if(!c||c.billing!=="package")return "";
+  var cur=currentPackage(c),latest=latestPackage(c),pkg=cur||latest,rows=clientPackages(c);
+  if(!pkg){
+    return '<div class="sec card"><div class="rowhead"><div><h2>'+(LANG==="ar"?"الباقة الحالية":"Current package")+'</h2>'
+      +'<p class="sub" style="margin:0">'+(LANG==="ar"?"لا توجد باقة مفتوحة.":"No package is open.")+'</p></div>'
+      +(w?'<button class="btn primary" data-act="newpackage" data-id="'+c.id+'">'+(LANG==="ar"?"فتح باقة":"Open package")+'</button>':'')+'</div></div>';
+  }
+  var d=packageDelivered(pkg),rem=packageRemaining(pkg),complete=packageIsComplete(pkg),isCurrent=!!cur;
+  var status=isCurrent?(complete?(LANG==="ar"?"مكتملة — بانتظار فتح التالية":"Complete — waiting for next package"):(LANG==="ar"?"مفتوحة":"Open")):(LANG==="ar"?"مغلقة":"Closed");
+  var statusCls=isCurrent&&complete?"on":(isCurrent?"amb":"");
+  var suggested=packageSuggestedEnd(pkg.startDate);
+  var target=function(k,label){
+    var goal=+pkg[k+"s"]||0,done=+d[k]||0;
+    if(!goal&&!done)return "";
+    return '<div class="carve"><span>'+label+'</span><span><b class="num">'+done+'</b>'+(goal?' / <span class="num">'+goal+'</span>':'')+(goal&&done<goal?' <small class="mut">· '+(LANG==="ar"?"باقي ":"left ")+(goal-done)+'</small>':'')+'</span></div>';
+  };
+  var hist=rows.slice().reverse().map(function(p,i){
+    var pd=packageDelivered(p),done=[+pd.video?pd.video+" "+t("d.video"):"",+pd.post?pd.post+" "+t("d.post"):"",+pd.design?pd.design+" "+t("d.design"):""].filter(Boolean).join(" · ");
+    return '<div class="carve"><span><b>'+(LANG==="ar"?"باقة ":"Package ")+(rows.length-i)+'</b><small class="mut" style="display:block">'+esc(p.startDate||"—")+(p.endDate?" → "+esc(p.endDate):"")+' · '+(p.status==="closed"?(LANG==="ar"?"مغلقة":"Closed"):(LANG==="ar"?"مفتوحة":"Open"))+'</small></span><span class="r"><b class="num">'+money(p.fee)+'</b>'+(done?'<small class="mut" style="display:block">'+esc(done)+'</small>':'')+'</span></div>';
+  }).join("");
+  return '<div class="sec card">'
+    +'<div class="rowhead"><div><span class="eyebrow">'+(LANG==="ar"?"دورة الباقة":"Package cycle")+'</span><h2 style="margin-top:5px">'+(LANG==="ar"?"الباقة الحالية":"Current package")+'</h2>'
+    +'<p class="sub" style="margin:0">'+(LANG==="ar"?"لا تتجدد تلقائياً مع أول الشهر.":"It does not renew automatically at the start of a month.")+'</p></div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap"><span class="pill '+statusCls+'">'+status+'</span>'
+    +(w&&isCurrent?'<button class="btn sm ghost" data-act="editpackage" data-id="'+c.id+'">'+t("edit")+'</button>':'')
+    +(w?'<button class="btn sm primary" data-act="newpackage" data-id="'+c.id+'">'+(LANG==="ar"?"فتح باقة جديدة":"Open new package")+'</button>':'')+'</div></div>'
+    +'<div class="two"><div>'
+      +'<div class="carve"><span>'+(LANG==="ar"?"تاريخ البداية":"Start date")+'</span><b class="num">'+esc(pkg.startDate||"—")+'</b></div>'
+      +'<div class="carve"><span>'+(isCurrent?(LANG==="ar"?"الموعد الإرشادي للدورة التالية":"Suggested next-cycle date"):(LANG==="ar"?"تاريخ الإغلاق":"Closed on"))+'</span><b class="num">'+esc(isCurrent?(suggested||"—"):(pkg.endDate||"—"))+'</b></div>'
+      +'<div class="carve"><span>'+(LANG==="ar"?"قيمة الباقة":"Package price")+'</span><b class="num">'+money(pkg.fee)+'</b></div>'
+    +'</div><div>'
+      +target("video",t("d.video"))+target("post",t("d.post"))+target("design",t("d.design"))
+    +'</div></div>'
+    +(pkg.note?'<div class="note" style="margin-top:14px">'+esc(pkg.note)+'</div>':'')
+    +(rows.length>1?'<details class="glass-disclosure" style="margin-top:14px"><summary><span>'+(LANG==="ar"?"سجل الباقات":"Package history")+'</span><b>'+rows.length+'</b></summary><div class="disclosure-body">'+hist+'</div></details>':'')
+    +'</div>';
+}
+
 /* ══════ one client's full account ══════ */
 function vClient(){
   var c=S.customers.filter(function(x){return x.id===SEL;})[0];
@@ -2337,11 +2560,12 @@ function vClient(){
   h+='<div class="sec"><div class="rowhead"><div>'
    +'<h2 style="font-size:20px">'+esc(c.name)+'</h2>'
    +'<p class="sub" style="margin:0"><span class="pill '+(c.billing==="prepaid"?"cy":"amb")+'">'+t("b."+c.billing)+'</span> '
-   +(c.billing==="package"?t("cli.month",{v:money(c.monthlyFee)}):t("cli.pv",{v:money(c.rate)}))+'</p></div>'
+   +(c.billing==="package"?((LANG==="ar"?"الباقة الحالية · ":"Current package · ")+money((currentPackage(c)||latestPackage(c)||{fee:c.monthlyFee}).fee)):t("cli.pv",{v:money(c.rate)}))+'</p></div>'
    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
       +(can("invoices")?'<button class="btn primary" data-act="newinvoice" data-id="'+c.id+'">'+t("cd.invoice")+'</button>':'')
       +'<button class="btn" data-act="invoice" data-id="'+c.id+'">'+t("cd.preview")+'</button>'
       +(wp?'<button class="btn" data-act="newpay" data-id="'+c.id+'">'+t("cd.pay")+'</button>':'')
+      +(w&&c.billing==="package"?'<button class="btn primary" data-act="newpackage" data-id="'+c.id+'">'+(LANG==="ar"?"فتح باقة جديدة":"Open new package")+'</button>':'')
       +(can("work")?'<button class="btn" data-act="legacydelivery" data-id="'+c.id+'">'+(LANG==="ar"?"إضافة تسليم قديم":"Add legacy delivery")+'</button>':'')
       +(amOwner()&&MODE==="cloud"?'<button class="btn" data-act="portalcode" data-kind="client" data-id="'+c.id+'" data-name="'+esc(c.name)+'">'+(LANG==="ar"?"رمز العميل":"Client code")+'</button>':'')
       +(w?'<button class="btn" data-act="editclient" data-id="'+c.id+'">'+t("cd.rename")+'</button>':'')+'</div>' 
@@ -2353,13 +2577,14 @@ function vClient(){
    +kpi("in",t("th.paid"),money(st.paid),t("cd.all",{m:monthName(c.startMonth||MONTH)}))
    +'</div>';
 
+  h+=packageProgressHTML(c,w);
+
   h+='<div class="sec two"><div class="card"><span class="eyebrow">'+t("cd.delivered")+'</span>'
    +'<div class="mut" style="margin-top:14px;font-size:12px">'+t("cd.month")+' — '+monthName(MONTH)+'</div>'
    +'<div style="margin-top:6px">'+deliveredChips(dm)+'</div>'
    +'<div class="mut" style="margin-top:16px;font-size:12px">'+t("cd.all",{m:monthName(c.startMonth||MONTH)})+'</div>'
    +'<div style="margin-top:6px">'+deliveredChips(da)+'</div>'
-   +(c.billing==="package"?'<div class="carve" style="margin-top:14px"><span>'+t("cd.promised")+'</span>'
-      +'<span>'+[+c.videos?((+c.videos)+" "+t("d.video")):"",+c.posts?((+c.posts)+" "+t("d.post")):"",+c.designs?((+c.designs)+" "+t("d.design")):""].filter(Boolean).join(" · ")+'</span></div>':'')
+   +(c.billing==="package"?(function(){var p=currentPackage(c)||latestPackage(c)||{};return '<div class="carve" style="margin-top:14px"><span>'+t("cd.promised")+'</span><span>'+[+p.videos?((+p.videos)+" "+t("d.video")):"",+p.posts?((+p.posts)+" "+t("d.post")):"",+p.designs?((+p.designs)+" "+t("d.design")):""].filter(Boolean).join(" · ")+'</span></div>';})():'')
    +'</div>'
    +'<div class="card"><span class="eyebrow">'+t("f.note")+'</span>'
    +'<p style="margin-top:10px;font-size:13px">'+(c.note?esc(c.note):'<span class="mut">'+t("cd.none")+'</span>')+'</p>'
@@ -2418,7 +2643,7 @@ function vTeamDesktop(){
      +'<td class="r">'+(lg.adv?'<span class="num neg">−'+money(lg.adv)+'</span>':'<span class="mut">—</span>')+'</td>'
      +'<td class="r">'+(lg.carryIn?'<span class="num neg">−'+money(lg.carryIn)+'</span>':'<span class="mut">—</span>')+'</td>'
      +'<td class="r"><span class="num '+(lg.carryOut?"neg":"acc")+'" style="font-weight:600">'
-       +(lg.carryOut?t("ad.owes")+" "+money(lg.carryOut):money(lg.payout))+'</span></td>'
+       +empBalanceText(lg)+'</span></td>'
      +'<td class="r">'+(wa?'<button class="btn sm primary" data-act="newpayout" data-id="'+e.id+'">'+t("po.add")+'</button> ':'')
      +(w?'<button class="btn sm ghost" data-act="editemp" data-id="'+e.id+'">'+t("edit")+'</button>':'')+'</td></tr>';
   });
@@ -2434,7 +2659,7 @@ function vTeamDesktop(){
      +'<th class="r">'+t("th.adv")+'</th><th class="r">'+t("th.net")+'</th></tr></thead><tbody>';
     pr.forEach(function(pn){
       var L=empLedger(pn.e,MONTH), cur=L.cur;
-      var owed=L.rows.reduce(function(a,x){return a+x.payout;},0)-paidTo(pn.e.id,MONTH);
+      var owed=L.cur.payout;
       h+='<tr><td><b>'+esc(pn.e.name)+'</b></td>'
        +'<td class="r"><span class="num acc">'+pn.pct+'%</span></td>'
        +'<td class="r"><span class="num">'+money(cur.earned)+'</span></td>'
@@ -2460,13 +2685,13 @@ function vTeamMobile(){
     var delivered=Object.keys(wc).reduce(function(a,k){return a+(+wc[k]||0);},0);
     h+='<button class="entity-row" data-act="openemp" data-id="'+e.id+'"><span class="entity-avatar">'+esc((e.name||"?").charAt(0))+'</span>'
       +'<span class="entity-copy"><b>'+esc(e.name)+'</b><small>'+esc(e.role||t("sec.team"))+' · '+delivered+' '+t("th.deliv")+'</small></span>'
-      +'<span class="entity-money"><small>'+t("th.net")+'</small><b class="num '+(lg.carryOut?"neg":"")+'">'+(lg.carryOut?t("ad.owes")+" "+money(lg.carryOut):money(lg.payout))+'</b></span><span class="chev">‹</span></button>';
+      +'<span class="entity-money"><small>'+t("th.net")+'</small><b class="num '+(lg.carryOut?"neg":"")+'">'+empBalanceText(lg)+'</b></span><span class="chev">‹</span></button>';
   });
   h+='</div>';
   var pr=r.partners||[];
   if(pr.length){
     h+='<details class="glass-disclosure"><summary><span>'+t("draw.t")+'</span><b>'+pr.length+'</b></summary><div class="disclosure-body">';
-    pr.forEach(function(pn){var L=empLedger(pn.e,MONTH),cur=L.cur,owed=L.rows.reduce(function(a,x){return a+x.payout;},0)-paidTo(pn.e.id,MONTH);
+    pr.forEach(function(pn){var L=empLedger(pn.e,MONTH),cur=L.cur,owed=L.cur.payout;
       h+='<div class="detail-row"><span>'+esc(pn.e.name)+' · '+pn.pct+'%</span><b class="num">'+money(Math.max(0,owed))+'</b></div>';});
     h+='</div></details>';
   }
@@ -2496,14 +2721,13 @@ function vEmployee(){
    +(amOwner()&&MODE==="cloud"?'<button class="btn" data-act="portalcode" data-kind="staff" data-id="'+e.id+'" data-name="'+esc(e.name)+'">'+(LANG==="ar"?"رمز البوابة":"Portal code")+'</button>':'')
    +(w?'<button class="btn" data-act="editemp" data-id="'+e.id+'">'+t("edit")+'</button>':'')+'</div></div></div>';
 
-  var owedAll=lg.rows.reduce(function(a,r){return a+r.payout;},0);
   var paidAll=paidTo(e.id,MONTH);
-  var left=owedAll-paidAll;
+  var left=cur.payout;
   var wcE=workCounts(e.id,MONTH,e.id===calc(MONTH).rentEmp);
   h+='<div class="sec card"><span class="eyebrow">'+t("tm.work",{m:monthName(MONTH)})+'</span>'
    +'<div style="margin-top:10px">'+deliveredChips(wcE)+'</div></div>';
   h+='<div class="kpis">'
-   +kpi("net",t("th.net"),money(cur.payout),t("emp.thismonth",{m:monthName(MONTH)}))
+   +kpi("net",t("th.net"),empBalanceText(cur),t("emp.thismonth",{m:monthName(MONTH)}))
    +kpi("in",t("th.earned"),money(cur.earned),monthName(MONTH))
    +kpi("out",t("th.adv"),money(cur.adv),monthName(MONTH))
    +kpi(left>0.005?"out":"in",t("po.left"),money(left>0?left:0),t("po.paid")+" "+money(paidAll))
@@ -2511,14 +2735,14 @@ function vEmployee(){
 
   h+='<div class="sec card"><h2>'+t("emp.stmt")+'</h2><p class="sub">'+t("emp.stmt.s")+'</p><div class="tbl-wrap"><table><thead><tr>'
    +'<th>'+t("th.month2")+'</th><th class="r">'+t("th.earned")+'</th><th class="r">'+t("th.adv")+'</th>'
-   +'<th class="r">'+t("th.carry")+'</th><th class="r">'+t("th.payout")+'</th><th class="r">'+t("ad.owes")+'</th></tr></thead><tbody>';
+   +'<th class="r">'+t("th.carry")+'</th><th class="r">'+t("th.payout")+'</th><th class="r">'+(LANG==="ar"?"الرصيد":"Balance")+'</th></tr></thead><tbody>';
   lg.rows.slice().reverse().forEach(function(r){
     h+='<tr><td>'+esc(monthName(r.month))+'</td>'
      +'<td class="r"><span class="num">'+money(r.earned)+'</span></td>'
      +'<td class="r">'+(r.adv?'<span class="num neg">−'+money(r.adv)+'</span>':'—')+'</td>'
-     +'<td class="r">'+(r.carryIn?'<span class="num neg">−'+money(r.carryIn)+'</span>':'—')+'</td>'
-     +'<td class="r"><span class="num acc">'+money(r.payout)+'</span></td>'
-     +'<td class="r">'+(r.carryOut?'<span class="num neg">'+money(r.carryOut)+'</span>':'—')+'</td></tr>';
+     +'<td class="r">'+(r.owedIn?'<span class="num acc">'+money(r.owedIn)+'</span>':(r.carryIn?'<span class="num pos">'+(LANG==="ar"?"مدفوع مقدماً ":"Prepaid ")+money(r.carryIn)+'</span>':'—'))+'</td>'
+     +'<td class="r"><span class="num pos">'+money(r.paid||0)+'</span></td>'
+     +'<td class="r">'+(r.payout?'<span class="num neg">'+money(r.payout)+'</span>':(r.carryOut?'<span class="num pos">'+(LANG==="ar"?"مدفوع مقدماً ":"Prepaid ")+money(r.carryOut)+'</span>':'—'))+'</td></tr>';
   });
   h+='</tbody></table></div></div>';
 
@@ -3951,12 +4175,13 @@ function printInvoice(c,invoice){
   w.document.open(); w.document.write(html); w.document.close();
 }
 
-function clientPackageLabel(c){
+function clientPackageLabel(c,pkg){
+  pkg=pkg||currentPackage(c)||latestPackage(c)||{};
   var parts=[];
-  if(+c.videos) parts.push((+c.videos)+" "+t("d.video"));
-  if(+c.posts) parts.push((+c.posts)+" "+t("d.post"));
-  if(+c.designs) parts.push((+c.designs)+" "+t("d.design"));
-  return (LANG==="ar"?"الباقة الشهرية":"Monthly package")+(parts.length?" — "+parts.join(" + "):"");
+  if(+pkg.videos) parts.push((+pkg.videos)+" "+t("d.video"));
+  if(+pkg.posts) parts.push((+pkg.posts)+" "+t("d.post"));
+  if(+pkg.designs) parts.push((+pkg.designs)+" "+t("d.design"));
+  return (LANG==="ar"?"باقة":"Package")+(parts.length?" — "+parts.join(" + "):"");
 }
 function fundingInvoiceItemsForClient(c,period,legacyAds){
   var p=period||MONTH;
@@ -3977,15 +4202,26 @@ function fundingInvoiceItemsForClient(c,period,legacyAds){
     })
   };
 }
-function rootInvoiceItemsForClient(c,period){
+function rootInvoiceItemsForClient(c,period,packageId,invoiceDate){
   var items=[],p=period||MONTH;
-  var legacyAds=c.billing==="package"?(+c.adSpend||0):0;
+  var pkg=null;
+  if(c.billing==="package"){
+    pkg=packageById(c,packageId);
+    if(!pkg&&invoiceDate){
+      var byDate=packageForDate(c,invoiceDate);
+      if(byDate&&String(byDate.startDate||"").slice(0,7)===p)pkg=byDate;
+    }
+    if(!pkg)pkg=packageForPeriod(c,p);
+  }
+  var legacyAds=pkg?(+pkg.adSpend||0):0;
   var fundingItems=fundingInvoiceItemsForClient(c,p,legacyAds);
   if(c.billing==="package"){
-    var total=+c.monthlyFee||0,ads=legacyAds;
-    var service=Math.max(0,total-ads);
-    if(service) items.push({kind:"service",description:clientPackageLabel(c),amount:service});
-    if(ads&&!fundingItems.replacesLegacy) items.push({kind:"ads",description:t("inv.ads"),amount:ads});
+    if(pkg){
+      var total=+pkg.fee||0,ads=legacyAds;
+      var service=Math.max(0,total-ads);
+      if(service) items.push({kind:"service",packageId:pkg.id,description:clientPackageLabel(c,pkg),amount:service});
+      if(ads&&!fundingItems.replacesLegacy) items.push({kind:"ads",packageId:pkg.id,description:t("inv.ads"),amount:ads});
+    }
   }else{
     var dm=delivered(c,p);
     if(c.billing==="per_design"){
@@ -4018,12 +4254,14 @@ function syncClientOpenInvoices(c,fromMonth){
     if(inv.status==="paid"||inv.status==="cancelled"||(storedTotal>0&&paid>=storedTotal-0.005)) return;
 
     var keep=(inv.items||[]).filter(function(item){return !isInvoiceRootItem(item);});
-    var root=rootInvoiceItemsForClient(c,per||start);
+    var pkg=packageForInvoice(c,inv);
+    var root=rootInvoiceItemsForClient(c,per||start,pkg?pkg.id:"",inv.date||"");
     var dm=delivered(c,per||start);
     var next={
       items:root.concat(keep),
-      serviceAmount:c.billing==="package"?Math.max(0,(+c.monthlyFee||0)-(+c.adSpend||0)):0,
-      adAmount:c.billing==="package"?(+c.adSpend||0):0,
+      packageId:pkg?pkg.id:"",
+      serviceAmount:pkg?Math.max(0,(+pkg.fee||0)-(+pkg.adSpend||0)):0,
+      adAmount:pkg?(+pkg.adSpend||0):0,
       videoQty:c.billing!=="package"?(+dm.video||0):0,
       videoRate:c.billing!=="package"?(+c.rate||0):0,
       designQty:c.billing!=="package"?(+dm.design||0):0,
@@ -4031,6 +4269,7 @@ function syncClientOpenInvoices(c,fromMonth){
     };
     var before=JSON.stringify({
       items:inv.items||[],
+      packageId:inv.packageId||"",
       serviceAmount:+inv.serviceAmount||0,
       adAmount:+inv.adAmount||0,
       videoQty:+inv.videoQty||0,
@@ -4062,7 +4301,7 @@ function clientForm(c){
     {k:"email",label:t("f.email"),type:"email"},
     {k:"phone",label:t("f.phone")},
     {k:"billing",label:t("f.howpay"),type:"select",options:[["package",t("b.packageL")],["per_video",t("b.per_videoL")],["per_design",t("b.per_designL")],["prepaid",t("b.prepaidL")]]},
-    {k:"monthlyFee",label:t("f.fee"),type:"number",step:"0.01",showIf:{k:"billing",in:["package"]}},
+    {k:"monthlyFee",label:(LANG==="ar"?"قيمة الباقة الافتراضية":"Default package price"),type:"number",step:"0.01",showIf:{k:"billing",in:["package"]}},
     {k:"videos",label:t("f.vids"),type:"number",showIf:{k:"billing",in:["package"]}},
     {k:"posts",label:t("f.posts"),type:"number",showIf:{k:"billing",in:["package"]}},
     {k:"designs",label:t("f.designs"),type:"number",showIf:{k:"billing",in:["package"]}},
@@ -4073,6 +4312,7 @@ function clientForm(c){
     {k:"credit",label:t("f.advance"),type:"number",step:"0.01",hint:t("f.advanceH")},
     {k:"openingDue",label:t("f.opening"),type:"number",step:"0.01",hint:t("f.openingH")},
     {k:"startMonth",label:t("f.start"),type:"month",def:ymNow(),hint:t("f.startH")},
+    {k:"packageStartDate",label:(LANG==="ar"?"تاريخ بداية الباقة الحالية":"Current package start date"),type:"date",def:todayISO(),showIf:{k:"billing",in:["package"]}},
     {k:"endMonth",label:t("f.end"),type:"month",hint:t("f.endH")},
     {k:"note",label:t("f.note"),type:"textarea"},
     {k:"websiteVisible",label:"",type:"check",checkLabel:t("f.websiteVisible"),def:false},
@@ -4081,8 +4321,84 @@ function clientForm(c){
     if(v===null){S.customers=S.customers.filter(function(x){return x.id!==c.id;});return;}
     if(c){
       Object.assign(c,v);
+      if(c.billing==="package"&&!clientPackages(c).length){
+        c.packages=[{
+          id:"pkg_"+c.id+"_legacy",customerId:c.id,startDate:c.packageStartDate||todayISO(),endDate:"",status:"open",
+          fee:+c.monthlyFee||0,videos:+c.videos||0,posts:+c.posts||0,designs:+c.designs||0,adSpend:+c.adSpend||0,note:""
+        }];
+      }
       syncClientOpenInvoices(c,MONTH);
-    } else {v.id=uid();S.customers.push(v);}});
+    } else {
+      v.id=uid();
+      if(v.billing==="package"){
+        v.packages=[{
+          id:"pkg_"+v.id+"_legacy",customerId:v.id,startDate:v.packageStartDate||todayISO(),endDate:"",status:"open",
+          fee:+v.monthlyFee||0,videos:+v.videos||0,posts:+v.posts||0,designs:+v.designs||0,adSpend:+v.adSpend||0,note:""
+        }];
+      }else v.packages=[];
+      S.customers.push(v);
+    }});
+}
+function packageForm(pkg,cust){
+  if(!cust)return;
+  var isNew=!pkg,cur=currentPackage(cust),base=pkg||cur||{
+    startDate:todayISO(),fee:+cust.monthlyFee||0,videos:+cust.videos||0,posts:+cust.posts||0,designs:+cust.designs||0,adSpend:+cust.adSpend||0,note:""
+  };
+  var rem=cur?packageRemaining(cur):{video:0,post:0,design:0};
+  var incomplete=!!(cur&&!packageIsComplete(cur));
+  var fields=[
+    {k:"startDate",label:(LANG==="ar"?"تاريخ بداية الباقة":"Package start date"),type:"date",def:isNew?todayISO():base.startDate},
+    {k:"fee",label:(LANG==="ar"?"قيمة الباقة":"Package price"),type:"number",step:"0.01",def:base.fee||0},
+    {k:"videos",label:t("f.vids"),type:"number",def:+base.videos||0},
+    {k:"posts",label:t("f.posts"),type:"number",def:+base.posts||0},
+    {k:"designs",label:t("f.designs"),type:"number",def:+base.designs||0},
+    {k:"adSpend",label:t("f.ads"),type:"number",step:"0.01",def:+base.adSpend||0},
+    {k:"note",label:t("f.note"),type:"textarea",def:base.note||""}
+  ];
+  if(isNew&&incomplete)fields.push({
+    k:"confirmClose",label:"",type:"check",def:false,
+    checkLabel:(LANG==="ar"?"أغلق الباقة الحالية رغم وجود تسليمات متبقية":"Close the current package even though deliveries remain")
+  });
+  var extra="";
+  if(isNew&&cur){
+    extra='<div class="note" style="margin-bottom:12px">'+
+      (incomplete
+        ? (LANG==="ar"
+            ?"تنبيه: الباقة الحالية لم تكتمل بعد. المتبقي: "
+            :"Warning: the current package is not complete. Remaining: ")+
+          [rem.video?rem.video+" "+t("d.video"):"",rem.post?rem.post+" "+t("d.post"):"",rem.design?rem.design+" "+t("d.design"):""].filter(Boolean).join(" · ")
+        : (LANG==="ar"?"الباقة الحالية مكتملة. عند الحفظ سيتم إغلاقها وفتح باقة جديدة.":"The current package is complete. Saving will close it and open a new package."))+
+      '</div>';
+  }
+  var vals=isNew?null:Object.assign({},pkg,{id:""});
+  form(isNew?(LANG==="ar"?"فتح باقة جديدة":"Open new package"):(LANG==="ar"?"تعديل الباقة الحالية":"Edit current package"),
+    fields,vals,function(v){
+      if(!v.startDate)throw new Error(LANG==="ar"?"حدد تاريخ بداية الباقة.":"Choose the package start date.");
+      if(isNew&&cur&&String(v.startDate)<=String(cur.startDate||""))
+        throw new Error(LANG==="ar"?"تاريخ الباقة الجديدة لازم يكون بعد بداية الباقة الحالية.":"The new package must start after the current package.");
+      if(isNew&&cur&&incomplete&&!v.confirmClose)
+        throw new Error(LANG==="ar"?"فعّل خيار إغلاق الباقة الحالية أولاً.":"Confirm closing the current package first.");
+      delete v.confirmClose;
+      if(isNew){
+        if(cur){cur.status="closed";cur.endDate=v.startDate;}
+        var np={
+          id:uid(),customerId:cust.id,startDate:v.startDate,endDate:"",status:"open",
+          fee:+v.fee||0,videos:+v.videos||0,posts:+v.posts||0,designs:+v.designs||0,adSpend:+v.adSpend||0,note:v.note||""
+        };
+        if(!Array.isArray(cust.packages))cust.packages=[];
+        cust.packages.push(np);
+        cust.packageStartDate=np.startDate;
+        cust.monthlyFee=np.fee;cust.videos=np.videos;cust.posts=np.posts;cust.designs=np.designs;cust.adSpend=np.adSpend;
+        syncClientOpenInvoices(cust,String(np.startDate).slice(0,7));
+      }else{
+        Object.assign(pkg,{
+          startDate:v.startDate,fee:+v.fee||0,videos:+v.videos||0,posts:+v.posts||0,designs:+v.designs||0,adSpend:+v.adSpend||0,note:v.note||""
+        });
+        cust.packageStartDate=pkg.startDate;
+        cust.monthlyFee=pkg.fee;cust.videos=pkg.videos;cust.posts=pkg.posts;cust.designs=pkg.designs;cust.adSpend=pkg.adSpend;
+        syncClientOpenInvoices(cust,String(pkg.startDate).slice(0,7));
+      }
+    },extra,isNew?(LANG==="ar"?"فتح الباقة":"Open package"):t("save"));
 }
 function empForm(e){
   form(e?t("tm.edit"):t("tm.add"),[
@@ -4136,6 +4452,15 @@ function workForm(w){
     }
     delete v.adFaceCharge;
     ensureAccountingFields(v,MONTH);
+    var workCustomer=S.customers.filter(function(x){return x.id===v.customerId;})[0];
+    if(workCustomer&&workCustomer.billing==="package"){
+      var assigned=(w&&w.customerId===v.customerId&&w.packageId)
+        ? clientPackages(workCustomer).filter(function(p){return p.id===w.packageId;})[0]
+        : packageForDate(workCustomer,v.date);
+      if(!assigned||assigned.status==="cancelled")
+        throw new Error(LANG==="ar"?"افتح باقة للعميل قبل تسجيل التسليم.":"Open a package for the client before logging delivery.");
+      v.packageId=assigned.id;
+    }else delete v.packageId;
     if(w){
       var updated=Object.assign({},w,v,{id:w.id});
       if(canSeeMoney()) await saveWorkDirect(updated);
@@ -4174,6 +4499,7 @@ function legacyDeliveryForm(custId){
         archived:true,
         portalVisible:!!v.portalVisible,
         countInPackage:!!v.countInPackage,
+        packageId:(v.countInPackage&&cst.billing==="package"&&packageForDate(cst,v.date))?packageForDate(cst,v.date).id:"",
         amount:"",
         charge:""
       };
@@ -4526,7 +4852,7 @@ document.addEventListener("click",function(ev){
   else if(act==="newpayout"){
     var em=S.employees.filter(function(x){return x.id===id;})[0];
     var due=null;
-    if(em){var L=empLedger(em,MONTH);due=L.rows.reduce(function(a,r){return a+r.payout;},0)-paidTo(em.id,MONTH);}
+    if(em){var L=empLedger(em,MONTH);due=L.cur.payout;}
     payoutForm(null,id,due);
   }
   else if(act==="editpayout") payoutForm(f(S.payouts));
@@ -4553,6 +4879,14 @@ document.addEventListener("click",function(ev){
   else if(act==="newadv") advForm(null,id);
   else if(act==="editadv") advForm(f(S.advances));
   else if(act==="newpay") payForm(null,id);
+  else if(act==="newpackage"){
+    var pc=S.customers.filter(function(x){return x.id===id;})[0];
+    if(pc)packageForm(null,pc);
+  }
+  else if(act==="editpackage"){
+    var pec=S.customers.filter(function(x){return x.id===id;})[0];
+    if(pec){var pp=currentPackage(pec)||latestPackage(pec);if(pp)packageForm(pp,pec);}
+  }
   else if(act==="newfund"||act==="newfunding") fundingForm(null);
   else if(act==="editfunding") fundingForm(f(S.fundings));
   else if(act==="payfunding"){
@@ -4763,7 +5097,7 @@ async function handleAppointmentConfirmation(){
 
 /* ═════════════ boot ═════════════ */
 if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
-  window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js?v=20260930-v67").catch(function(){});});
+  window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js?v=20261003-v70-packages").catch(function(){});});
 }
 Store.load().then(async function(d){
   if(d&&d.settings){S=d;
@@ -4787,7 +5121,8 @@ Store.load().then(async function(d){
       if(!c.startMonth)c.startMonth=ymNow();
       if(c.endMonth==null)c.endMonth="";});
   }
-  normalizeStateShape();
+  var localPackageMigrated=normalizeStateShape();
+  if(localPackageMigrated)Store.save(S);
   LANG=S.settings.lang||"ar";
   applyTheme();
   var went=false;
