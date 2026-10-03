@@ -893,6 +893,7 @@ async function pull(){
           S.settings=Object.assign({},S.settings,d.settings,localOnly);
         }
         PULLED.shoots=true;
+        normalizeStateShape();
         clearCalc();
         setSync("cl.synced");
         return;
@@ -919,13 +920,13 @@ async function pull(){
     S.settings=Object.assign({},S.settings,st.data.data,localOnly2);
     PULLED.settings=true;
   }
-  normalizeStateShape();
+  var packageMigrated=normalizeStateShape();
   var currencyMigrated=false;
   if(!S.settings.fxRates["2026-10-01"]){
     S.settings.fxRates["2026-10-01"]=137;
     currencyMigrated=true;
   }
-  if(applyBrandDefaults()||currencyMigrated) setTimeout(save,0);
+  if(applyBrandDefaults()||currencyMigrated||packageMigrated) setTimeout(save,0);
   await loadPortalPending();
   if(canSeeMoney()&&syncAllOpenInvoiceRoots(MONTH)){
     Store.save(S);
@@ -2134,10 +2135,12 @@ function nextInvoiceNumber(){
 function invoiceForm(inv,custId){
   var c=S.customers.filter(function(x){return x.id===(inv?inv.customerId:custId);})[0]||S.customers[0];
   var dm=c?delivered(c,MONTH):{video:0,design:0};
+  var defaultPkg=c&&c.billing==="package"?packageForPeriod(c,MONTH):null;
   var defaults=inv||{
     number:nextInvoiceNumber(),customerId:c?c.id:"",date:todayISO(),dueDate:(function(){var d=new Date();d.setDate(d.getDate()+14);return d.toISOString().slice(0,10);})(),
-    period:MONTH,status:"draft",serviceAmount:c&&c.billing==="package"?Math.max(0,(+c.monthlyFee||0)-(+c.adSpend||0)):0,
-    adAmount:c?(+c.adSpend||0):0,videoQty:c&&c.billing!=="package"?(+dm.video||0):0,videoRate:c?(+c.rate||0):0,
+    period:MONTH,status:"draft",packageId:defaultPkg?defaultPkg.id:"",
+    serviceAmount:defaultPkg?Math.max(0,(+defaultPkg.fee||0)-(+defaultPkg.adSpend||0)):0,
+    adAmount:defaultPkg?(+defaultPkg.adSpend||0):0,videoQty:c&&c.billing!=="package"?(+dm.video||0):0,videoRate:c?(+c.rate||0):0,
     designQty:c&&(+c.drate||0)?(+dm.design||0):0,designRate:c?(+c.drate||0):0,extraDesc:"",extraAmount:0,notes:""
   };
   form(inv?t("inv.edit"):t("inv.new"),[
@@ -2159,14 +2162,16 @@ function invoiceForm(inv,custId){
   ],inv?defaults:null,function(v){
     if(v===null){S.invoices=S.invoices.filter(function(x){return x.id!==inv.id;});return;}
     var items=[],chosen=S.customers.filter(function(x){return x.id===v.customerId;})[0];
+    var chosenPkg=chosen&&chosen.billing==="package"?packageForPeriod(chosen,v.period||MONTH):null;
     var autoFunding=chosen?fundingInvoiceItemsForClient(chosen,v.period||MONTH,+v.adAmount||0):{replacesLegacy:false,items:[]};
-    if(+v.serviceAmount)items.push({kind:"service",description:t("inv.service"),amount:+v.serviceAmount});
-    if(+v.adAmount&&!autoFunding.replacesLegacy)items.push({kind:"ads",description:t("inv.ads"),amount:+v.adAmount});
+    if(+v.serviceAmount)items.push({kind:"service",packageId:chosenPkg?chosenPkg.id:"",description:chosenPkg?clientPackageLabel(chosen,chosenPkg):t("inv.service"),amount:+v.serviceAmount});
+    if(+v.adAmount&&!autoFunding.replacesLegacy)items.push({kind:"ads",packageId:chosenPkg?chosenPkg.id:"",description:t("inv.ads"),amount:+v.adAmount});
     if((+v.videoQty||0)*(+v.videoRate||0))items.push({kind:"video",description:v.videoQty+" × "+t("d.video"),qty:+v.videoQty,rate:+v.videoRate,amount:+v.videoQty*+v.videoRate});
     if((+v.designQty||0)*(+v.designRate||0))items.push({kind:"design",description:v.designQty+" × "+t("d.design"),qty:+v.designQty,rate:+v.designRate,amount:+v.designQty*+v.designRate});
     items=items.concat(autoFunding.items);
     var keep=inv?(inv.items||[]).filter(function(item){return !isInvoiceRootItem(item);}):[];
     if(+v.extraAmount)keep.push({kind:"other",description:v.extraDesc||t("inv.extra"),amount:+v.extraAmount});
+    v.packageId=chosenPkg?chosenPkg.id:"";
     v.items=items.concat(keep); v.updatedAt=new Date().toISOString();
     if(inv)Object.assign(inv,v);else{v.id=uid();v.createdAt=v.updatedAt;S.invoices.push(v);}
   });
@@ -4188,6 +4193,7 @@ function syncClientOpenInvoices(c,fromMonth){
     };
     var before=JSON.stringify({
       items:inv.items||[],
+      packageId:inv.packageId||"",
       serviceAmount:+inv.serviceAmount||0,
       adAmount:+inv.adAmount||0,
       videoQty:+inv.videoQty||0,
@@ -4230,6 +4236,7 @@ function clientForm(c){
     {k:"credit",label:t("f.advance"),type:"number",step:"0.01",hint:t("f.advanceH")},
     {k:"openingDue",label:t("f.opening"),type:"number",step:"0.01",hint:t("f.openingH")},
     {k:"startMonth",label:t("f.start"),type:"month",def:ymNow(),hint:t("f.startH")},
+    {k:"packageStartDate",label:(LANG==="ar"?"تاريخ بداية الباقة الحالية":"Current package start date"),type:"date",def:todayISO(),showIf:{k:"billing",in:["package"]}},
     {k:"endMonth",label:t("f.end"),type:"month",hint:t("f.endH")},
     {k:"note",label:t("f.note"),type:"textarea"},
     {k:"websiteVisible",label:"",type:"check",checkLabel:t("f.websiteVisible"),def:false},
@@ -4238,8 +4245,82 @@ function clientForm(c){
     if(v===null){S.customers=S.customers.filter(function(x){return x.id!==c.id;});return;}
     if(c){
       Object.assign(c,v);
+      if(c.billing==="package"&&!clientPackages(c).length){
+        c.packages=[{
+          id:"pkg_"+c.id+"_legacy",customerId:c.id,startDate:c.packageStartDate||todayISO(),endDate:"",status:"open",
+          fee:+c.monthlyFee||0,videos:+c.videos||0,posts:+c.posts||0,designs:+c.designs||0,adSpend:+c.adSpend||0,note:""
+        }];
+      }
       syncClientOpenInvoices(c,MONTH);
-    } else {v.id=uid();S.customers.push(v);}});
+    } else {
+      v.id=uid();
+      if(v.billing==="package"){
+        v.packages=[{
+          id:"pkg_"+v.id+"_legacy",customerId:v.id,startDate:v.packageStartDate||todayISO(),endDate:"",status:"open",
+          fee:+v.monthlyFee||0,videos:+v.videos||0,posts:+v.posts||0,designs:+v.designs||0,adSpend:+v.adSpend||0,note:""
+        }];
+      }else v.packages=[];
+      S.customers.push(v);
+    }});
+}
+function packageForm(pkg,cust){
+  if(!cust)return;
+  var isNew=!pkg,cur=currentPackage(cust),base=pkg||cur||{
+    startDate:todayISO(),fee:+cust.monthlyFee||0,videos:+cust.videos||0,posts:+cust.posts||0,designs:+cust.designs||0,adSpend:+cust.adSpend||0,note:""
+  };
+  var rem=cur?packageRemaining(cur):{video:0,post:0,design:0};
+  var incomplete=!!(cur&&!packageIsComplete(cur));
+  var fields=[
+    {k:"startDate",label:(LANG==="ar"?"تاريخ بداية الباقة":"Package start date"),type:"date",def:isNew?todayISO():base.startDate},
+    {k:"fee",label:(LANG==="ar"?"قيمة الباقة":"Package price"),type:"number",step:"0.01",def:base.fee||0},
+    {k:"videos",label:t("f.vids"),type:"number",def:+base.videos||0},
+    {k:"posts",label:t("f.posts"),type:"number",def:+base.posts||0},
+    {k:"designs",label:t("f.designs"),type:"number",def:+base.designs||0},
+    {k:"adSpend",label:t("f.ads"),type:"number",step:"0.01",def:+base.adSpend||0},
+    {k:"note",label:t("f.note"),type:"textarea",def:base.note||""}
+  ];
+  if(isNew&&incomplete)fields.push({
+    k:"confirmClose",label:"",type:"check",def:false,
+    checkLabel:(LANG==="ar"?"أغلق الباقة الحالية رغم وجود تسليمات متبقية":"Close the current package even though deliveries remain")
+  });
+  var extra="";
+  if(isNew&&cur){
+    extra='<div class="note" style="margin-bottom:12px">'+
+      (incomplete
+        ? (LANG==="ar"
+            ?"تنبيه: الباقة الحالية لم تكتمل بعد. المتبقي: "
+            :"Warning: the current package is not complete. Remaining: ")+
+          [rem.video?rem.video+" "+t("d.video"):"",rem.post?rem.post+" "+t("d.post"):"",rem.design?rem.design+" "+t("d.design"):""].filter(Boolean).join(" · ")
+        : (LANG==="ar"?"الباقة الحالية مكتملة. عند الحفظ سيتم إغلاقها وفتح باقة جديدة.":"The current package is complete. Saving will close it and open a new package."))+
+      '</div>';
+  }
+  var vals=isNew?null:Object.assign({},pkg,{id:""});
+  form(isNew?(LANG==="ar"?"فتح باقة جديدة":"Open new package"):(LANG==="ar"?"تعديل الباقة الحالية":"Edit current package"),
+    fields,vals,function(v){
+      if(!v.startDate)throw new Error(LANG==="ar"?"حدد تاريخ بداية الباقة.":"Choose the package start date.");
+      if(isNew&&cur&&incomplete&&!v.confirmClose)
+        throw new Error(LANG==="ar"?"فعّل خيار إغلاق الباقة الحالية أولاً.":"Confirm closing the current package first.");
+      delete v.confirmClose;
+      if(isNew){
+        if(cur){cur.status="closed";cur.endDate=v.startDate;}
+        var np={
+          id:uid(),customerId:cust.id,startDate:v.startDate,endDate:"",status:"open",
+          fee:+v.fee||0,videos:+v.videos||0,posts:+v.posts||0,designs:+v.designs||0,adSpend:+v.adSpend||0,note:v.note||""
+        };
+        if(!Array.isArray(cust.packages))cust.packages=[];
+        cust.packages.push(np);
+        cust.packageStartDate=np.startDate;
+        cust.monthlyFee=np.fee;cust.videos=np.videos;cust.posts=np.posts;cust.designs=np.designs;cust.adSpend=np.adSpend;
+        syncClientOpenInvoices(cust,String(np.startDate).slice(0,7));
+      }else{
+        Object.assign(pkg,{
+          startDate:v.startDate,fee:+v.fee||0,videos:+v.videos||0,posts:+v.posts||0,designs:+v.designs||0,adSpend:+v.adSpend||0,note:v.note||""
+        });
+        cust.packageStartDate=pkg.startDate;
+        cust.monthlyFee=pkg.fee;cust.videos=pkg.videos;cust.posts=pkg.posts;cust.designs=pkg.designs;cust.adSpend=pkg.adSpend;
+        syncClientOpenInvoices(cust,String(pkg.startDate).slice(0,7));
+      }
+    },extra,isNew?(LANG==="ar"?"فتح الباقة":"Open package"):t("save"));
 }
 function empForm(e){
   form(e?t("tm.edit"):t("tm.add"),[
@@ -4293,6 +4374,15 @@ function workForm(w){
     }
     delete v.adFaceCharge;
     ensureAccountingFields(v,MONTH);
+    var workCustomer=S.customers.filter(function(x){return x.id===v.customerId;})[0];
+    if(workCustomer&&workCustomer.billing==="package"){
+      var assigned=(w&&w.customerId===v.customerId&&w.packageId)
+        ? clientPackages(workCustomer).filter(function(p){return p.id===w.packageId;})[0]
+        : packageForDate(workCustomer,v.date);
+      if(!assigned||assigned.status==="cancelled")
+        throw new Error(LANG==="ar"?"افتح باقة للعميل قبل تسجيل التسليم.":"Open a package for the client before logging delivery.");
+      v.packageId=assigned.id;
+    }else delete v.packageId;
     if(w){
       var updated=Object.assign({},w,v,{id:w.id});
       if(canSeeMoney()) await saveWorkDirect(updated);
@@ -4331,6 +4421,7 @@ function legacyDeliveryForm(custId){
         archived:true,
         portalVisible:!!v.portalVisible,
         countInPackage:!!v.countInPackage,
+        packageId:(v.countInPackage&&cst.billing==="package"&&packageForDate(cst,v.date))?packageForDate(cst,v.date).id:"",
         amount:"",
         charge:""
       };
@@ -4944,7 +5035,8 @@ Store.load().then(async function(d){
       if(!c.startMonth)c.startMonth=ymNow();
       if(c.endMonth==null)c.endMonth="";});
   }
-  normalizeStateShape();
+  var localPackageMigrated=normalizeStateShape();
+  if(localPackageMigrated)Store.save(S);
   LANG=S.settings.lang||"ar";
   applyTheme();
   var went=false;
