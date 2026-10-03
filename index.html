@@ -1415,6 +1415,10 @@ function packageForPeriod(c,m){
   var rows=clientPackages(c).filter(function(p){return String(p.startDate||"").slice(0,7)===m&&p.status!=="cancelled";});
   return rows.length?rows[rows.length-1]:null;
 }
+function packageById(c,id){
+  if(!id)return null;
+  return clientPackages(c).filter(function(p){return p.id===id;})[0]||null;
+}
 function packageForDate(c,date){
   var d=String(date||todayISO()).slice(0,10),rows=clientPackages(c),hit=null;
   rows.forEach(function(p){
@@ -1459,6 +1463,21 @@ function packageFeeInMonth(c,m){
 function packageAdsInMonth(c,m){
   return clientPackages(c).filter(function(p){return p.status!=="cancelled"&&String(p.startDate||"").slice(0,7)===m;})
     .reduce(function(a,p){return a+(+p.adSpend||0);},0);
+}
+function packageForInvoice(c,inv){
+  if(!c||!inv||c.billing!=="package")return null;
+  var direct=packageById(c,inv.packageId);
+  if(direct)return direct;
+  var itemId="";
+  (inv.items||[]).some(function(item){
+    if(item&&item.packageId){itemId=item.packageId;return true;}
+    return false;
+  });
+  direct=packageById(c,itemId);
+  if(direct)return direct;
+  var byDate=packageForDate(c,inv.date||((inv.period||MONTH)+"-01"));
+  if(byDate&&String(byDate.startDate||"").slice(0,7)===(inv.period||inv.date||MONTH).slice(0,7))return byDate;
+  return packageForPeriod(c,(inv.period||inv.date||MONTH).slice(0,7));
 }
 function invoiceCoversPackage(inv,pkg){
   if(!inv||!pkg)return false;
@@ -2115,7 +2134,7 @@ function effectiveInvoiceItems(inv){
 
   var per=(inv.period||inv.date||MONTH).slice(0,7);
   var keep=(inv.items||[]).filter(function(item){return !isInvoiceRootItem(item);});
-  return rootInvoiceItemsForClient(c,per).concat(keep);
+  return rootInvoiceItemsForClient(c,per,inv.packageId||"",inv.date||"").concat(keep);
 }
 function invoiceTotalStored(inv){
   return (inv&&inv.items||[]).reduce(function(a,x){return a+(+x.amount||0);},0);
@@ -4183,9 +4202,17 @@ function fundingInvoiceItemsForClient(c,period,legacyAds){
     })
   };
 }
-function rootInvoiceItemsForClient(c,period){
+function rootInvoiceItemsForClient(c,period,packageId,invoiceDate){
   var items=[],p=period||MONTH;
-  var pkg=c.billing==="package"?packageForPeriod(c,p):null;
+  var pkg=null;
+  if(c.billing==="package"){
+    pkg=packageById(c,packageId);
+    if(!pkg&&invoiceDate){
+      var byDate=packageForDate(c,invoiceDate);
+      if(byDate&&String(byDate.startDate||"").slice(0,7)===p)pkg=byDate;
+    }
+    if(!pkg)pkg=packageForPeriod(c,p);
+  }
   var legacyAds=pkg?(+pkg.adSpend||0):0;
   var fundingItems=fundingInvoiceItemsForClient(c,p,legacyAds);
   if(c.billing==="package"){
@@ -4227,8 +4254,9 @@ function syncClientOpenInvoices(c,fromMonth){
     if(inv.status==="paid"||inv.status==="cancelled"||(storedTotal>0&&paid>=storedTotal-0.005)) return;
 
     var keep=(inv.items||[]).filter(function(item){return !isInvoiceRootItem(item);});
-    var root=rootInvoiceItemsForClient(c,per||start);
-    var dm=delivered(c,per||start),pkg=c.billing==="package"?packageForPeriod(c,per||start):null;
+    var pkg=packageForInvoice(c,inv);
+    var root=rootInvoiceItemsForClient(c,per||start,pkg?pkg.id:"",inv.date||"");
+    var dm=delivered(c,per||start);
     var next={
       items:root.concat(keep),
       packageId:pkg?pkg.id:"",
@@ -4346,6 +4374,8 @@ function packageForm(pkg,cust){
   form(isNew?(LANG==="ar"?"فتح باقة جديدة":"Open new package"):(LANG==="ar"?"تعديل الباقة الحالية":"Edit current package"),
     fields,vals,function(v){
       if(!v.startDate)throw new Error(LANG==="ar"?"حدد تاريخ بداية الباقة.":"Choose the package start date.");
+      if(isNew&&cur&&String(v.startDate)<=String(cur.startDate||""))
+        throw new Error(LANG==="ar"?"تاريخ الباقة الجديدة لازم يكون بعد بداية الباقة الحالية.":"The new package must start after the current package.");
       if(isNew&&cur&&incomplete&&!v.confirmClose)
         throw new Error(LANG==="ar"?"فعّل خيار إغلاق الباقة الحالية أولاً.":"Confirm closing the current package first.");
       delete v.confirmClose;
