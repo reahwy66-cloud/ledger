@@ -315,7 +315,7 @@ en:{
  "b.per_designL":"A price for each design",
  "f.drate":"Design price","f.drateH":"Charged per design delivered. Leave empty if you don't bill designs.",
  "cli.pd":"{v} / design","cd.designs":"{v} designs",
- "b.packageL":"Fixed monthly package","b.per_videoL":"Per video","b.prepaidL":"Paid up front, drawing down",
+ "b.packageL":"Package cycle","b.per_videoL":"Per video","b.prepaidL":"Paid up front, drawing down",
  "th.billed2":"Billed","th.paid":"Paid","th.balance":"Balance","th.desc":"Detail","th.charge":"Charge","th.run":"Running",
  "k.due":"Owed by clients","k.due.n":"{n} clients with a balance",
  "cd.open":"Open statement","cd.back":"All clients","cd.invoice":"Create invoice","cd.preview":"Account invoice",
@@ -627,7 +627,7 @@ ar:{
  "b.per_designL":"سعر لكل تصميم",
  "f.drate":"سعر التصميم","f.drateH":"يُحتسب لكل تصميم مُسلَّم. اتركه فارغاً إن كنت لا تفوتر التصاميم.",
  "cli.pd":"{v} / تصميم","cd.designs":"{v} تصاميم",
- "b.packageL":"باقة شهرية ثابتة","b.per_videoL":"سعر لكل فيديو","b.prepaidL":"مدفوع مقدماً ويُخصم",
+ "b.packageL":"باقة بدورة مستقلة","b.per_videoL":"سعر لكل فيديو","b.prepaidL":"مدفوع مقدماً ويُخصم",
  "cli.month":"{v} / شهر","cli.pv":"{v} / فيديو","cli.inc":"{v} فيديو · {p} منشور","cli.left":"متبقٍّ {v}","cli.over":"تجاوز {v}","cli.exp":"{n} فيديو",
  "cli.ads":"منها {v} إعلانات","st.active":"نشط","st.paused":"موقوف","cli.total":"إجمالي المستحق",
  "cd.open":"كشف الحساب","cd.back":"العملاء","cd.invoice":"إنشاء فاتورة","cd.preview":"فاتورة كشف الحساب",
@@ -2272,7 +2272,7 @@ function vClients(){
   var tot=0;
   S.customers.forEach(function(c){
     var st=stmt(c,MONTH); tot+=st.balance;
-    var rate=c.billing==="package"?t("cli.month",{v:money(c.monthlyFee)})
+    var rate=c.billing==="package"?((LANG==="ar"?"باقة ":"Package ")+money((currentPackage(c)||latestPackage(c)||{fee:c.monthlyFee}).fee))
              :(c.billing==="per_design"?t("cli.pd",{v:money(c.drate||c.rate)}):t("cli.pv",{v:money(c.rate)}));
     var bal=Math.abs(st.balance)<0.005
       ? '<span class="mut">'+money(0)+'</span>'
@@ -2479,6 +2479,52 @@ function paidTo(empId,upto){
     .reduce(function(a,x){return a+(+x.amount||0);},0);
 }
 
+function packageSuggestedEnd(startDate){
+  var s=String(startDate||"");
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return "";
+  var p=s.split("-"),y=+p[0],m=+p[1]-1,d=+p[2],n=new Date(y,m+1,1);
+  var last=new Date(n.getFullYear(),n.getMonth()+1,0).getDate();
+  return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(Math.min(d,last)).padStart(2,"0");
+}
+function packageProgressHTML(c,w){
+  if(!c||c.billing!=="package")return "";
+  var cur=currentPackage(c),latest=latestPackage(c),pkg=cur||latest,rows=clientPackages(c);
+  if(!pkg){
+    return '<div class="sec card"><div class="rowhead"><div><h2>'+(LANG==="ar"?"الباقة الحالية":"Current package")+'</h2>'
+      +'<p class="sub" style="margin:0">'+(LANG==="ar"?"لا توجد باقة مفتوحة.":"No package is open.")+'</p></div>'
+      +(w?'<button class="btn primary" data-act="newpackage" data-id="'+c.id+'">'+(LANG==="ar"?"فتح باقة":"Open package")+'</button>':'')+'</div></div>';
+  }
+  var d=packageDelivered(pkg),rem=packageRemaining(pkg),complete=packageIsComplete(pkg),isCurrent=!!cur;
+  var status=isCurrent?(complete?(LANG==="ar"?"مكتملة — بانتظار فتح التالية":"Complete — waiting for next package"):(LANG==="ar"?"مفتوحة":"Open")):(LANG==="ar"?"مغلقة":"Closed");
+  var statusCls=isCurrent&&complete?"on":(isCurrent?"amb":"");
+  var suggested=packageSuggestedEnd(pkg.startDate);
+  var target=function(k,label){
+    var goal=+pkg[k+"s"]||0,done=+d[k]||0;
+    if(!goal&&!done)return "";
+    return '<div class="carve"><span>'+label+'</span><span><b class="num">'+done+'</b>'+(goal?' / <span class="num">'+goal+'</span>':'')+(goal&&done<goal?' <small class="mut">· '+(LANG==="ar"?"باقي ":"left ")+(goal-done)+'</small>':'')+'</span></div>';
+  };
+  var hist=rows.slice().reverse().map(function(p,i){
+    var pd=packageDelivered(p),done=[+pd.video?pd.video+" "+t("d.video"):"",+pd.post?pd.post+" "+t("d.post"):"",+pd.design?pd.design+" "+t("d.design"):""].filter(Boolean).join(" · ");
+    return '<div class="carve"><span><b>'+(LANG==="ar"?"باقة ":"Package ")+(rows.length-i)+'</b><small class="mut" style="display:block">'+esc(p.startDate||"—")+(p.endDate?" → "+esc(p.endDate):"")+' · '+(p.status==="closed"?(LANG==="ar"?"مغلقة":"Closed"):(LANG==="ar"?"مفتوحة":"Open"))+'</small></span><span class="r"><b class="num">'+money(p.fee)+'</b>'+(done?'<small class="mut" style="display:block">'+esc(done)+'</small>':'')+'</span></div>';
+  }).join("");
+  return '<div class="sec card">'
+    +'<div class="rowhead"><div><span class="eyebrow">'+(LANG==="ar"?"دورة الباقة":"Package cycle")+'</span><h2 style="margin-top:5px">'+(LANG==="ar"?"الباقة الحالية":"Current package")+'</h2>'
+    +'<p class="sub" style="margin:0">'+(LANG==="ar"?"لا تتجدد تلقائياً مع أول الشهر.":"It does not renew automatically at the start of a month.")+'</p></div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap"><span class="pill '+statusCls+'">'+status+'</span>'
+    +(w&&isCurrent?'<button class="btn sm ghost" data-act="editpackage" data-id="'+c.id+'">'+t("edit")+'</button>':'')
+    +(w?'<button class="btn sm primary" data-act="newpackage" data-id="'+c.id+'">'+(LANG==="ar"?"فتح باقة جديدة":"Open new package")+'</button>':'')+'</div></div>'
+    +'<div class="two"><div>'
+      +'<div class="carve"><span>'+(LANG==="ar"?"تاريخ البداية":"Start date")+'</span><b class="num">'+esc(pkg.startDate||"—")+'</b></div>'
+      +'<div class="carve"><span>'+(isCurrent?(LANG==="ar"?"الموعد الإرشادي للدورة التالية":"Suggested next-cycle date"):(LANG==="ar"?"تاريخ الإغلاق":"Closed on"))+'</span><b class="num">'+esc(isCurrent?(suggested||"—"):(pkg.endDate||"—"))+'</b></div>'
+      +'<div class="carve"><span>'+(LANG==="ar"?"قيمة الباقة":"Package price")+'</span><b class="num">'+money(pkg.fee)+'</b></div>'
+    +'</div><div>'
+      +target("video",t("d.video"))+target("post",t("d.post"))+target("design",t("d.design"))
+    +'</div></div>'
+    +(pkg.note?'<div class="note" style="margin-top:14px">'+esc(pkg.note)+'</div>':'')
+    +(rows.length>1?'<details class="glass-disclosure" style="margin-top:14px"><summary><span>'+(LANG==="ar"?"سجل الباقات":"Package history")+'</span><b>'+rows.length+'</b></summary><div class="disclosure-body">'+hist+'</div></details>':'')
+    +'</div>';
+}
+
 /* ══════ one client's full account ══════ */
 function vClient(){
   var c=S.customers.filter(function(x){return x.id===SEL;})[0];
@@ -2495,11 +2541,12 @@ function vClient(){
   h+='<div class="sec"><div class="rowhead"><div>'
    +'<h2 style="font-size:20px">'+esc(c.name)+'</h2>'
    +'<p class="sub" style="margin:0"><span class="pill '+(c.billing==="prepaid"?"cy":"amb")+'">'+t("b."+c.billing)+'</span> '
-   +(c.billing==="package"?t("cli.month",{v:money(c.monthlyFee)}):t("cli.pv",{v:money(c.rate)}))+'</p></div>'
+   +(c.billing==="package"?((LANG==="ar"?"الباقة الحالية · ":"Current package · ")+money((currentPackage(c)||latestPackage(c)||{fee:c.monthlyFee}).fee)):t("cli.pv",{v:money(c.rate)}))+'</p></div>'
    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
       +(can("invoices")?'<button class="btn primary" data-act="newinvoice" data-id="'+c.id+'">'+t("cd.invoice")+'</button>':'')
       +'<button class="btn" data-act="invoice" data-id="'+c.id+'">'+t("cd.preview")+'</button>'
       +(wp?'<button class="btn" data-act="newpay" data-id="'+c.id+'">'+t("cd.pay")+'</button>':'')
+      +(w&&c.billing==="package"?'<button class="btn primary" data-act="newpackage" data-id="'+c.id+'">'+(LANG==="ar"?"فتح باقة جديدة":"Open new package")+'</button>':'')
       +(can("work")?'<button class="btn" data-act="legacydelivery" data-id="'+c.id+'">'+(LANG==="ar"?"إضافة تسليم قديم":"Add legacy delivery")+'</button>':'')
       +(amOwner()&&MODE==="cloud"?'<button class="btn" data-act="portalcode" data-kind="client" data-id="'+c.id+'" data-name="'+esc(c.name)+'">'+(LANG==="ar"?"رمز العميل":"Client code")+'</button>':'')
       +(w?'<button class="btn" data-act="editclient" data-id="'+c.id+'">'+t("cd.rename")+'</button>':'')+'</div>' 
@@ -2511,13 +2558,14 @@ function vClient(){
    +kpi("in",t("th.paid"),money(st.paid),t("cd.all",{m:monthName(c.startMonth||MONTH)}))
    +'</div>';
 
+  h+=packageProgressHTML(c,w);
+
   h+='<div class="sec two"><div class="card"><span class="eyebrow">'+t("cd.delivered")+'</span>'
    +'<div class="mut" style="margin-top:14px;font-size:12px">'+t("cd.month")+' — '+monthName(MONTH)+'</div>'
    +'<div style="margin-top:6px">'+deliveredChips(dm)+'</div>'
    +'<div class="mut" style="margin-top:16px;font-size:12px">'+t("cd.all",{m:monthName(c.startMonth||MONTH)})+'</div>'
    +'<div style="margin-top:6px">'+deliveredChips(da)+'</div>'
-   +(c.billing==="package"?'<div class="carve" style="margin-top:14px"><span>'+t("cd.promised")+'</span>'
-      +'<span>'+[+c.videos?((+c.videos)+" "+t("d.video")):"",+c.posts?((+c.posts)+" "+t("d.post")):"",+c.designs?((+c.designs)+" "+t("d.design")):""].filter(Boolean).join(" · ")+'</span></div>':'')
+   +(c.billing==="package"?(function(){var p=currentPackage(c)||latestPackage(c)||{};return '<div class="carve" style="margin-top:14px"><span>'+t("cd.promised")+'</span><span>'+[+p.videos?((+p.videos)+" "+t("d.video")):"",+p.posts?((+p.posts)+" "+t("d.post")):"",+p.designs?((+p.designs)+" "+t("d.design")):""].filter(Boolean).join(" · ")+'</span></div>';})():'')
    +'</div>'
    +'<div class="card"><span class="eyebrow">'+t("f.note")+'</span>'
    +'<p style="margin-top:10px;font-size:13px">'+(c.note?esc(c.note):'<span class="mut">'+t("cd.none")+'</span>')+'</p>'
@@ -4225,7 +4273,7 @@ function clientForm(c){
     {k:"email",label:t("f.email"),type:"email"},
     {k:"phone",label:t("f.phone")},
     {k:"billing",label:t("f.howpay"),type:"select",options:[["package",t("b.packageL")],["per_video",t("b.per_videoL")],["per_design",t("b.per_designL")],["prepaid",t("b.prepaidL")]]},
-    {k:"monthlyFee",label:t("f.fee"),type:"number",step:"0.01",showIf:{k:"billing",in:["package"]}},
+    {k:"monthlyFee",label:(LANG==="ar"?"قيمة الباقة الافتراضية":"Default package price"),type:"number",step:"0.01",showIf:{k:"billing",in:["package"]}},
     {k:"videos",label:t("f.vids"),type:"number",showIf:{k:"billing",in:["package"]}},
     {k:"posts",label:t("f.posts"),type:"number",showIf:{k:"billing",in:["package"]}},
     {k:"designs",label:t("f.designs"),type:"number",showIf:{k:"billing",in:["package"]}},
@@ -4801,6 +4849,14 @@ document.addEventListener("click",function(ev){
   else if(act==="newadv") advForm(null,id);
   else if(act==="editadv") advForm(f(S.advances));
   else if(act==="newpay") payForm(null,id);
+  else if(act==="newpackage"){
+    var pc=S.customers.filter(function(x){return x.id===id;})[0];
+    if(pc)packageForm(null,pc);
+  }
+  else if(act==="editpackage"){
+    var pec=S.customers.filter(function(x){return x.id===id;})[0];
+    if(pec){var pp=currentPackage(pec)||latestPackage(pec);if(pp)packageForm(pp,pec);}
+  }
   else if(act==="newfund"||act==="newfunding") fundingForm(null);
   else if(act==="editfunding") fundingForm(f(S.fundings));
   else if(act==="payfunding"){
