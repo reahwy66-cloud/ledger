@@ -1707,11 +1707,28 @@ function carryoverSummary(m){
   var prev=addMonth(m,-1),items=[],sum=0;
   S.customers.forEach(function(c){
     var b=stmt(c,prev).balance;
+    /* A payment received after month-end clears the oldest carried balance first.
+       Keep its real transaction/accounting month everywhere else; only the
+       carryover reminder is reduced here so paid clients disappear immediately. */
+    if(b>0.005){
+      var laterPaid=S.payments.filter(function(x){
+        var am=accountingMonthOf(x);
+        return x.customerId===c.id&&am>prev&&am<=m;
+      }).reduce(function(a,x){return a+(+x.amount||0);},0);
+      b=Math.max(0,b-laterPaid);
+    }
     if(b>0.005){items.push({kind:"client",name:c.name,amount:b});sum+=b;}
   });
   S.employees.forEach(function(e){
     if(e.payType==="percent"||!e.active)return;
     var L=empLedger(e,prev),owed=L.rows.reduce(function(a,r){return a+r.payout;},0)-paidTo(e.id,prev);
+    if(owed>0.005){
+      var laterPaid=S.payouts.filter(function(x){
+        var am=accountingMonthOf(x);
+        return x.employeeId===e.id&&x.kind!=="reimb"&&am>prev&&am<=m;
+      }).reduce(function(a,x){return a+(+x.amount||0);},0);
+      owed=Math.max(0,owed-laterPaid);
+    }
     if(owed>0.005){items.push({kind:"team",name:e.name,amount:owed});sum+=owed;}
   });
   return {month:prev,items:items,count:items.length,sum:sum};
