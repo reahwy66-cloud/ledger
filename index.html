@@ -5067,7 +5067,7 @@ async function handleAppointmentConfirmation(){
 
 /* ═════════════ boot ═════════════ */
 if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
-  window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js?v=20260930-v67").catch(function(){});});
+  window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js?v=20261003-v70-packages").catch(function(){});});
 }
 Store.load().then(async function(d){
   if(d&&d.settings){S=d;
