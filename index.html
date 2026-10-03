@@ -1371,6 +1371,7 @@ function normalizeStateShape(){
   ["payments","advances","payouts","costs","transfers"].forEach(function(k){
     (S[k]||[]).forEach(function(x){ensureMoneyFields(x);});
   });
+  return normalizePackageCycles();
 }
 normalizeStateShape();
 function isMobileUI(){return !!(window.matchMedia&&window.matchMedia("(max-width: 820px)").matches);}
@@ -1390,6 +1391,119 @@ function ensureAccountingFields(x,defMonth){
   if(!x.accounting_month)x.accounting_month=defMonth||(td?td.slice(0,7):"");
   return x;
 }
+/* Package cycles are independent from calendar/accounting months.
+   A package is charged once when it is opened and stays current until a new
+   package is opened manually. */
+function clientPackages(c){
+  if(!c)return [];
+  if(!Array.isArray(c.packages))c.packages=[];
+  return c.packages.slice().sort(function(a,b){
+    var ad=String(a.startDate||""),bd=String(b.startDate||"");
+    if(ad===bd)return String(a.id||"").localeCompare(String(b.id||""));
+    return ad<bd?-1:1;
+  });
+}
+function currentPackage(c){
+  var rows=clientPackages(c).filter(function(p){return p.status!=="closed"&&p.status!=="cancelled";});
+  return rows.length?rows[rows.length-1]:null;
+}
+function latestPackage(c){
+  var rows=clientPackages(c);return rows.length?rows[rows.length-1]:null;
+}
+function packageForPeriod(c,m){
+  var rows=clientPackages(c).filter(function(p){return String(p.startDate||"").slice(0,7)===m&&p.status!=="cancelled";});
+  return rows.length?rows[rows.length-1]:null;
+}
+function packageForDate(c,date){
+  var d=String(date||todayISO()).slice(0,10),rows=clientPackages(c),hit=null;
+  rows.forEach(function(p){
+    if(p.status==="cancelled")return;
+    var s=String(p.startDate||"").slice(0,10);
+    if(s&&s<=d)hit=p;
+  });
+  return hit||currentPackage(c)||latestPackage(c);
+}
+function packageDelivered(pkg){
+  var out={video:0,post:0,design:0,shoot:0,voice:0,ad_face:0,task:0};
+  if(!pkg)return out;
+  var c=S.customers.filter(function(x){return x.id===pkg.customerId;})[0];
+  (S.work||[]).forEach(function(w){
+    if(!countsInPackage(w)||w.customerId!==pkg.customerId)return;
+    var belongs=w.packageId===pkg.id;
+    if(!w.packageId&&c){
+      var inferred=packageForDate(c,transactionDate(w)||((accountingMonthOf(w)||MONTH)+"-01"));
+      belongs=!!(inferred&&inferred.id===pkg.id);
+    }
+    if(!belongs)return;
+    var k=w.type||"task";
+    if(out[k]==null)out[k]=0;
+    out[k]+=+w.qty||0;
+  });
+  return out;
+}
+function packageRemaining(pkg){
+  var d=packageDelivered(pkg),r={};
+  ["video","post","design"].forEach(function(k){r[k]=Math.max(0,(+pkg[k+"s"]||0)-(+d[k]||0));});
+  return r;
+}
+function packageIsComplete(pkg){
+  if(!pkg)return false;
+  var r=packageRemaining(pkg);
+  return r.video<=0&&r.post<=0&&r.design<=0;
+}
+function packageFeeInMonth(c,m){
+  return clientPackages(c).filter(function(p){return p.status!=="cancelled"&&String(p.startDate||"").slice(0,7)===m;})
+    .reduce(function(a,p){return a+(+p.fee||0);},0);
+}
+function packageAdsInMonth(c,m){
+  return clientPackages(c).filter(function(p){return p.status!=="cancelled"&&String(p.startDate||"").slice(0,7)===m;})
+    .reduce(function(a,p){return a+(+p.adSpend||0);},0);
+}
+function invoiceCoversPackage(inv,pkg){
+  if(!inv||!pkg)return false;
+  if(inv.packageId&&inv.packageId===pkg.id)return true;
+  if((inv.items||[]).some(function(item){return item&&item.packageId===pkg.id;}))return true;
+  var per=String(inv.period||inv.date||"").slice(0,7);
+  var pm=String(pkg.startDate||"").slice(0,7);
+  return per===pm&&(inv.items||[]).some(function(item){return item&&isInvoiceRootItem(item)&&item.kind!=="funding";});
+}
+function normalizePackageCycles(){
+  var changed=false;
+  (S.customers||[]).forEach(function(c){
+    if(!Array.isArray(c.packages)){c.packages=[];changed=true;}
+    c.packages.forEach(function(p){
+      if(!p.id){p.id=uid();changed=true;}
+      if(!p.customerId){p.customerId=c.id;changed=true;}
+      if(!p.startDate){p.startDate=c.packageStartDate||((c.startMonth||ymNow())+"-01");changed=true;}
+      if(p.status==null){p.status="open";changed=true;}
+      if(p.fee==null){p.fee=+c.monthlyFee||0;changed=true;}
+      if(p.videos==null){p.videos=+c.videos||0;changed=true;}
+      if(p.posts==null){p.posts=+c.posts||0;changed=true;}
+      if(p.designs==null){p.designs=+c.designs||0;changed=true;}
+      if(p.adSpend==null){p.adSpend=+c.adSpend||0;changed=true;}
+      if(p.note==null){p.note="";changed=true;}
+    });
+    if(c.billing==="package"&&!c.packages.length){
+      c.packages.push({
+        id:"pkg_"+c.id+"_legacy",customerId:c.id,
+        startDate:c.packageStartDate||((c.startMonth||ymNow())+"-01"),
+        endDate:"",status:"open",fee:+c.monthlyFee||0,
+        videos:+c.videos||0,posts:+c.posts||0,designs:+c.designs||0,
+        adSpend:+c.adSpend||0,note:""
+      });
+      changed=true;
+    }
+  });
+  (S.work||[]).forEach(function(w){
+    if(w.packageId||!countsInPackage(w))return;
+    var c=(S.customers||[]).filter(function(x){return x.id===w.customerId;})[0];
+    if(!c||c.billing!=="package")return;
+    var p=packageForDate(c,transactionDate(w)||((accountingMonthOf(w)||MONTH)+"-01"));
+    if(p){w.packageId=p.id;changed=true;}
+  });
+  return changed;
+}
+
 function selectedMonth(){
   try{
     var m=localStorage.getItem("riwa_accounting_month")||"";
@@ -1478,9 +1592,13 @@ function _calc(m){
       basis=monthInvoices.map(function(inv){return inv.number||t("inv.title");}).join(", ");
     }
     else if(c.billing==="package"){
-      amt=(+c.monthlyFee||0)+designs*(+c.drate||0)+extras+salaryCharges+fundingBilled;
-      adSpend+=+c.adSpend||0;
-      basis=t("b.packageL")+(designs&&(+c.drate)?(" + "+designs+" × "+money(+c.drate||0)):"");
+      var pkgFee=packageFeeInMonth(c,m),pkgAds=packageAdsInMonth(c,m);
+      amt=pkgFee+designs*(+c.drate||0)+extras+salaryCharges+fundingBilled;
+      adSpend+=pkgAds;
+      basis=pkgFee
+        ? ((LANG==="ar"?"باقة فُتحت هذا الشهر":"Package opened this month")+" · "+money(pkgFee))
+        : (LANG==="ar"?"الباقة الحالية مستمرة — لا توجد باقة جديدة":"Current package continues — no new package");
+      if(designs&&(+c.drate))basis+=" + "+designs+" × "+money(+c.drate||0);
     }
     else if(c.billing==="per_design"){amt=designs*(+c.drate||+c.rate||0)+extras+salaryCharges+fundingBilled;basis=designs+" × "+money(+c.drate||+c.rate||0);}
     else{
@@ -1568,16 +1686,17 @@ function stmt(c,thru){
   if(adv)  {lines.push({date:(c.startMonth||thru)+"-01",desc:t("line.adv"),charge:0,paid:adv}); paid+=adv;}
 
   if(c.billing==="package"){
-    var m=c.startMonth||thru, guard=0, stop=c.endMonth&&c.endMonth<thru?c.endMonth:thru;
-    while(m<=stop && guard++<180){
-      var fee=+c.monthlyFee||0;
-      if(fee&&!invoicedMonth(m)){
-        var ad=+c.adSpend||0;
-        var desc=t("line.sub",{m:monthName(m)})+(ad?" · "+t("inv.ads")+" "+money(ad):"");
-        lines.push({date:m+"-01",desc:desc,charge:fee,paid:0}); billed+=fee;
+    clientPackages(c).forEach(function(pkg){
+      if(pkg.status==="cancelled"||String(pkg.startDate||"").slice(0,7)>thru)return;
+      var fee=+pkg.fee||0;
+      var covered=explicit.some(function(inv){return invoiceCoversPackage(inv,pkg);});
+      if(fee&&!covered){
+        var ad=+pkg.adSpend||0;
+        var desc=clientPackageLabel(c,pkg)+(ad?" · "+t("inv.ads")+" "+money(ad):"");
+        lines.push({date:pkg.startDate||((c.startMonth||thru)+"-01"),desc:desc,charge:fee,paid:0,packageId:pkg.id});
+        billed+=fee;
       }
-      m=addMonth(m,1);
-    }
+    });
   }
   var vRate=+c.rate||0, dRate=+c.drate||0;
   if(c.billing!=="package"){
@@ -3984,12 +4103,13 @@ function printInvoice(c,invoice){
   w.document.open(); w.document.write(html); w.document.close();
 }
 
-function clientPackageLabel(c){
+function clientPackageLabel(c,pkg){
+  pkg=pkg||currentPackage(c)||latestPackage(c)||{};
   var parts=[];
-  if(+c.videos) parts.push((+c.videos)+" "+t("d.video"));
-  if(+c.posts) parts.push((+c.posts)+" "+t("d.post"));
-  if(+c.designs) parts.push((+c.designs)+" "+t("d.design"));
-  return (LANG==="ar"?"الباقة الشهرية":"Monthly package")+(parts.length?" — "+parts.join(" + "):"");
+  if(+pkg.videos) parts.push((+pkg.videos)+" "+t("d.video"));
+  if(+pkg.posts) parts.push((+pkg.posts)+" "+t("d.post"));
+  if(+pkg.designs) parts.push((+pkg.designs)+" "+t("d.design"));
+  return (LANG==="ar"?"باقة":"Package")+(parts.length?" — "+parts.join(" + "):"");
 }
 function fundingInvoiceItemsForClient(c,period,legacyAds){
   var p=period||MONTH;
@@ -4012,13 +4132,16 @@ function fundingInvoiceItemsForClient(c,period,legacyAds){
 }
 function rootInvoiceItemsForClient(c,period){
   var items=[],p=period||MONTH;
-  var legacyAds=c.billing==="package"?(+c.adSpend||0):0;
+  var pkg=c.billing==="package"?packageForPeriod(c,p):null;
+  var legacyAds=pkg?(+pkg.adSpend||0):0;
   var fundingItems=fundingInvoiceItemsForClient(c,p,legacyAds);
   if(c.billing==="package"){
-    var total=+c.monthlyFee||0,ads=legacyAds;
-    var service=Math.max(0,total-ads);
-    if(service) items.push({kind:"service",description:clientPackageLabel(c),amount:service});
-    if(ads&&!fundingItems.replacesLegacy) items.push({kind:"ads",description:t("inv.ads"),amount:ads});
+    if(pkg){
+      var total=+pkg.fee||0,ads=legacyAds;
+      var service=Math.max(0,total-ads);
+      if(service) items.push({kind:"service",packageId:pkg.id,description:clientPackageLabel(c,pkg),amount:service});
+      if(ads&&!fundingItems.replacesLegacy) items.push({kind:"ads",packageId:pkg.id,description:t("inv.ads"),amount:ads});
+    }
   }else{
     var dm=delivered(c,p);
     if(c.billing==="per_design"){
@@ -4052,11 +4175,12 @@ function syncClientOpenInvoices(c,fromMonth){
 
     var keep=(inv.items||[]).filter(function(item){return !isInvoiceRootItem(item);});
     var root=rootInvoiceItemsForClient(c,per||start);
-    var dm=delivered(c,per||start);
+    var dm=delivered(c,per||start),pkg=c.billing==="package"?packageForPeriod(c,per||start):null;
     var next={
       items:root.concat(keep),
-      serviceAmount:c.billing==="package"?Math.max(0,(+c.monthlyFee||0)-(+c.adSpend||0)):0,
-      adAmount:c.billing==="package"?(+c.adSpend||0):0,
+      packageId:pkg?pkg.id:"",
+      serviceAmount:pkg?Math.max(0,(+pkg.fee||0)-(+pkg.adSpend||0)):0,
+      adAmount:pkg?(+pkg.adSpend||0):0,
       videoQty:c.billing!=="package"?(+dm.video||0):0,
       videoRate:c.billing!=="package"?(+c.rate||0):0,
       designQty:c.billing!=="package"?(+dm.design||0):0,
