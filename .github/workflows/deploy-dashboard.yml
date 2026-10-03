@@ -1,0 +1,91 @@
+name: Deploy dashboard to riwaa.me
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "sw.js"
+      - "manifest.webmanifest"
+      - "icon-192.png"
+      - "icon-512.png"
+      - "apple-touch-icon.png"
+      - "favicon.png"
+      - "push.js"
+      - "mobile.css"
+      - "desktop.css"
+      - "daily-tasks.html"
+      - "staff-portal.html"
+      - "client-portal.html"
+      - "portal.css"
+      - "portal.js"
+      - "riwa-logo.png"
+      - ".github/workflows/deploy-dashboard.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-riwaa-dashboard
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: src
+
+      - name: Checkout live gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: live
+          fetch-depth: 0
+
+      - name: Sync dashboard files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p live/dashboard
+          files=(
+            index.html
+            sw.js
+            manifest.webmanifest
+            icon-192.png
+            icon-512.png
+            apple-touch-icon.png
+            favicon.png
+            push.js
+            mobile.css
+            desktop.css
+            daily-tasks.html
+            staff-portal.html
+            client-portal.html
+            portal.css
+            portal.js
+            riwa-logo.png
+          )
+          for f in "${files[@]}"; do
+            if [ -f "src/$f" ]; then
+              cp "src/$f" "live/dashboard/$f"
+            fi
+          done
+
+      - name: Publish gh-pages
+        shell: bash
+        working-directory: live
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- dashboard; then
+            echo "Dashboard is already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dashboard
+          git commit -m "Deploy dashboard from main ${GITHUB_SHA::7}"
+          git push origin gh-pages
