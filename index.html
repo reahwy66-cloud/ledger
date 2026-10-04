@@ -1376,6 +1376,8 @@ function normalizeStateShape(){
   return normalizePackageCycles();
 }
 normalizeStateShape();
+/* Repair the accidental duplicate rent-reserve taps from the Oct 5 migration. */
+if(ymNow()==="2026-10"&&(+S.settings.rentSetAside||0)===600){S.settings.rentSetAside=300;S.settings.rentTransfers=[];save();}
 function isMobileUI(){return !!(window.matchMedia&&window.matchMedia("(max-width: 820px)").matches);}
 function save(){clearCalc();Store.save(S);queuePush();}
 
