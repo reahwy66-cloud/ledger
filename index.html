@@ -5026,7 +5026,7 @@ document.addEventListener("click",function(ev){
   }
   else if(act==="mtoday"){chooseMonth(ymNow());}
   else if(act==="print") window.print();
-  else if(act==="addrent"){S.settings.rentSetAside=(+S.settings.rentSetAside||0)+(+a.dataset.amt||0);save();render();}
+  else if(act==="addrent"){var suggested=+a.dataset.amt||0;form(t("rent.t"),[{k:"amount",label:(LANG==="ar"?"المبلغ المراد إضافته لصندوق الإيجار":"Amount to add to rent fund"),type:"number",step:"0.01",def:suggested||""}],null,function(v){var amt=+v.amount||0;if(amt<=0)return;S.settings.rentSetAside=(+S.settings.rentSetAside||0)+amt;save();});}
   else if(act==="gotoTeam"){TAB="team";SELE=null;render();}
   else if(act==="editrent") form(t("sp.rentBtn"),[
     {k:"rentMode",label:t("f.whopays"),type:"select",options:[["myshare",t("f.rentmine")],["expense",t("f.rentco")]]},
