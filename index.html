@@ -2391,21 +2391,6 @@ function movements(upto){
     out.push({date:x.date||"",accountingMonth:(x.accounting_month||String(x.date||"").slice(0,7)),kind:"fx",who:label,note:x.note||"",
       amt:usdEq,currency:to,nativeAmt:toAmount,exchangeRate:rate,dir:1,id:x.id,act:"editfxtransfer",sec:"setup"});
   });
-  /* rent fund is reserved cash: moving money into it must reduce the available company box */
-  var rentRows=S.settings.rentTransfers||[];
-  if(rentRows.length){
-    rentRows.forEach(function(x){
-      var amt=+x.amount||0;if(!(amt>0))return;
-      out.push({date:x.date||todayISO(),accountingMonth:x.accounting_month||String(x.date||todayISO()).slice(0,7),
-        kind:"rentreserve",who:t("rent.t"),note:x.note||(LANG==="ar"?"تحويل إلى صندوق الإيجار":"Transfer to rent fund"),
-        amt:amt,currency:"USD",nativeAmt:amt,dir:-1,id:x.id||"",sec:"setup"});
-    });
-  }else if((+S.settings.rentSetAside||0)>0){
-    var legacyRent=+S.settings.rentSetAside||0;
-    out.push({date:todayISO(),accountingMonth:ymNow(),kind:"rentreserve",who:t("rent.t"),
-      note:(LANG==="ar"?"رصيد صندوق الإيجار المحجوز":"Reserved rent fund balance"),
-      amt:legacyRent,currency:"USD",nativeAmt:legacyRent,dir:-1,id:"legacy-rent",sec:"setup"});
-  }
   out=out.filter(function(x){return (x.accountingMonth||String(x.date||"").slice(0,7))<=upto;});
   out.sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:0);});
   var runUSD=+S.settings.openingCash||0,runSYP=+S.settings.openingCashSYP||0;
@@ -5042,7 +5027,7 @@ document.addEventListener("click",function(ev){
   }
   else if(act==="mtoday"){chooseMonth(ymNow());}
   else if(act==="print") window.print();
-  else if(act==="addrent"){var suggested=+a.dataset.amt||0;form(t("rent.t"),[{k:"amount",label:(LANG==="ar"?"المبلغ المراد تحويله من الصندوق إلى صندوق الإيجار":"Amount to transfer from cash box to rent fund"),type:"number",step:"0.01",def:suggested||""}],null,function(v){var amt=+v.amount||0;if(amt<=0)return;if(!Array.isArray(S.settings.rentTransfers))S.settings.rentTransfers=[];if(!S.settings.rentTransfers.length&&(+S.settings.rentSetAside||0)>0){S.settings.rentTransfers.push({id:uid(),date:todayISO(),accounting_month:MONTH,amount:+S.settings.rentSetAside,note:(LANG==="ar"?"رصيد صندوق الإيجار السابق":"Existing rent reserve")});}S.settings.rentTransfers.push({id:uid(),date:todayISO(),accounting_month:MONTH,amount:amt,note:(LANG==="ar"?"تحويل من الصندوق إلى حصة الإيجار":"Transfer from cash box to rent fund")});S.settings.rentSetAside=(+S.settings.rentSetAside||0)+amt;save();});}
+  else if(act==="addrent"){if(a.dataset.busy==="1")return;a.dataset.busy="1";var suggested=+a.dataset.amt||0;form(t("rent.t"),[{k:"amount",label:(LANG==="ar"?"المبلغ المراد إضافته لصندوق الإيجار":"Amount to add to rent fund"),type:"number",step:"0.01",def:suggested||""}],null,function(v){var amt=+v.amount||0;if(amt<=0){a.dataset.busy="";return;}S.settings.rentSetAside=(+S.settings.rentSetAside||0)+amt;S.settings.rentTransfers=[];save();a.dataset.busy="";},function(){a.dataset.busy="";});}
   else if(act==="gotoTeam"){TAB="team";SELE=null;render();}
   else if(act==="editrent") form(t("sp.rentBtn"),[
     {k:"rentMode",label:t("f.whopays"),type:"select",options:[["myshare",t("f.rentmine")],["expense",t("f.rentco")]]},
