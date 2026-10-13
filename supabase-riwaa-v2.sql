@@ -24,9 +24,9 @@ insert into rwa2.accounts(code,name,kind,currency) values
 ('cash_usd','صندوق الدولار','asset','USD'),('cash_syp','صندوق السوري','asset','SYP'),('bank_usd','بنك / بطاقة العمل','asset','USD'),
 ('receivable','ذمم العملاء','asset',null),('advance','سلف الموظفين','asset',null),('prepaid_rent','إيجار مدفوع مقدماً','asset',null),('equipment','معدات الشركة','asset',null),('depreciation_acc','مجمع إهلاك المعدات','asset',null),
 ('deferred','إيرادات خدمات مؤجلة','liability',null),('customer_credit','دفعات عملاء غير مخصصة','liability',null),('wages_due','أجور مستحقة','liability',null),('supplier_due','مستحقات الموردين','liability',null),('ad_funds','أموال حملات العملاء','liability',null),('partner_due','تمويل وتكاليف مستحقة للشركاء','liability',null),('distribution_due','توزيعات أرباح معتمدة','liability',null),
-('capital','رأس مال الشركاء','equity',null),('drawings','سحوبات الشركاء','equity',null),('retained','أرباح محتجزة / افتتاحي','equity',null),
+('capital','رأس مال الشركاء','equity',null),('drawings','سحوبات الشركاء','equity',null),('retained','أرباح محتجزة / افتتاحي','equity',null),('migration_clearing','أرصدة افتتاحية قيد استكمال التصنيف','equity',null),
 ('video_income','إيرادات الفيديو','income',null),('design_income','إيرادات التصميم','income',null),('content_income','إيرادات المحتوى','income',null),('service_income','إيرادات خدمات إضافية','income',null),('ad_income','أتعاب إدارة الحملات','income',null),
-('production_cost','تكاليف الإنتاج والوجوه','expense',null),('salary_cost','أجور ورواتب','expense',null),('commission_cost','عمولات مبيعات','expense',null),('operating_cost','تشغيل ومواصلات','expense',null),('rent_cost','مصروف الإيجار','expense',null),('depreciation_cost','إهلاك المعدات','expense',null),('fx_gain','أرباح فروق الصرف','income',null),('fx_loss','خسائر فروق الصرف','expense',null)
+('production_cost','تكاليف الإنتاج والوجوه','expense',null),('salary_cost','أجور ورواتب','expense',null),('payroll_recovery','استرداد حصة رواتب مشتركة','expense',null),('commission_cost','عمولات مبيعات','expense',null),('operating_cost','تشغيل ومواصلات','expense',null),('rent_cost','مصروف الإيجار','expense',null),('depreciation_cost','إهلاك المعدات','expense',null),('fx_gain','أرباح فروق الصرف','income',null),('fx_loss','خسائر فروق الصرف','expense',null)
 on conflict(code) do nothing;
 create or replace function rwa2.role() returns text language sql stable security definer set search_path='' as $$
  select case when public.is_owner() then 'owner' else (select m.role from rwa2.members m join public.profiles p on p.id=m.user_id where m.user_id=auth.uid() and m.active and p.active) end;
@@ -63,7 +63,7 @@ begin
  if auth.uid() is null or r is null then raise exception 'حسابك يحتاج صلاحية للنسخة الجديدة'; end if;
  fin:=r in ('owner','finance','partner'); select person_id into person from rwa2.members where user_id=auth.uid();
  select jsonb_build_object('role',r,'user_id',auth.uid(),'person_id',person,'name',(select name from public.profiles where id=auth.uid()),
- 'records',coalesce((select jsonb_agg(jsonb_build_object('id',id,'kind',kind,'version',version,'data',case when fin then data when r='sales' then data-'rate'-'salary'-'cost'-'capital' else data-'price'-'items'-'rate'-'salary'-'cost'-'capital'-'fee'-'budget' end)) from rwa2.records where fin or (r='sales' and kind in ('customer','lead','appointment','quote','contract')) or (r='staff' and ((kind='task' and data->>'employee_id'=person::text) or (kind='employee' and id=person)))),'[]'),
+ 'records',coalesce((select jsonb_agg(jsonb_build_object('id',id,'kind',kind,'version',version,'data',case when fin then data when r='sales' then data-'rate'-'salary'-'cost'-'capital'-'migration_review'-'opening_history' else data-'price'-'items'-'rate'-'salary'-'cost'-'capital'-'fee'-'budget'-'migration_review'-'opening_history' end)) from rwa2.records where fin or (r='sales' and kind in ('customer','lead','appointment','quote','contract')) or (r='staff' and ((kind='task' and data->>'employee_id'=person::text) or (kind='employee' and id=person)))),'[]'),
  'accounts',case when fin then coalesce((select jsonb_agg(to_jsonb(a)) from rwa2.accounts a),'[]') else '[]'::jsonb end,
  'journals',case when fin then coalesce((select jsonb_agg(to_jsonb(j)||jsonb_build_object('lines',(select jsonb_agg(to_jsonb(l)-'id'-'journal_id') from rwa2.lines l where l.journal_id=j.id)) order by j.date,j.created_at) from rwa2.journals j),'[]') else '[]'::jsonb end,
  'periods',coalesce((select jsonb_agg(to_jsonb(p)) from rwa2.periods p),'[]'),
@@ -383,6 +383,31 @@ create or replace function public.rwa2_close_period(p_month text,p_close boolean
  insert into rwa2.audit(user_id,action,data) values(auth.uid(),case when p_close then 'close_period' else 'reopen_period' end,jsonb_build_object('month',p_month));
  return jsonb_build_object('ok',true);
 end $$;
+create or replace function public.rwa2_sync_daily() returns jsonb language plpgsql security definer set search_path='' as $$
+declare r text:=rwa2.role(); e rwa2.records; dt date:=(now() at time zone 'Asia/Damascus')::date; month_start date; active_through date; days_worked integer; gross_expected numeric; share_expected numeric; gross_used numeric; share_used numeric; gross_delta numeric; share_delta numeric; j uuid; changed integer:=0; shared_customer uuid;
+begin
+ if auth.uid() is null or r not in ('owner','finance') then raise exception 'لا توجد صلاحية مالية';end if;
+ perform pg_advisory_xact_lock(72622026);
+ month_start:=date_trunc('month',dt)::date;
+ for e in select * from rwa2.records where kind='employee' and coalesce((data->>'daily_accrual')::boolean,false) loop
+  active_through:=least(dt,month_start+29,coalesce(nullif(e.data->>'end_date','')::date,dt));
+  days_worked:=greatest(0,active_through-greatest(month_start,(e.data->>'start_date')::date)+1);
+  gross_expected:=round((e.data->>'rate')::numeric*days_worked/30,2);
+  share_expected:=round(coalesce((e.data->>'shared_monthly')::numeric,0)*days_worked/30,2);
+  gross_used:=case when to_char(nullif(e.data->>'opening_accrued_through','')::date,'YYYY-MM')=to_char(dt,'YYYY-MM') then coalesce((e.data->>'opening_wage_amount')::numeric,0) else 0 end;
+  share_used:=case when to_char(nullif(e.data->>'opening_accrued_through','')::date,'YYYY-MM')=to_char(dt,'YYYY-MM') then coalesce((e.data->>'opening_share_amount')::numeric,0) else 0 end;
+  select gross_used+coalesce(sum(case when l.account='wages_due' then l.credit-l.debit else 0 end),0),share_used+coalesce(sum(case when l.account='receivable' then l.debit-l.credit else 0 end),0) into gross_used,share_used from rwa2.journals jj join rwa2.lines l on l.journal_id=jj.id where jj.op='daily_payroll' and to_char(jj.date,'YYYY-MM')=to_char(dt,'YYYY-MM') and jj.payload->>'party_id'=e.id::text;
+  gross_delta:=round(gross_expected-gross_used,2);share_delta:=round(share_expected-share_used,2);
+  if gross_delta>0 or share_delta>0 then
+   shared_customer:=nullif(e.data->>'shared_customer_id','')::uuid;j:=gen_random_uuid();
+   insert into rwa2.journals(id,op,date,note,payload,created_by) values(j,'daily_payroll',dt,'استحقاق يومي — '||(e.data->>'name'),jsonb_build_object('party_id',e.id,'shared_customer_id',shared_customer,'gross',gross_delta,'shared',share_delta),auth.uid());
+   if gross_delta>0 then perform rwa2.add_line(j,'salary_cost',gross_delta,0,e.id);perform rwa2.add_line(j,'wages_due',0,gross_delta,e.id);end if;
+   if share_delta>0 then perform rwa2.add_line(j,'receivable',share_delta,0,shared_customer);perform rwa2.add_line(j,'payroll_recovery',0,share_delta,shared_customer);end if;
+   insert into rwa2.audit(user_id,action,record_id,data) values(auth.uid(),'sync_daily_payroll',e.id,jsonb_build_object('date',dt,'gross',gross_delta,'shared',share_delta));changed:=changed+1;
+  end if;
+ end loop;
+ return jsonb_build_object('ok',true,'changed',changed>0,'count',changed,'date',dt);
+end $$;
 create or replace function public.rwa2_set_member(p_user uuid,p_role text,p_person uuid,p_active boolean) returns jsonb language plpgsql security definer set search_path='' as $$begin
  if not public.is_owner() then raise exception 'للمالك فقط';end if;
  if not exists(select 1 from public.profiles where id=p_user and active and role<>'owner') then raise exception 'يجب أن يكون المستخدم مسجلاً وفعالاً';end if;
@@ -398,8 +423,8 @@ insert into rwa2.records(kind,data) select 'lease','{"name":"الإيجار ال
 insert into rwa2.records(kind,data) select 'agreement',jsonb_build_object('name','اتفاق الشراكة — نوفمبر','owner_pct',65,'partner_pct',35,'owner_id',(select id from rwa2.records where kind='partner' and data->>'name'='محمد ديب ريحاوي'),'partner_id',(select id from rwa2.records where kind='partner' and data->>'name'='أيهم شاكر'),'start_date','2026-11-01','status','draft','ownership','company','liquidation','تقييم كل قطعة، سداد الالتزامات وتكاليف التصفية، ثم تقسيم صافي المتبقي حسب الاتفاق') where not exists(select 1 from rwa2.records where kind='agreement');
 revoke all on all tables in schema rwa2 from public,anon,authenticated;
 revoke all on all functions in schema rwa2 from public,anon,authenticated;
-revoke all on function public.rwa2_snapshot(), public.rwa2_save_record(jsonb), public.rwa2_post(jsonb),public.rwa2_close_period(text,boolean),public.rwa2_set_member(uuid,text,uuid,boolean) from public,anon;
-grant execute on function public.rwa2_snapshot(), public.rwa2_save_record(jsonb), public.rwa2_post(jsonb),public.rwa2_close_period(text,boolean),public.rwa2_set_member(uuid,text,uuid,boolean) to authenticated;
+revoke all on function public.rwa2_snapshot(), public.rwa2_save_record(jsonb), public.rwa2_post(jsonb),public.rwa2_sync_daily(),public.rwa2_close_period(text,boolean),public.rwa2_set_member(uuid,text,uuid,boolean) from public,anon;
+grant execute on function public.rwa2_snapshot(), public.rwa2_save_record(jsonb), public.rwa2_post(jsonb),public.rwa2_sync_daily(),public.rwa2_close_period(text,boolean),public.rwa2_set_member(uuid,text,uuid,boolean) to authenticated;
 notify pgrst,'reload schema';
 create table if not exists public.rwa2_revision(id integer primary key check(id=1),revision bigint not null default 0);
 insert into public.rwa2_revision values(1,0) on conflict(id) do nothing;
