@@ -9,8 +9,10 @@ create table if not exists rwa2.members(user_id uuid primary key references auth
 create table if not exists rwa2.periods(month text primary key check(month~'^\d{4}-\d{2}$'),closed boolean not null default false,closed_by uuid,closed_at timestamptz);
 create table if not exists rwa2.journals(id uuid primary key,op text not null,date date not null,note text not null,payload jsonb not null,created_by uuid not null,created_at timestamptz not null default now(),reversal_of uuid unique references rwa2.journals(id));
 create table if not exists rwa2.lines(id bigint generated always as identity primary key,journal_id uuid not null references rwa2.journals(id),account text not null references rwa2.accounts(code),debit numeric(18,2) not null default 0,credit numeric(18,2) not null default 0,party_id uuid,contract_id uuid,campaign_id uuid,asset_id uuid,native_amount numeric(18,4),currency text,check(debit>=0 and credit>=0 and (debit>0)<>(credit>0)));
+alter table rwa2.lines add column if not exists funding_account_id uuid;
 create index if not exists rwa2_lines_journal on rwa2.lines(journal_id);
 create index if not exists rwa2_lines_party on rwa2.lines(party_id);
+create index if not exists rwa2_lines_funding_account on rwa2.lines(funding_account_id);
 create table if not exists rwa2.audit(id bigint generated always as identity primary key,user_id uuid,action text not null,record_id uuid,at timestamptz not null default now(),data jsonb not null default '{}');
 alter table rwa2.accounts enable row level security;
 alter table rwa2.records enable row level security;
@@ -23,7 +25,7 @@ alter table rwa2.audit enable row level security;
 insert into rwa2.accounts(code,name,kind,currency) values
 ('cash_usd','صندوق الدولار','asset','USD'),('cash_syp','صندوق السوري','asset','SYP'),('bank_usd','بنك / بطاقة العمل','asset','USD'),
 ('receivable','ذمم العملاء','asset',null),('advance','سلف الموظفين','asset',null),('prepaid_rent','إيجار مدفوع مقدماً','asset',null),('equipment','معدات الشركة','asset',null),('depreciation_acc','مجمع إهلاك المعدات','asset',null),
-('deferred','إيرادات خدمات مؤجلة','liability',null),('customer_credit','دفعات عملاء غير مخصصة','liability',null),('wages_due','أجور مستحقة','liability',null),('supplier_due','مستحقات الموردين','liability',null),('ad_funds','أموال حملات العملاء','liability',null),('partner_due','تمويل وتكاليف مستحقة للشركاء','liability',null),('distribution_due','توزيعات أرباح معتمدة','liability',null),
+('deferred','إيرادات خدمات مؤجلة','liability',null),('customer_credit','دفعات عملاء غير مخصصة','liability',null),('wages_due','أجور مستحقة','liability',null),('supplier_due','مستحقات الموردين','liability',null),('ad_funds','أموال حملات العملاء','liability',null),('funder_due','مستحقات أصحاب بطاقات التمويل','liability',null),('partner_due','تمويل وتكاليف مستحقة للشركاء','liability',null),('distribution_due','توزيعات أرباح معتمدة','liability',null),
 ('capital','رأس مال الشركاء','equity',null),('drawings','سحوبات الشركاء','equity',null),('retained','أرباح محتجزة / افتتاحي','equity',null),('migration_clearing','أرصدة افتتاحية قيد استكمال التصنيف','equity',null),
 ('video_income','إيرادات الفيديو','income',null),('design_income','إيرادات التصميم','income',null),('content_income','إيرادات المحتوى','income',null),('service_income','إيرادات خدمات إضافية','income',null),('ad_income','أتعاب إدارة الحملات','income',null),
 ('production_cost','تكاليف الإنتاج والوجوه','expense',null),('salary_cost','أجور ورواتب','expense',null),('payroll_recovery','استرداد حصة رواتب مشتركة','expense',null),('commission_cost','عمولات مبيعات','expense',null),('operating_cost','تشغيل ومواصلات','expense',null),('rent_cost','مصروف الإيجار','expense',null),('depreciation_cost','إهلاك المعدات','expense',null),('fx_gain','أرباح فروق الصرف','income',null),('fx_loss','خسائر فروق الصرف','expense',null)
@@ -33,7 +35,8 @@ create or replace function rwa2.role() returns text language sql stable security
 $$;
 create or replace function rwa2.amount(v text) returns numeric language plpgsql immutable set search_path='' as $$ declare a numeric; begin
  a:=round(coalesce(nullif(v,''),'0')::numeric,2); if a<=0 or a>100000000 then raise exception 'المبلغ يجب أن يكون موجباً وضمن الحد المسموح'; end if; return a; end $$;
-create or replace function rwa2.add_line(j uuid,a text,d numeric,c numeric,p uuid default null,ct uuid default null,cp uuid default null,ast uuid default null,n numeric default null,cur text default null) returns void language plpgsql set search_path='' as $$
+drop function if exists rwa2.add_line(uuid,text,numeric,numeric,uuid,uuid,uuid,uuid,numeric,text);
+create or replace function rwa2.add_line(j uuid,a text,d numeric,c numeric,p uuid default null,ct uuid default null,cp uuid default null,ast uuid default null,n numeric default null,cur text default null,fa uuid default null) returns void language plpgsql set search_path='' as $$
 declare book numeric; native numeric; carrying numeric; dt date;
 begin
  if a='cash_syp' and c>0 and n<0 then
@@ -41,9 +44,9 @@ begin
   select coalesce(sum(l.debit-l.credit),0),coalesce(sum(l.native_amount),0) into book,native from rwa2.lines l join rwa2.journals jj on jj.id=l.journal_id where l.account='cash_syp' and jj.date<=dt;
   if native<abs(n) or native<=0 then raise exception 'رصيد السوري غير كاف';end if;
   carrying:=round(book*abs(n)/native,2);
-  insert into rwa2.lines(journal_id,account,debit,credit,party_id,contract_id,campaign_id,asset_id,native_amount,currency) values(j,a,d,carrying,p,ct,cp,ast,n,cur);
+  insert into rwa2.lines(journal_id,account,debit,credit,party_id,contract_id,campaign_id,asset_id,native_amount,currency,funding_account_id) values(j,a,d,carrying,p,ct,cp,ast,n,cur,fa);
   if c>carrying then insert into rwa2.lines(journal_id,account,debit,credit) values(j,'fx_gain',0,c-carrying);elsif c<carrying then insert into rwa2.lines(journal_id,account,debit,credit) values(j,'fx_loss',carrying-c,0);end if;
- else insert into rwa2.lines(journal_id,account,debit,credit,party_id,contract_id,campaign_id,asset_id,native_amount,currency) values(j,a,d,c,p,ct,cp,ast,n,cur);end if;
+ else insert into rwa2.lines(journal_id,account,debit,credit,party_id,contract_id,campaign_id,asset_id,native_amount,currency,funding_account_id) values(j,a,d,c,p,ct,cp,ast,n,cur,fa);end if;
 end $$;
 create or replace function rwa2.immutable() returns trigger language plpgsql set search_path='' as $$ begin raise exception 'القيود المرحلة ثابتة؛ استخدم قيداً عكسياً'; end $$;
 drop trigger if exists rwa2_no_journal_edit on rwa2.journals;
@@ -77,11 +80,11 @@ create or replace function public.rwa2_save_record(p jsonb) returns jsonb langua
 declare r text:=rwa2.role(); rid uuid:=coalesce(nullif(p->>'id','')::uuid,gen_random_uuid()); k text:=p->>'kind'; d jsonb:=p->'data'; old rwa2.records; person uuid; x jsonb; totals numeric:=0;
 begin
  if r is null or auth.uid() is null then raise exception 'غير مصرح';end if;
- if k not in ('customer','employee','contract','task','lead','appointment','quote','asset','campaign','lease','agreement','valuation','config','partner') or jsonb_typeof(d)<>'object' then raise exception 'نوع سجل غير صالح';end if;
+ if k not in ('customer','employee','contract','task','lead','appointment','quote','asset','campaign','funding_account','lease','agreement','valuation','config','partner') or jsonb_typeof(d)<>'object' then raise exception 'نوع سجل غير صالح';end if;
  if r='partner' then raise exception 'حساب الشريك للعرض فقط';end if;
  if r='sales' and k not in ('customer','lead','appointment','quote') then raise exception 'ليس ضمن صلاحيات المبيعات';end if;
  if r='staff' and k<>'task' then raise exception 'ليس ضمن صلاحيات الموظف';end if;
- if k in ('employee','asset','lease','agreement','valuation','config','partner') and r<>'owner' then raise exception 'للمالك فقط';end if;
+ if k in ('employee','asset','funding_account','lease','agreement','valuation','config','partner') and r<>'owner' then raise exception 'للمالك فقط';end if;
  perform pg_advisory_xact_lock(72622026);
  select * into old from rwa2.records where id=rid for update;
  if found then
@@ -95,7 +98,7 @@ begin
  else
   if r='staff' then raise exception 'المهام يحددها المدير';end if;
  end if;
- if k in ('customer','employee','lead','asset','lease','campaign','agreement','valuation') and length(trim(coalesce(d->>'name','')))=0 then raise exception 'الاسم مطلوب';end if;
+ if k in ('customer','employee','lead','asset','lease','campaign','funding_account','agreement','valuation') and length(trim(coalesce(d->>'name','')))=0 then raise exception 'الاسم مطلوب';end if;
  if k='contract' then
   if not exists(select 1 from rwa2.records where id=(d->>'customer_id')::uuid and kind='customer') then raise exception 'حدد العميل';end if;
   if (d->>'end_date')::date<(d->>'start_date')::date then raise exception 'تاريخ نهاية العقد غير صالح';end if;
@@ -121,6 +124,11 @@ begin
   if coalesce((d->>'fee')::numeric,0)<0 then raise exception 'الأتعاب سالبة';end if;
   if exists(select 1 from rwa2.journals where payload->>'campaign_id'=rid::text) and (d-'note'-'status')<>(old.data-'note'-'status') then raise exception 'الحملة المالية ثابتة؛ عالج الفرق بتسوية';end if;
  end if;
+ if k='funding_account' then
+  if not exists(select 1 from rwa2.records where id=(d->>'owner_party_id')::uuid and kind in ('customer','partner')) then raise exception 'حدد صاحب بطاقة التمويل';end if;
+  if coalesce((d->>'default_fee_value')::numeric,0)<0 then raise exception 'أتعاب التمويل غير صالحة';end if;
+  if coalesce(d->>'default_fee_mode','percent') not in ('percent','fixed','markup_total','share_total','fixed_total') then raise exception 'طريقة أتعاب التمويل غير صالحة';end if;
+ end if;
  if k='appointment' then
   if nullif(d->>'assignee','') is not null and exists(select 1 from rwa2.records where kind='appointment' and id<>rid and data->>'status'<>'cancelled' and data->>'date'=d->>'date' and data->>'assignee'=d->>'assignee' and (data->>'time')::time < (d->>'time')::time+make_interval(mins=>coalesce((d->>'minutes')::int,60)) and (data->>'time')::time+make_interval(mins=>coalesce((data->>'minutes')::int,60))>(d->>'time')::time) then raise exception 'الموعد يتعارض مع حجز المسؤول';end if;
  end if;
@@ -132,7 +140,7 @@ begin
  return jsonb_build_object('ok',true,'id',rid);
 end $$;
 create or replace function public.rwa2_post(p jsonb) returns jsonb language plpgsql security definer set search_path='' as $$
-declare r text:=rwa2.role(); j uuid:=(p->>'id')::uuid; v_op text:=p->>'op'; dt date:=(p->>'date')::date; note text:=p->>'note'; amt numeric; native numeric; rate numeric; ca text; party uuid:=nullif(p->>'party_id','')::uuid; ct uuid:=nullif(p->>'contract_id','')::uuid; cp uuid:=nullif(p->>'campaign_id','')::uuid; ast uuid:=nullif(p->>'asset_id','')::uuid; ref uuid:=nullif(p->>'reference_id','')::uuid; doc rwa2.records; x jsonb; qty numeric; total numeric; used numeric; expected numeric; acct text; orig rwa2.journals; ln record; service text; period text; paydate date;
+declare r text:=rwa2.role(); j uuid:=(p->>'id')::uuid; v_op text:=p->>'op'; dt date:=(p->>'date')::date; note text:=p->>'note'; amt numeric; native numeric; rate numeric; ca text; party uuid:=nullif(p->>'party_id','')::uuid; source_party uuid:=nullif(p->>'source_party_id','')::uuid; ct uuid:=nullif(p->>'contract_id','')::uuid; cp uuid:=nullif(p->>'campaign_id','')::uuid; ast uuid:=nullif(p->>'asset_id','')::uuid; fa uuid:=nullif(p->>'funding_account_id','')::uuid; ref uuid:=nullif(p->>'reference_id','')::uuid; doc rwa2.records; funding_doc rwa2.records; x jsonb; qty numeric; total numeric; used numeric; expected numeric; acct text; orig rwa2.journals; ln record; service text; period text; paydate date;
 begin
  if auth.uid() is null or r not in ('owner','finance') or r is null then raise exception 'لا توجد صلاحية مالية';end if;
  if j is null or dt is null or nullif(trim(note),'') is null then raise exception 'التاريخ والوصف ومعرف العملية مطلوبون';end if;
@@ -162,7 +170,7 @@ begin
   insert into rwa2.journals values(j,v_op,dt,note,p,auth.uid(),now(),ref);
   if orig.op='task_approve' then update rwa2.records set data=data||'{"status":"review"}',version=version+1 where id=(orig.payload->>'reference_id')::uuid;end if;
   for ln in select * from rwa2.lines where journal_id=ref loop
-   perform rwa2.add_line(j,ln.account,ln.credit,ln.debit,ln.party_id,ln.contract_id,ln.campaign_id,ln.asset_id,-ln.native_amount,ln.currency);
+   perform rwa2.add_line(j,ln.account,ln.credit,ln.debit,ln.party_id,ln.contract_id,ln.campaign_id,ln.asset_id,-ln.native_amount,ln.currency,ln.funding_account_id);
   end loop;
  else
   insert into rwa2.journals(id,op,date,note,payload,created_by) values(j,v_op,dt,note,p,auth.uid());
@@ -292,6 +300,66 @@ begin
      perform rwa2.add_line(j,'advance',0,amt,party);
     else perform rwa2.add_line(j,ca,0,amt,party,null,null,null,-native,case when ca='cash_syp' then 'SYP' else 'USD' end);end if;
    end if;
+  elsif v_op in ('ad_invoice','ad_payment','ad_spend_funded') then
+   select * into doc from rwa2.records where id=cp and kind='campaign';if not found then raise exception 'حدد الحملة';end if;
+   party:=(doc.data->>'customer_id')::uuid;
+   if v_op='ad_invoice' then
+    if exists(select 1 from rwa2.journals a where a.id<>j and a.op='ad_invoice' and a.payload->>'campaign_id'=cp::text and not exists(select 1 from rwa2.journals rv where rv.reversal_of=a.id)) then raise exception 'مطالبة الحملة مثبتة سابقاً';end if;
+    expected:=rwa2.amount(doc.data->>'budget');amt:=round(expected+coalesce((doc.data->>'fee')::numeric,0),2);
+    perform rwa2.add_line(j,'receivable',amt,0,party,null,cp);
+    perform rwa2.add_line(j,'ad_funds',0,expected,party,null,cp);
+    if amt>expected then perform rwa2.add_line(j,'deferred',0,amt-expected,party,null,cp);end if;
+   elsif v_op='ad_payment' then
+    if amt<=0 then raise exception 'حدد المبلغ المقبوض';end if;
+    select coalesce(sum(debit-credit),0) into used from rwa2.lines where account='receivable' and campaign_id=cp;
+    if amt>used then raise exception 'القبض يتجاوز المطلوب على الحملة';end if;
+    perform rwa2.add_line(j,ca,amt,0,party,null,cp,null,native,case when ca='cash_syp' then 'SYP' else 'USD' end);
+    perform rwa2.add_line(j,'receivable',0,amt,party,null,cp);
+   else
+    select * into funding_doc from rwa2.records where id=fa and kind='funding_account' and data->>'status'='active';if not found then raise exception 'حدد حساب تمويل فعال';end if;
+    source_party:=(funding_doc.data->>'owner_party_id')::uuid;
+    select coalesce(sum(credit-debit),0) into used from rwa2.lines where account='ad_funds' and campaign_id=cp;
+    if amt<=0 or amt>used then raise exception 'المبلغ يتجاوز ميزانية المنصة المتبقية';end if;
+    perform rwa2.add_line(j,'ad_funds',amt,0,party,null,cp,null,null,null,fa);
+    perform rwa2.add_line(j,'funder_due',0,amt,source_party,null,cp,null,null,null,fa);
+   end if;
+  elsif v_op in ('funded_expense','funder_payment','funder_transfer') then
+   select * into funding_doc from rwa2.records where id=fa and kind='funding_account' and data->>'status'='active';if not found then raise exception 'حدد حساب تمويل فعال';end if;
+   source_party:=(funding_doc.data->>'owner_party_id')::uuid;
+   if amt<=0 then raise exception 'حدد المبلغ';end if;
+   if v_op='funded_expense' then
+    acct:=coalesce(p->>'expense_account','operating_cost');if acct not in ('production_cost','operating_cost','commission_cost','rent_cost') then raise exception 'تصنيف مصروف غير صالح';end if;
+    perform rwa2.add_line(j,acct,amt,0,source_party,null,null,null,null,null,fa);
+    perform rwa2.add_line(j,'funder_due',0,amt,source_party,null,null,null,null,null,fa);
+   elsif v_op='funder_payment' then
+    select coalesce(sum(credit-debit),0) into used from rwa2.lines where account='funder_due' and funding_account_id=fa;
+    if amt>used then raise exception 'الدفع يتجاوز رصيد صاحب البطاقة';end if;
+    perform rwa2.add_line(j,'funder_due',amt,0,source_party,null,null,null,null,null,fa);
+    perform rwa2.add_line(j,ca,0,amt,source_party,null,null,null,-native,case when ca='cash_syp' then 'SYP' else 'USD' end,fa);
+   else
+    if party is null or not exists(select 1 from rwa2.records where id=party and kind='customer') then raise exception 'حدد العميل المستفيد';end if;
+    select coalesce(sum(credit-debit),0) into used from rwa2.lines where account='funder_due' and funding_account_id=fa;
+    if amt>used then raise exception 'التحويل يتجاوز رصيد التمويل';end if;
+    if ct is not null then
+     select * into doc from rwa2.records where id=ct and kind='contract';if not found or doc.data->>'customer_id'<>party::text then raise exception 'العقد لا يخص العميل المستفيد';end if;
+     select coalesce(sum(debit-credit),0) into expected from rwa2.lines where account='receivable' and contract_id=ct;if amt>expected then raise exception 'التحويل يتجاوز المطلوب على العقد';end if;
+     acct:='receivable';
+    else acct:='customer_credit';end if;
+    perform rwa2.add_line(j,'funder_due',amt,0,source_party,null,null,null,null,null,fa);
+    perform rwa2.add_line(j,acct,0,amt,party,ct,null,null,null,null,fa);
+   end if;
+  elsif v_op='distribution_transfer' then
+   if source_party is null or not exists(select 1 from rwa2.records where id=source_party and kind='partner') then raise exception 'حدد الشريك صاحب الحصة';end if;
+   if party is null or not exists(select 1 from rwa2.records where id=party and kind='customer') then raise exception 'حدد العميل المستفيد';end if;
+   if amt<=0 then raise exception 'حدد المبلغ';end if;
+   select coalesce(sum(credit-debit),0) into used from rwa2.lines where account='distribution_due' and party_id=source_party;if amt>used then raise exception 'التحويل يتجاوز حصة الأرباح المستحقة';end if;
+   if ct is not null then
+    select * into doc from rwa2.records where id=ct and kind='contract';if not found or doc.data->>'customer_id'<>party::text then raise exception 'العقد لا يخص العميل المستفيد';end if;
+    select coalesce(sum(debit-credit),0) into expected from rwa2.lines where account='receivable' and contract_id=ct;if amt>expected then raise exception 'التحويل يتجاوز المطلوب على العقد';end if;
+    acct:='receivable';
+   else acct:='customer_credit';end if;
+   perform rwa2.add_line(j,'distribution_due',amt,0,source_party);
+   perform rwa2.add_line(j,acct,0,amt,party,ct);
   elsif v_op in ('ad_receipt','ad_spend','ad_fee','ad_refund') then
    select * into doc from rwa2.records where id=cp and kind='campaign';if not found then raise exception 'حدد الحملة';end if;
    party:=(doc.data->>'customer_id')::uuid;
@@ -336,10 +404,11 @@ begin
    if jsonb_array_length(p->'lines')<2 then raise exception 'حدد طرفي القيد الافتتاحي';end if;
    for x in select * from jsonb_array_elements(p->'lines') loop
     acct:=x->>'account';if acct='cash_syp' and (nullif(x->>'native_amount','') is null or (x->>'native_amount')::numeric=0) then raise exception 'نقد السوري يحتاج المبلغ الأصلي';end if;
-    if acct in ('receivable','customer_credit','wages_due','advance','capital','partner_due','drawings','distribution_due') and nullif(x->>'party_id','') is null then raise exception 'حدد صاحب الرصيد الافتتاحي';end if;
+    if acct in ('receivable','customer_credit','wages_due','advance','capital','funder_due','partner_due','drawings','distribution_due') and nullif(x->>'party_id','') is null then raise exception 'حدد صاحب الرصيد الافتتاحي';end if;
+    if acct='funder_due' and nullif(x->>'funding_account_id','') is null then raise exception 'حدد حساب التمويل في الرصيد الافتتاحي';end if;
     if acct='equipment' and nullif(x->>'asset_id','') is null then raise exception 'حدد القطعة في افتتاح المعدات';end if;
     if not exists(select 1 from rwa2.accounts where code=acct and kind not in ('income','expense')) then raise exception 'الافتتاحي لحسابات المركز المالي فقط';end if;
-    perform rwa2.add_line(j,acct,round(coalesce((x->>'debit')::numeric,0),2),round(coalesce((x->>'credit')::numeric,0),2),nullif(x->>'party_id','')::uuid,nullif(x->>'contract_id','')::uuid,nullif(x->>'campaign_id','')::uuid,nullif(x->>'asset_id','')::uuid,nullif(x->>'native_amount','')::numeric,x->>'currency');
+    perform rwa2.add_line(j,acct,round(coalesce((x->>'debit')::numeric,0),2),round(coalesce((x->>'credit')::numeric,0),2),nullif(x->>'party_id','')::uuid,nullif(x->>'contract_id','')::uuid,nullif(x->>'campaign_id','')::uuid,nullif(x->>'asset_id','')::uuid,nullif(x->>'native_amount','')::numeric,x->>'currency',nullif(x->>'funding_account_id','')::uuid);
    end loop;
   elsif v_op='fx_transfer' then
    if native<=0 or rate<=0 then raise exception 'حدد المبلغ وسعر الصرف';end if;
@@ -372,6 +441,7 @@ begin
  select coalesce(sum(debit),0),coalesce(sum(credit),0) into total,used from rwa2.lines where journal_id=j;
  if total<=0 or total<>used then raise exception 'القيد غير متوازن';end if;
  if exists(select 1 from (select account,sum(sum(debit-credit)) over(partition by account order by jj.date) as book,sum(sum(coalesce(native_amount,debit-credit))) over(partition by account order by jj.date) as native from rwa2.lines l join rwa2.journals jj on jj.id=l.journal_id where account in ('cash_usd','cash_syp','bank_usd') group by account,jj.date) balances where balances.book<-0.005 or balances.native<-0.005) then raise exception 'رصيد النقد غير كافٍ؛ راجع الجرد أو سجل التمويل أولاً';end if;
+ if exists(select 1 from rwa2.lines where account='funder_due' group by funding_account_id having sum(credit-debit)<-0.005) then raise exception 'رصيد حساب التمويل لا يمكن أن يصبح سالباً';end if;
  insert into rwa2.audit(user_id,action,record_id,data) values(auth.uid(),'post_'||v_op,j,jsonb_build_object('amount',total));
  return jsonb_build_object('ok',true,'id',j);
 end $$;
