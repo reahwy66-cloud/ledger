@@ -1052,7 +1052,10 @@ function watch(){
       RT.on("postgres_changes",{event:"*",schema:"public",table:tb},function(){
         clearTimeout(RT._t); RT._t=setTimeout(async function(){
           if(DIRTY||PUSHING) return;        // our own write is echoing back — ignore it
-          await pull(); render();
+          var previous=JSON.stringify(S);
+          await pull();
+          var modal=el("modalHost");
+          if(previous!==JSON.stringify(S)&&(!modal||!modal.innerHTML)) render();
         },600);
       });
     });
