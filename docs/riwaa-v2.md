@@ -6,7 +6,7 @@ The owner must approve opening cash, receivables, customer credits, wages, ad fu
 
 Features: dated contracts/packages, deferred/earned revenue, invoice allocation, credit notes, monthly continuous-service accrual, multi-person tasks, wage accrual/payment/advances, commission on allocated service collections, agency ad budget and fee accounting, supplier costs/payments, partner capital/loans/drawings/distributions, original USD/SYP cash, carrying-cost FX gain/loss, company asset register/depreciation/valuation, prepaid rent consumption, period locking, reversals, customer statements, journal/general ledger/trial balance/profit report, CSV and JSON export, CRM leads/quotes/appointment conflict detection and role assignment.
 
-No rapid polling: reload after confirmed command, on manual refresh, after another local tab's completed operation, and when returning to a visible tab after30seconds. Revision equality suppresses unchanged repaints. Modal data is preserved. Legacy realtime redraws only for changed business data and does not interrupt open forms.
+No rapid polling: reload after confirmed command, on manual refresh, after an authorized server revision event or another local tab's completed operation, and when returning to a visible tab after30seconds. Revision equality suppresses unchanged repaints. Modal data is preserved. Legacy realtime redraws only for changed business data and does not interrupt open forms.
 
 Security: private tables deny direct clients; RPCs validate active profile/explicit v2 membership and owner-only setup. Partners cannot write. Sales get only permitted operational records, employees only own tasks/own wage totals. Every financial command is transactional, idempotent and balanced; posted rows are immutable. Optimistic versions reject stale record writes. Period lock and original-currency liquidity checks run server-side.
 
@@ -15,3 +15,5 @@ Run `node --test tests/v2-core.test.mjs` and syntax checks. SQL test suites in `
 No password or service-role key is shipped. The frontend uses the existing project's public anon key with Supabase Auth and pinned client2.116.0.
 
 Operational limitations: initial client portal remains the legacy portal; v2 financial statements are downloadable/printable but are not wired into the old token-based client portal. The old connector keeps reporting legacy books until it is explicitly migrated. User onboarding requires an Auth account/profile; no account for Ayham has been created without his email. The4,000 contribution is unposted until its payment and terms are confirmed. Asset evaluation and rent settlement records are reviewable inputs, not automatically booked real transactions.
+
+Realtime publishes only an authenticated revision number, not private ledger rows. No periodic polling is used. Deferred updates wait until forms close.
