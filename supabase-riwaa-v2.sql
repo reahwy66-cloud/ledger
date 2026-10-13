@@ -176,7 +176,7 @@ begin
   insert into rwa2.journals(id,op,date,note,payload,created_by) values(j,v_op,dt,note,p,auth.uid());
   if v_op='invoice' then
    select * into doc from rwa2.records where id=ct and kind='contract';if not found or doc.data->>'status' in ('draft','cancelled') then raise exception 'حدد عقداً معتمداً';end if;
-   if exists(select 1 from rwa2.journals a where a.id<>j and id<>j and op='invoice' and payload->>'contract_id'=ct::text and not exists(select 1 from rwa2.journals rv where rv.reversal_of=a.id)) then raise exception 'العقد مفوتر سابقاً';end if;
+   if exists(select 1 from rwa2.journals a where a.id<>j and id<>j and op='invoice' and payload->>'contract_id'=ct::text and (coalesce((doc.data->>'monthly_recurring')::boolean,false)=false or to_char(a.date,'YYYY-MM')=period) and not exists(select 1 from rwa2.journals rv where rv.reversal_of=a.id)) then raise exception '%',case when coalesce((doc.data->>'monthly_recurring')::boolean,false) then 'عقد الخدمة مفوتر لهذا الشهر' else 'العقد مفوتر سابقاً' end;end if;
    party:=(doc.data->>'customer_id')::uuid;amt:=rwa2.amount(doc.data->>'price');
    perform rwa2.add_line(j,'receivable',amt,0,party,ct);perform rwa2.add_line(j,'deferred',0,amt,party,ct);
   elsif v_op='recognize' then
@@ -205,15 +205,22 @@ begin
    if amt>expected then perform rwa2.add_line(j,'customer_credit',0,amt-expected,party);end if;
   elsif v_op='time_accrual' then
    select * into doc from rwa2.records where id=ct and kind='contract' and data->>'type'='retainer';if not found then raise exception 'حدد عقد إدارة مستمرة';end if;
-   if not exists(select 1 from rwa2.journals a where a.op='invoice' and a.payload->>'contract_id'=ct::text and not exists(select 1 from rwa2.journals rv where rv.reversal_of=a.id)) then raise exception 'فوتر العقد أولاً';end if;
+   if not exists(select 1 from rwa2.journals a where a.op='invoice' and a.payload->>'contract_id'=ct::text and (coalesce((doc.data->>'monthly_recurring')::boolean,false)=false or to_char(a.date,'YYYY-MM')=period) and not exists(select 1 from rwa2.journals rv where rv.reversal_of=a.id)) then raise exception 'فوتر عقد الخدمة لهذا الشهر أولاً';end if;
    if exists(select 1 from rwa2.journals a where a.id<>j and a.op='time_accrual' and a.payload->>'contract_id'=ct::text and to_char(a.date,'YYYY-MM')=period and not exists(select 1 from rwa2.journals rv where rv.reversal_of=a.id)) then raise exception 'إيراد الفترة مثبت';end if;
-   expected:=(doc.data->>'end_date')::date-(doc.data->>'start_date')::date+1;
-   used:=least((doc.data->>'end_date')::date,(date_trunc('month',dt)+interval '1 month -1 day')::date)-greatest((doc.data->>'start_date')::date,date_trunc('month',dt)::date)+1;
-   if used<=0 then raise exception 'خارج فترة الخدمة';end if;
-   if dt<least((doc.data->>'end_date')::date,(date_trunc('month',dt)+interval '1 month -1 day')::date) then raise exception 'اعتمد الخدمة في نهاية فترة أدائها';end if;
-   amt:=round((doc.data->>'price')::numeric*used/expected,2);
-   select coalesce(sum(credit-debit),0) into total from rwa2.lines where account='deferred' and contract_id=ct;
-   if dt>=(doc.data->>'end_date')::date then amt:=total;end if;
+   if coalesce((doc.data->>'monthly_recurring')::boolean,false) then
+    if dt<(date_trunc('month',dt)+interval '1 month -1 day')::date then raise exception 'اعتمد إيراد الخدمة الشهرية في نهاية الشهر';end if;
+    amt:=rwa2.amount(coalesce(doc.data->>'monthly_target',doc.data->>'price'));
+    select coalesce(sum(l.credit-l.debit),0) into total from rwa2.lines l join rwa2.journals jj on jj.id=l.journal_id where l.account='deferred' and l.contract_id=ct and to_char(jj.date,'YYYY-MM')=period;
+    amt:=least(amt,total);
+   else
+    expected:=(doc.data->>'end_date')::date-(doc.data->>'start_date')::date+1;
+    used:=least((doc.data->>'end_date')::date,(date_trunc('month',dt)+interval '1 month -1 day')::date)-greatest((doc.data->>'start_date')::date,date_trunc('month',dt)::date)+1;
+    if used<=0 then raise exception 'خارج فترة الخدمة';end if;
+    if dt<least((doc.data->>'end_date')::date,(date_trunc('month',dt)+interval '1 month -1 day')::date) then raise exception 'اعتمد الخدمة في نهاية فترة أدائها';end if;
+    amt:=round((doc.data->>'price')::numeric*used/expected,2);
+    select coalesce(sum(credit-debit),0) into total from rwa2.lines where account='deferred' and contract_id=ct;
+    if dt>=(doc.data->>'end_date')::date then amt:=total;end if;
+   end if;
    if amt<=0 or amt>total then raise exception 'قيمة مؤجلة غير كافية';end if;
    party:=(doc.data->>'customer_id')::uuid;
    perform rwa2.add_line(j,'deferred',amt,0,party,ct);perform rwa2.add_line(j,'service_income',0,amt,party,ct);

@@ -1,4 +1,4 @@
-export const VERSION='2.2.0';
+export const VERSION='2.2.1';
 export const money=(v,c='USD')=>new Intl.NumberFormat('en-US',{minimumFractionDigits:c==='USD'?2:0,maximumFractionDigits:c==='USD'?2:2}).format(Number(v)||0)+(c==='USD'?' $':' ل.س');
 export const round=v=>Math.round((Number(v)+Number.EPSILON)*100)/100;
 export const uid=()=>crypto.randomUUID();
@@ -13,4 +13,5 @@ export function liquidate(assets,liabilities,pct=35){const gross=round(assets.re
 export function employeeBalance(snapshot,id,month){const l=ledger(snapshot,month);return {owed:-l.balance('wages_due',id),advance:l.balance('advance',id)};}
 export function fundingBalance(snapshot,account,month){const l=ledger(snapshot,month),owner=account.data.owner_party_id,card=-l.balance('funder_due',null,null,null,account.id),profit=account.data.owner_kind==='partner'?-l.balance('distribution_due',owner):0;return {card,profit,total:round(card+profit)};}
 export function contractProgress(snapshot,contract){const id=contract.id,rev=new Set((snapshot.journals||[]).filter(j=>j.reversal_of).map(j=>j.reversal_of)),initial=contract.data.initial_delivered||{};return (contract.data.items||[]).map(i=>({...i,done:round(Number(initial[i.service]||0)+(snapshot.journals||[]).filter(j=>j.op==='recognize'&&j.payload.contract_id===id&&j.payload.service===i.service&&!rev.has(j.id)).reduce((s,j)=>s+Number(j.payload.qty),0))}));}
+export function monthlyRetainerProgress(contract,month,asOf=today()){const [y,m]=month.split('-').map(Number),days=new Date(Date.UTC(y,m,0)).getUTCDate(),start=month+'-01',end=month+'-'+String(days).padStart(2,'0'),startMonth=String(contract.data.start_date||'').slice(0,7),asOfMonth=String(asOf).slice(0,7),goal=round(Number(contract.data.monthly_target??contract.data.price??0));let elapsed=0;if(month>=startMonth){if(month<asOfMonth)elapsed=days;else if(month===asOfMonth)elapsed=Math.min(days,Math.max(0,Number(String(asOf).slice(8,10))||0));}const earned=round(goal*elapsed/days);return {goal,earned,elapsed,days,start,end,percent:goal>0?Math.min(100,round(earned/goal*100)):0};}
 export const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
