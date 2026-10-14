@@ -53,7 +53,7 @@ drop trigger if exists rwa2_no_journal_edit on rwa2.journals;
 create trigger rwa2_no_journal_edit before update or delete on rwa2.journals for each row execute function rwa2.immutable();
 drop trigger if exists rwa2_no_line_edit on rwa2.lines;
 create trigger rwa2_no_line_edit before update or delete on rwa2.lines for each row execute function rwa2.immutable();
-create or replace function rwa2.check_balance() returns trigger language plpgsql set search_path='' as $$ declare j uuid; d numeric;c numeric; begin
+create or replace function rwa2.check_balance() returns trigger language plpgsql security definer set search_path='' as $$ declare j uuid; d numeric;c numeric; begin
  j:=new.id;
  select coalesce(sum(debit),0),coalesce(sum(credit),0) into d,c from rwa2.lines where journal_id=j;
  if d=0 or d<>c then raise exception 'قيد غير متوازن: % / %',d,c; end if;return new;
