@@ -28,7 +28,7 @@ insert into rwa2.accounts(code,name,kind,currency) values
 ('deferred','إيرادات خدمات مؤجلة','liability',null),('customer_credit','دفعات عملاء غير مخصصة','liability',null),('wages_due','أجور مستحقة','liability',null),('supplier_due','مستحقات الموردين','liability',null),('ad_funds','أموال حملات العملاء','liability',null),('funder_due','مستحقات أصحاب بطاقات التمويل','liability',null),('partner_due','تمويل وتكاليف مستحقة للشركاء','liability',null),('distribution_due','توزيعات أرباح معتمدة','liability',null),
 ('capital','رأس مال الشركاء','equity',null),('drawings','سحوبات الشركاء','equity',null),('retained','أرباح محتجزة / افتتاحي','equity',null),('migration_clearing','أرصدة افتتاحية قيد استكمال التصنيف','equity',null),
 ('video_income','إيرادات الفيديو','income',null),('design_income','إيرادات التصميم','income',null),('content_income','إيرادات المحتوى','income',null),('service_income','إيرادات خدمات إضافية','income',null),('ad_income','أتعاب إدارة الحملات','income',null),
-('production_cost','تكاليف الإنتاج والوجوه','expense',null),('salary_cost','أجور ورواتب','expense',null),('payroll_recovery','استرداد حصة رواتب مشتركة','expense',null),('commission_cost','عمولات مبيعات','expense',null),('operating_cost','تشغيل ومواصلات','expense',null),('rent_cost','مصروف الإيجار','expense',null),('depreciation_cost','إهلاك المعدات','expense',null),('fx_gain','أرباح فروق الصرف','income',null),('fx_loss','خسائر فروق الصرف','expense',null)
+('production_cost','تكاليف الإنتاج والوجوه','expense',null),('salary_cost','أجور ورواتب','expense',null),('payroll_recovery','استرداد حصة رواتب مشتركة','expense',null),('commission_cost','عمولات مبيعات','expense',null),('operating_cost','تشغيل واشتراكات','expense',null),('transport_cost','مواصلات وتنقل','expense',null),('hospitality_cost','قهوة وضيافة العملاء','expense',null),('outsourced_service_cost','خدمات خارجية ومستقلون','expense',null),('rent_cost','مصروف الإيجار','expense',null),('depreciation_cost','إهلاك المعدات','expense',null),('fx_gain','أرباح فروق الصرف','income',null),('fx_loss','خسائر فروق الصرف','expense',null)
 on conflict(code) do nothing;
 create or replace function rwa2.role() returns text language sql stable security definer set search_path='' as $$
  select case when public.is_owner() then 'owner' else (select m.role from rwa2.members m join public.profiles p on p.id=m.user_id where m.user_id=auth.uid() and m.active and p.active) end;
@@ -245,7 +245,7 @@ begin
   elsif v_op in ('expense','asset_purchase','rent_prepay','advance','draw','contribution','partner_loan','partner_repay','customer_refund') then
    if amt<=0 then raise exception 'المبلغ مطلوب';end if;
    acct:=case v_op when 'asset_purchase' then 'equipment' when 'rent_prepay' then 'prepaid_rent' when 'advance' then 'advance' when 'draw' then 'drawings' when 'contribution' then 'capital' when 'partner_loan' then 'partner_due' when 'partner_repay' then 'partner_due' when 'customer_refund' then 'customer_credit' else coalesce(p->>'expense_account','operating_cost') end;
-   if v_op='expense' and acct not in ('production_cost','operating_cost','commission_cost','rent_cost') then raise exception 'تصنيف مصروف غير صالح';end if;
+   if v_op='expense' and acct not in ('production_cost','operating_cost','transport_cost','hospitality_cost','outsourced_service_cost','commission_cost','rent_cost') then raise exception 'تصنيف مصروف غير صالح';end if;
    if v_op in ('advance','draw','contribution','partner_loan','partner_repay') and party is null then raise exception 'حدد الشخص';end if;
    if v_op='asset_purchase' then
     select * into doc from rwa2.records where id=ast and kind='asset';if not found then raise exception 'أضف قطعة المعدات أولاً';end if;
@@ -335,7 +335,7 @@ begin
    source_party:=(funding_doc.data->>'owner_party_id')::uuid;
    if amt<=0 then raise exception 'حدد المبلغ';end if;
    if v_op='funded_expense' then
-    acct:=coalesce(p->>'expense_account','operating_cost');if acct not in ('production_cost','operating_cost','commission_cost','rent_cost') then raise exception 'تصنيف مصروف غير صالح';end if;
+    acct:=coalesce(p->>'expense_account','operating_cost');if acct not in ('production_cost','operating_cost','transport_cost','hospitality_cost','outsourced_service_cost','commission_cost','rent_cost') then raise exception 'تصنيف مصروف غير صالح';end if;
     perform rwa2.add_line(j,acct,amt,0,source_party,null,null,null,null,null,fa);
     perform rwa2.add_line(j,'funder_due',0,amt,source_party,null,null,null,null,null,fa);
    elsif v_op='funder_payment' then
