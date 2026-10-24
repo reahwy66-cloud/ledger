@@ -1,4 +1,4 @@
-export const VERSION='2.3.0';
+export const VERSION='2.4.0';
 export const money=(v,c='USD')=>new Intl.NumberFormat('en-US',{minimumFractionDigits:c==='USD'?2:0,maximumFractionDigits:c==='USD'?2:2}).format(Number(v)||0)+(c==='USD'?' $':' ل.س');
 export const round=v=>Math.round((Number(v)+Number.EPSILON)*100)/100;
 export const uid=()=>crypto.randomUUID();

@@ -130,6 +130,7 @@ const records = (k) => (S.records || []).filter((r) => r.kind === k),
   finance = () => ["owner", "finance", "partner"].includes(S.role),
   write = () => ["owner", "finance"].includes(S.role),
   owner = () => S.role === "owner",
+  canSell = () => ["owner", "finance", "sales"].includes(S.role),
   visible = () =>
     S.role === "sales"
       ? ["sales", "customers", "appointments", "settings"]
@@ -160,6 +161,22 @@ const filtered = (list) =>
   list.filter((r) =>
     JSON.stringify(r.data).toLowerCase().includes(search.toLowerCase()),
   );
+const mapURL = (d = {}) => {
+  const lat = Number(d.latitude),
+    lng = Number(d.longitude);
+  return Number.isFinite(lat) && Number.isFinite(lng)
+    ? `https://www.google.com/maps?q=${lat},${lng}`
+    : "";
+};
+const socialURL = (value = "", network = "instagram") => {
+  const raw = String(value).trim();
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return safeURL(raw);
+  const handle = raw.replace(/^@/, "").replace(/^\/+|\/+$/g, "");
+  return network === "facebook"
+    ? `https://www.facebook.com/${encodeURIComponent(handle)}`
+    : `https://www.instagram.com/${encodeURIComponent(handle)}`;
+};
 const table = (headers, rows) =>
   `<div class="card table-card"><div class="table-wrap"><table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.length ? rows.join("") : `<tr><td colspan="${headers.length}">${empty("لا توجد سجلات لهذه الفترة")}</td></tr>`}</tbody></table></div></div>`;
 function toast(msg, error = false) {
@@ -246,7 +263,7 @@ function render() {
     )
     .join(
       "",
-    )}</nav><div class="sidebar-footer"><div><b>${esc(S.name)}</b> ${badge(S.role)}</div>${S.role !== "partner" ? '<a href="../dashboard/" target="_blank" rel="noopener">↗ فتح الداش بورد السابق</a>' : ""}<button data-action="logout">تسجيل الخروج</button></div></aside><main class="main"><header class="topbar"><div><div class="breadcrumbs">مساحة العمل / ${titles[view]}</div><h1>${selected && view === "customers" ? esc(name(selected)) : titles[view]}</h1></div><div class="top-actions">${btn("☰", "menu", "", "mobile-menu")}${finance() ? `<input type="month" id="month" value="${month}" aria-label="الفترة المعروضة">` : ""}${closed ? badge("closed") : ""}${btn(privateMoney ? "إظهار المبالغ" : "إخفاء المبالغ", "privacy", "", "small")}${btn("تحديث", "refresh", "", "small")}<span class="sync">محفوظ · بعد كل عملية</span></div></header>${migrated && finance() ? `<div class="notice"><b>تم اعتماد الجرد الافتتاحي في ${esc(migrated.data.date)}.</b> الصندوق والذمم ومستحقات الفريق مرحّلة. أرباح ما قبل هذا التاريخ غير معاد بناؤها، وتوزيع أسعار الباقات القديمة يبقى للمراجعة قبل إثبات إيرادها.</div>` : S.journals.length === 0 && finance() ? `<div class="notice"><b>دفتر جديد مستقل.</b> الأرصدة المالية لم تُرحّل بعد.</div>` : ""}<div id="content">${{ overview: overview, customers: customers, contracts: contracts, production: production, finance: cash, payroll: payroll, sales: sales, appointments: appointments, campaigns: campaigns, partners: partners, reports: reports, settings: settings }[view]()}</div></main></div>`;
+    )}</nav><div class="sidebar-footer"><div><b>${esc(S.name)}</b> ${badge(S.role)}</div>${S.role !== "partner" ? '<a href="../dashboard/" target="_blank" rel="noopener">↗ فتح الداش بورد السابق</a>' : ""}<button data-action="logout">تسجيل الخروج</button></div></aside><main class="main"><header class="topbar"><div><div class="breadcrumbs">مساحة العمل / ${titles[view]}</div><h1>${selected && view === "customers" ? esc(name(selected)) : titles[view]}</h1></div><div class="top-actions">${btn("☰", "menu", "", "mobile-menu")}${finance() || S.role === "sales" ? `<input type="month" id="month" value="${month}" aria-label="الفترة المعروضة">` : ""}${closed ? badge("closed") : ""}${btn(privateMoney ? "إظهار المبالغ" : "إخفاء المبالغ", "privacy", "", "small")}${btn("تحديث", "refresh", "", "small")}<span class="sync">محفوظ · بعد كل عملية</span></div></header>${migrated && finance() ? `<div class="notice"><b>تم اعتماد الجرد الافتتاحي في ${esc(migrated.data.date)}.</b> الصندوق والذمم ومستحقات الفريق مرحّلة. أرباح ما قبل هذا التاريخ غير معاد بناؤها، وتوزيع أسعار الباقات القديمة يبقى للمراجعة قبل إثبات إيرادها.</div>` : S.journals.length === 0 && finance() ? `<div class="notice"><b>دفتر جديد مستقل.</b> الأرصدة المالية لم تُرحّل بعد.</div>` : ""}<div id="content">${{ overview: overview, customers: customers, contracts: contracts, production: production, finance: cash, payroll: payroll, sales: sales, appointments: appointments, campaigns: campaigns, partners: partners, reports: reports, settings: settings }[view]()}</div></main></div>`;
   bind();
 }
 function overview() {
@@ -361,15 +378,23 @@ function payroll() {
     table(
       ["الموظف", "الاتفاق", "مستحق متراكم", "سلفة متبقية", ""],
       filtered(records("employee")).map((e) => {
-        const b = employeeBalance(S, e.id, month);
-        return `<tr><td><b>${esc(e.data.name)}</b><br><small>${esc(e.data.role)}</small></td><td>${names[e.data.pay_type] || e.data.pay_type}<br><small>${m(e.data.rate)}</small></td><td>${m(b.owed)}</td><td>${m(b.advance)}</td><td><div class="actions">${write() ? action("salary_accrual", "إثبات الشهر", "party", e.id) + action("salary_payment", "دفع", "party", e.id) + action("advance", "سلفة", "party", e.id) + action("advance_apply", "حسم سلفة", "party", e.id) + btn("تعديل", "record", `data-kind="employee" data-id="${e.id}"`, "small") : ""}</div></td></tr>`;
+        const b = employeeBalance(S, e.id, month),
+          sales = (S.sales_summary || []).find(
+            (x) => x.employee_id === e.id && x.month === month,
+          );
+        return `<tr><td><b>${esc(e.data.name)}</b><br><small>${esc(e.data.role)}</small>${sales ? `<br><small>تارغت ${m(sales.target)} · مبيعات ${m(sales.signed_sales)}</small>` : ""}</td><td>${names[e.data.pay_type] || e.data.pay_type}<br><small>${m(e.data.rate)}${sales ? ` + ${sales.commission_pct}% عمولة` : ""}</small></td><td>${m(b.owed)}${sales ? `<br><small>عمولة محسوبة ${m(sales.commission_expected)}</small>` : ""}</td><td>${m(b.advance)}</td><td><div class="actions">${write() ? action("salary_accrual", "إثبات الشهر", "party", e.id) + action("salary_payment", "دفع", "party", e.id) + action("advance", "سلفة", "party", e.id) + action("advance_apply", "حسم سلفة", "party", e.id) + (sales ? btn("اعتماد عمولة الشهر", "accrue-commission", `data-employee="${e.id}"`, "small") : "") + btn("تعديل", "record", `data-kind="employee" data-id="${e.id}"`, "small") : ""}</div></td></tr>`;
       }),
     )
   );
 }
 function sales() {
-  const canSell = ["owner", "finance", "sales"].includes(S.role);
-  return `<div class="toolbar"><p class="muted">استقطاب، متابعة، موعد، وعرض قبل فتح العقد.</p>${canSell ? btn("+ فرصة جديدة", "record", 'data-kind="lead"', "primary") : ""}</div><div class="kanban">${[
+  const metrics = (S.sales_summary || []).find(
+      (x) => x.month === month && (S.role !== "sales" || x.employee_id === S.person_id),
+    ) || {},
+    target = Number(metrics.target || 0),
+    signed = Number(metrics.signed_sales || 0),
+    pct = target > 0 ? Math.min(100, round((signed / target) * 100)) : 0;
+  return `<div class="sales-hero"><div><small>راتب هذا الشهر</small><b>${m(metrics.salary || 0)}</b></div><div><small>نسبة المبيعات</small><b>${esc(metrics.commission_pct ?? 10)}%</b></div><div><small>عمولة على المقبوض</small><b>${m(metrics.commission_expected || 0)}</b></div><div class="target-card"><small>التارغت · ${m(signed)} من ${m(target)}</small><b>${pct}%</b><div class="progress"><i style="width:${pct}%"></i></div></div></div><div class="notice"><b>قاعدة العمولة:</b> تُحسب على مبالغ الخدمات المقبوضة والمربوطة بعقدك، ولا تشمل ميزانية تمويل الإعلانات. كتابة دفعة أولى في العقد لا تغيّر الصندوق حتى يعتمدها الحساب المالي.</div><div class="toolbar"><p class="muted">داتا العملاء، المتابعة، المواعيد، والعقود الموقعة بمكان واحد.</p>${canSell() ? btn("+ عميل محتمل", "record", 'data-kind="lead"', "primary") : ""}</div><div class="kanban">${[
     ["new", "جديدة"],
     ["meeting", "موعد ومتابعة"],
     ["proposal", "عروض وتفاوض"],
@@ -382,18 +407,17 @@ function sales() {
             .filter((x) => x.data.status === s)
             .map(
               (x) =>
-                `<div class="card"><div class="lead-source">${esc(x.data.source || "استقطاب مباشر")}</div><h3>${esc(x.data.name)}</h3><small>${esc(x.data.phone || "")}</small><p style="margin:10px 0">${esc(x.data.next_action || "حدد خطوة المتابعة")}</p><small>${esc(x.data.follow_date || "")}</small>${canSell ? `<div class="actions" style="margin-top:12px">${btn("متابعة", "record", `data-kind="lead" data-id="${x.id}"`, "small")}${btn("موعد", "record", `data-kind="appointment" data-customer="${x.id}"`, "small")}</div>` : ""}</div>`,
+                `<div class="card"><div class="lead-source">${esc(x.data.profession || x.data.source || "استقطاب مباشر")}</div><h3>${esc(x.data.name)}</h3><small>${esc(x.data.phone || "")}</small><div class="lead-links">${mapURL(x.data) ? `<a href="${mapURL(x.data)}" target="_blank" rel="noopener">● الموقع</a>` : ""}${x.data.instagram ? `<a href="${socialURL(x.data.instagram)}" target="_blank" rel="noopener">Instagram</a>` : ""}${x.data.facebook ? `<a href="${socialURL(x.data.facebook, "facebook")}" target="_blank" rel="noopener">Facebook</a>` : ""}</div><p style="margin:10px 0">${esc(x.data.next_action || "حدد خطوة المتابعة")}</p><small>${esc(x.data.follow_date || "")}</small>${canSell() ? `<div class="actions" style="margin-top:12px">${btn("تعديل الداتا", "record", `data-kind="lead" data-id="${x.id}"`, "small")}${btn("موعد", "record", `data-kind="appointment" data-customer="${x.id}"`, "small")}${btn("تحويل لعميل وعقد", "convert-lead", `data-id="${x.id}"`, "small")}</div>` : ""}</div>`,
             )
             .join("") || "<small>لا توجد فرص بهذه المرحلة</small>"
         }</section>`,
     )
     .join(
       "",
-    )}</div><div class="section-title" style="margin-top:25px"><h2>عروض الأسعار</h2>${canSell ? btn("+ عرض", "record", 'data-kind="quote"', "small") : ""}</div>${table(
-    ["العميل / الفرصة", "العرض", "القيمة", "الحالة", ""],
-    records("quote").map(
-      (q) =>
-        `<tr><td>${esc(name(q.data.customer_id))}</td><td>${esc(q.data.name)}</td><td>${m(q.data.price)}</td><td>${badge(q.data.status)}</td><td>${canSell ? btn("تعديل", "record", `data-kind="quote" data-id="${q.id}"`, "small") : ""}</td></tr>`,
+    )}</div><div class="section-title" style="margin-top:25px"><h2>عقود المبيعات</h2>${canSell() ? btn("+ عقد جديد", "record", 'data-kind="contract"', "small") : ""}</div>${table(
+    ["العميل", "الخدمة", "القيمة", "الدفعة المصرح بها", "الحالة", ""],
+    records("contract").map((q) =>
+      `<tr><td>${esc(name(q.data.customer_id))}</td><td>${esc(q.data.service_name || q.data.name)}</td><td>${m(q.data.price)}</td><td>${m(q.data.declared_payment || 0)}</td><td>${badge(q.data.status)}</td><td><div class="actions">${btn("معاينة", "contract-preview", `data-id="${q.id}"`, "small")}${canSell() && !["active", "closed"].includes(q.data.status) ? btn("تعديل", "record", `data-kind="contract" data-id="${q.id}"`, "small") : ""}</div></td></tr>`,
     ),
   )}`;
 }
@@ -584,6 +608,105 @@ function safeURL(url) {
     return "#";
   }
 }
+function setupLocationPicker() {
+  const button = modal.querySelector("[data-location]");
+  if (!button) return;
+  button.onclick = () => {
+    const status = modal.querySelector("[data-location-status]");
+    if (!navigator.geolocation) {
+      status.textContent = "المتصفح لا يدعم تحديد الموقع";
+      return;
+    }
+    button.disabled = true;
+    status.textContent = "جاري التقاط الموقع…";
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        modal.querySelector('[name="latitude"]').value = coords.latitude.toFixed(6);
+        modal.querySelector('[name="longitude"]').value = coords.longitude.toFixed(6);
+        status.textContent = `تم حفظ النقطة بدقة ${Math.round(coords.accuracy)} متر`;
+        button.disabled = false;
+      },
+      (error) => {
+        status.textContent =
+          error.code === 1
+            ? "اسمح للموقع من إعدادات المتصفح ثم حاول مجدداً"
+            : "تعذر تحديد الموقع؛ حاول قرب العميل";
+        button.disabled = false;
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 },
+    );
+  };
+}
+function setupSignature(initial = "") {
+  const canvas = modal.querySelector("#signature"),
+    hidden = modal.querySelector('[name="signature_data"]'),
+    clear = modal.querySelector("[data-clear-signature]");
+  if (!canvas || !hidden) return;
+  const ctx = canvas.getContext("2d");
+  ctx.lineWidth = 5;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "#2f3a34";
+  if (initial) {
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    img.src = initial;
+  }
+  let drawing = false;
+  const point = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: ((e.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((e.clientY - rect.top) / rect.height) * canvas.height,
+    };
+  };
+  canvas.onpointerdown = (e) => {
+    drawing = true;
+    canvas.setPointerCapture(e.pointerId);
+    const p = point(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  };
+  canvas.onpointermove = (e) => {
+    if (!drawing) return;
+    const p = point(e);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  };
+  const finish = () => {
+    if (!drawing) return;
+    drawing = false;
+    hidden.value = canvas.toDataURL("image/png");
+  };
+  canvas.onpointerup = finish;
+  canvas.onpointercancel = finish;
+  clear.onclick = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hidden.value = "";
+  };
+}
+function contractPreview(id) {
+  const c = get(id),
+    customer = get(c?.data.customer_id),
+    d = c?.data || {},
+    sig = String(d.signature_data || "");
+  if (!c) return;
+  const deliverables = [
+    Number(d.videos_count || 0) ? `${Number(d.videos_count)} فيديو` : "",
+    Number(d.designs_count || 0) ? `${Number(d.designs_count)} تصميم` : "",
+  ].filter(Boolean).join(" · ") || "حسب وصف الخدمة";
+  showModal(
+    "معاينة عقد المبيعات",
+    `<article class="contract-sheet" id="contract-sheet"><header><img src="../riwa-logo.png" alt="رواء"><div><small>RIWAA STUDIO</small><h2>عقد تقديم خدمات</h2></div></header><div class="contract-party"><div><small>العميل</small><b>${esc(customer?.data.name || "—")}</b><span>${esc(customer?.data.phone || "")}</span></div><div><small>الخدمة</small><b>${esc(d.service_name || d.name || "—")}</b><span>${esc(deliverables)}</span></div></div><div class="contract-facts"><div><small>الفترة</small><b>${esc(d.start_date || "—")} — ${esc(d.end_date || "—")}</b></div><div><small>القيمة</small><b>${m(d.price)}</b></div><div><small>التمويل</small><b>${d.funding_included ? "متضمن حسب الاتفاق" : "غير متضمن"}</b></div><div><small>الدفعة المصرح بها</small><b>${m(d.declared_payment || 0)}</b></div></div><p>${esc(d.note || "يلتزم الطرفان بنطاق الخدمة والفترة والقيمة المبينة في هذا العقد.")}</p><footer><div><small>توقيع العميل</small>${sig.startsWith("data:image/png") ? `<img src="${sig}" alt="توقيع العميل">` : "<b>غير موقّع</b>"}</div><div><small>تاريخ التوقيع</small><b>${esc(d.signed_at ? new Date(d.signed_at).toLocaleDateString("ar-SY") : "—")}</b></div></footer><div class="contract-warning">المبلغ المصرّح به هنا لا يُعد قبضاً محاسبياً قبل تسجيله واعتماده في الصندوق.</div></article>`,
+    () => modal.close(),
+    "إغلاق",
+  );
+  modal.querySelector(".modal-footer").insertAdjacentHTML(
+    "afterbegin",
+    btn("طباعة / PDF", "print-contract", "", "small"),
+  );
+  modal.querySelector('[data-action="print-contract"]').onclick = () => window.print();
+}
 function showModal(title, body, submit, confirmLabel = "حفظ واعتماد") {
   modal.innerHTML = `<form id="modalform"><div class="modal-header"><h2>${title}</h2><button type="button" class="btn small" data-close aria-label="إغلاق">×</button></div><div class="modal-body">${body}<div class="error" id="modalerror" role="alert"></div></div><div class="modal-footer"><button class="btn primary" type="submit">${confirmLabel}</button><button class="btn" type="button" data-close>إلغاء</button></div></form>`;
   modal.showModal();
@@ -630,6 +753,7 @@ function recordForm(kind, id = "", preset = {}) {
     "الحالة",
     [
       ["active", "فعال"],
+      ["pending", "بانتظار اعتماد الإدارة"],
       ["draft", "مسودة"],
       ["paused", "موقوف"],
       ["closed", "مغلق"],
@@ -638,7 +762,15 @@ function recordForm(kind, id = "", preset = {}) {
     d.status || "active",
   );
   if (kind === "customer")
-    fields += input("phone", "رقم التواصل", d.phone, "tel") + status;
+    fields +=
+      input("phone", "رقم الموبايل", d.phone, "tel") +
+      input("profession", "مهنة العميل", d.profession || "") +
+      input("instagram", "Instagram", d.instagram || "") +
+      input("facebook", "Facebook", d.facebook || "") +
+      input("latitude", "خط العرض", d.latitude || "", "hidden") +
+      input("longitude", "خط الطول", d.longitude || "", "hidden") +
+      `<div class="full location-picker"><button class="map-pin" type="button" data-location>⌖</button><div><b>موقع العميل</b><small data-location-status>${mapURL(d) ? "الموقع محفوظ — يمكن تحديثه" : "اضغط النقطة لالتقاط GPS"}</small></div>${mapURL(d) ? `<a href="${mapURL(d)}" target="_blank" rel="noopener">فتح Google Maps ↗</a>` : ""}</div>` +
+      status;
   if (kind === "employee")
     fields +=
       input("role", "الوظيفة", d.role) +
@@ -653,6 +785,26 @@ function recordForm(kind, id = "", preset = {}) {
         d.pay_type || "per_task",
       ) +
       input("rate", "سعر الاتفاق بالدولار", d.rate || 0, "number", true) +
+      select(
+        "sales_enabled",
+        "صلاحية المبيعات",
+        [["false", "ليس مسؤول مبيعات"], ["true", "مسؤول مبيعات"]],
+        String(d.sales_enabled || false),
+      ) +
+      input(
+        "commission_pct",
+        "نسبة المبيعات %",
+        d.commission_pct ?? 10,
+        "number",
+        false,
+        'max="100"',
+      ) +
+      input(
+        "sales_target",
+        "التارغت الشهري بالدولار",
+        d.sales_target || 0,
+        "number",
+      ) +
       input(
         "start_date",
         "تاريخ البدء",
@@ -663,7 +815,34 @@ function recordForm(kind, id = "", preset = {}) {
       input("end_date", "تاريخ التوقف", d.end_date || "", "date") +
       status;
   if (kind === "contract") {
-    fields +=
+    if (S.role === "sales") {
+      fields =
+        select("customer_id", "العميل", opts("customer"), d.customer_id) +
+        input("service_name", "اسم الخدمة / الباقة", d.service_name || d.name || "", "text", true) +
+        input("videos_count", "عدد الفيديوهات", d.videos_count || 0, "number") +
+        input("designs_count", "عدد التصاميم", d.designs_count || 0, "number") +
+        input("price", "السعر الإجمالي بالدولار", d.price || 0, "number", true) +
+        select(
+          "funding_included",
+          "التمويل الإعلاني",
+          [["false", "بدون تمويل"], ["true", "مع تمويل"]],
+          String(d.funding_included || false),
+        ) +
+        input("funding_note", "تفاصيل التمويل / الأتعاب", d.funding_note || "") +
+        select(
+          "payment_declaration",
+          "الدفعة المذكورة بالعقد",
+          [["none", "لم يدفع"], ["partial", "دفعة أولى"], ["full", "المبلغ كامل"]],
+          d.payment_declaration || "none",
+        ) +
+        input("declared_payment", "المبلغ المصرّح بدفعه", d.declared_payment || 0, "number") +
+        input("start_date", "بداية الخدمة", d.start_date || today(), "date", true) +
+        input("end_date", "نهاية الخدمة", d.end_date || endOfCycle(today()), "date", true) +
+        input("signature_data", "", d.signature_data || "", "hidden") +
+        `<div class="full signature-box"><div><b>توقيع العميل الإلكتروني</b><small>يُحفظ داخل العقد مع تاريخ التوقيع. امسح وأعد التوقيع عند أي تعديل جوهري.</small></div><canvas id="signature" width="900" height="260" aria-label="منطقة توقيع العميل"></canvas><div class="actions"><button type="button" class="btn small" data-clear-signature>مسح التوقيع</button></div></div>`;
+      hint =
+        "هذا عقد مبيعات بانتظار مراجعة الإدارة. الدفعة المكتوبة هنا تصريح تعاقدي فقط ولا تدخل الصندوق قبل تسجيل قبض منفصل.";
+    } else fields +=
       select("customer_id", "العميل", opts("customer"), d.customer_id) +
       select(
         "type",
@@ -703,7 +882,7 @@ function recordForm(kind, id = "", preset = {}) {
         d.commission_pct || 0,
         "number",
       );
-    fields += `<div class="full"><h3>بنود العقد والتخصيص بعد الخصم</h3><small>أدخل قيمة بيع الوحدة ضمن سعر العقد؛ الإجمالي يُحسب من البنود.</small>${[
+    if (S.role !== "sales") fields += `<div class="full"><h3>بنود العقد والتخصيص بعد الخصم</h3><small>أدخل قيمة بيع الوحدة ضمن سعر العقد؛ الإجمالي يُحسب من البنود.</small>${[
       "video",
       "design",
       "content",
@@ -714,7 +893,7 @@ function recordForm(kind, id = "", preset = {}) {
         return `<div class="item-inputs"><span>${names[s]}</span><input type="number" name="qty_${s}" value="${i.qty || 0}" min="0" step="1" aria-label="عدد ${names[s]}"><input type="number" name="rate_${s}" value="${i.rate || 0}" min="0" step="0.01" aria-label="قيمة وحدة ${names[s]}"></div>`;
       })
       .join("")}</div>`;
-    hint =
+    if (S.role !== "sales") hint =
       "التجديد عقد جديد. فوترة العقد تثبت المطالبة والإيراد المؤجل، والتسليم يثبت الإيراد المكتسب.";
   }
   if (kind === "task") {
@@ -769,7 +948,13 @@ function recordForm(kind, id = "", preset = {}) {
   }
   if (kind === "lead")
     fields +=
-      input("phone", "رقم التواصل", d.phone || "", "tel") +
+      input("phone", "رقم الموبايل", d.phone || "", "tel") +
+      input("profession", "مهنة العميل", d.profession || "") +
+      input("instagram", "Instagram", d.instagram || "") +
+      input("facebook", "Facebook", d.facebook || "") +
+      input("latitude", "خط العرض", d.latitude || "", "hidden") +
+      input("longitude", "خط الطول", d.longitude || "", "hidden") +
+      `<div class="full location-picker"><button class="map-pin" type="button" data-location>⌖</button><div><b>موقع العميل</b><small data-location-status>${mapURL(d) ? "الموقع محفوظ — يمكن تحديثه" : "اضغط النقطة لالتقاط GPS"}</small></div>${mapURL(d) ? `<a href="${mapURL(d)}" target="_blank" rel="noopener">فتح Google Maps ↗</a>` : ""}</div>` +
       input("source", "مصدر العميل", d.source || "") +
       select(
         "status",
@@ -1010,19 +1195,30 @@ function recordForm(kind, id = "", preset = {}) {
         "owner_pct",
         "partner_pct",
         "commission_pct",
+        "sales_target",
+        "videos_count",
+        "designs_count",
+        "declared_payment",
         "months",
         "remaining",
         "default_fee_value",
       ])
         if (k in data) data[k] = Number(data[k]);
       if (kind === "contract") {
-        data.items = ["video", "design", "content", "service"]
-          .filter((s) => Number(v["qty_" + s]) > 0)
-          .map((s) => ({
-            service: s,
-            qty: Number(v["qty_" + s]),
-            rate: Number(v["rate_" + s]),
-          }));
+        if (S.role === "sales") {
+          data.items = [{ service: "service", qty: 1, rate: Number(v.price) }];
+          data.type = "package";
+          data.status = v.signature_data ? "pending" : "draft";
+          data.signed_at = v.signature_data ? new Date().toISOString() : null;
+          data.funding_included = v.funding_included === "true";
+          data.name = v.service_name;
+        } else data.items = ["video", "design", "content", "service"]
+            .filter((s) => Number(v["qty_" + s]) > 0)
+            .map((s) => ({
+              service: s,
+              qty: Number(v["qty_" + s]),
+              rate: Number(v["rate_" + s]),
+            }));
         for (const k of Object.keys(data))
           if (k.startsWith("qty_") || k.startsWith("rate_")) delete data[k];
       }
@@ -1035,6 +1231,7 @@ function recordForm(kind, id = "", preset = {}) {
         });
         data = { ...data, ...f };
       }
+      if (kind === "employee") data.sales_enabled = v.sales_enabled === "true";
       if (kind === "asset") data.ownership = "company";
       if (kind === "task" && S.role === "staff") data.status = "review";
       await mutate(() =>
@@ -1051,6 +1248,8 @@ function recordForm(kind, id = "", preset = {}) {
           e.target.value,
         );
     };
+  if (["customer", "lead"].includes(kind)) setupLocationPicker();
+  if (kind === "contract" && S.role === "sales") setupSignature(d.signature_data || "");
   if (kind === "campaign") {
     const el = document.createElement("div");
     el.className = "hint full";
@@ -1512,6 +1711,46 @@ async function handle(b) {
         b.dataset.id || "",
         b.dataset.customer ? { customer_id: b.dataset.customer } : {},
       );
+    else if (a === "contract-preview") contractPreview(b.dataset.id);
+    else if (a === "convert-lead") {
+      const lead = get(b.dataset.id),
+        customerId = uid(),
+        data = {
+          name: lead.data.name,
+          phone: lead.data.phone,
+          profession: lead.data.profession,
+          instagram: lead.data.instagram,
+          facebook: lead.data.facebook,
+          latitude: lead.data.latitude,
+          longitude: lead.data.longitude,
+          status: "active",
+          note: `محوّل من فرصة: ${lead.data.source || "مبيعات"}`,
+        };
+      await mutate(() =>
+        rpc("rwa2_save_record", {
+          p: { id: customerId, kind: "customer", data },
+        }),
+      );
+      recordForm("contract", "", { customer_id: customerId });
+    }
+    else if (a === "accrue-commission") {
+      const employee = get(b.dataset.employee),
+        summary = (S.sales_summary || []).find(
+          (x) => x.employee_id === employee.id && x.month === month,
+        );
+      showModal(
+        "اعتماد عمولة المبيعات",
+        `<div class="hint">سيتم إثبات عمولات المقبوضات المرتبطة بعقود ${esc(employee.data.name)} خلال ${esc(month)} فقط، مع تجاهل أي قبض سبق إثبات عمولته.</div><div class="money-grid"><div><small>المبيعات المقبوضة</small><b>${m(summary?.collected_sales || 0)}</b></div><div><small>النسبة</small><b>${esc(summary?.commission_pct ?? employee.data.commission_pct ?? 10)}%</b></div><div><small>العمولة المتوقعة</small><b>${m(summary?.commission_expected || 0)}</b></div></div>`,
+        () =>
+          mutate(() =>
+            rpc("rwa2_accrue_sales_commissions", {
+              p_employee: employee.id,
+              p_month: month,
+            }),
+          ),
+        "اعتماد القيود",
+      );
+    }
     else if (a === "choose-post") choosePost();
     else if (a === "quick-expense")
       postForm("expense", {
