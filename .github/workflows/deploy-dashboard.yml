@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "dashboard-v2/**"
+      - "website/**"
       - "tests/v2-core.test.mjs"
       - "index.html"
       - "sw.js"
@@ -62,6 +63,7 @@ jobs:
           set -euo pipefail
           mkdir -p live/dashboard live/dashboard-v2
           cp -R src/dashboard-v2/. live/dashboard-v2/
+          cp -R src/website/. live/
           files=(
             index.html
             sw.js
@@ -92,12 +94,12 @@ jobs:
         working-directory: live
         run: |
           set -euo pipefail
-          if git diff --quiet -- dashboard dashboard-v2; then
-            echo "Dashboard is already current."
+          if git diff --quiet -- .; then
+            echo "Website and dashboards are already current."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dashboard dashboard-v2
-          git commit -m "Deploy dashboard from main ${GITHUB_SHA::7}"
+          git add -A
+          git commit -m "Deploy website and dashboards from main ${GITHUB_SHA::7}"
           git push origin gh-pages
