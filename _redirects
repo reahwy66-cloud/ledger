@@ -1,3 +1,8 @@
+/ /website/index.html 200
+/styles.css /website/styles.css 200
+/app.js /website/app.js 200
+/dashboard /index.html 200
+/dashboard/ /index.html 200
 /staff /staff-portal.html 200
 /client /client-portal.html 200
 /* /index.html 200
