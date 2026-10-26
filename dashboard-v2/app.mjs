@@ -1303,7 +1303,13 @@ function recordForm(kind, id = "", preset = {}) {
         });
         data = { ...data, ...f };
       }
-      if (kind === "employee") data.sales_enabled = v.sales_enabled === "true";
+      if (kind === "employee") {
+        data.sales_enabled = v.sales_enabled === "true";
+        // Monthly salaries accrue from the employee start date through the
+        // daily accounting sync. Keep the flag in the employee record so a
+        // newly added salaried employee is never silently skipped.
+        data.daily_accrual = v.pay_type === "monthly";
+      }
       if (kind === "asset") data.ownership = "company";
       if (kind === "task" && S.role === "staff") data.status = "review";
       await mutate(() =>
