@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "dashboard-v2/**"
+      - "sales/**"
       - "website/**"
       - "tests/v2-core.test.mjs"
       - "index.html"
@@ -61,8 +62,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p live/dashboard live/dashboard-v2
+          mkdir -p live/dashboard live/dashboard-v2 live/sales
           cp -R src/dashboard-v2/. live/dashboard-v2/
+          cp -R src/sales/. live/sales/
           cp -R src/website/. live/
           files=(
             index.html
