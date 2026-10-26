@@ -20,6 +20,7 @@ const URL='https://gvnpixjkcmbrdfefbamr.supabase.co';
 const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2bnBpeGprY21icmRmZWZiYW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MDAyNDAsImV4cCI6MjEwMDQ3NjI0MH0.PPuHBLPRwFPvjMgoIWHCubDTX9at5gSgn4QKxcgsbQI';
 const app = document.querySelector("#app"),
   modal = document.querySelector("#modal");
+const salesPortal = location.pathname.startsWith("/sales");
 let sb,
   S = { records: [], journals: [], accounts: [], periods: [] },
   view = "overview",
@@ -216,6 +217,10 @@ async function load(force = false) {
     S = d;
     lastLoad = Date.now();
     startEvents();
+    if (S.role === "sales" && !salesPortal) {
+      location.replace("../sales/");
+      return;
+    }
     if (!visible().includes(view)) view = visible()[0];
     render();
   } catch (e) {
@@ -252,6 +257,10 @@ async function mutate(fn) {
   }
 }
 function render() {
+  if (salesPortal) {
+    renderSalesPortal();
+    return;
+  }
   const closed = S.periods?.some((p) => p.month === month && p.closed),
     migrated = records("config").find(
       (x) => x.data.key === "migration_cutover",
@@ -264,6 +273,35 @@ function render() {
     .join(
       "",
     )}</nav><div class="sidebar-footer"><div><b>${esc(S.name)}</b> ${badge(S.role)}</div>${S.role !== "partner" ? '<a href="../dashboard/" target="_blank" rel="noopener">↗ فتح الداش بورد السابق</a>' : ""}<button data-action="logout">تسجيل الخروج</button></div></aside><main class="main"><header class="topbar"><div><div class="breadcrumbs">مساحة العمل / ${titles[view]}</div><h1>${selected && view === "customers" ? esc(name(selected)) : titles[view]}</h1></div><div class="top-actions">${btn("☰", "menu", "", "mobile-menu")}${finance() || S.role === "sales" ? `<input type="month" id="month" value="${month}" aria-label="الفترة المعروضة">` : ""}${closed ? badge("closed") : ""}${btn(privateMoney ? "إظهار المبالغ" : "إخفاء المبالغ", "privacy", "", "small")}${btn("تحديث", "refresh", "", "small")}<span class="sync">محفوظ · بعد كل عملية</span></div></header>${migrated && finance() ? `<div class="notice"><b>تم اعتماد الجرد الافتتاحي في ${esc(migrated.data.date)}.</b> الصندوق والذمم ومستحقات الفريق مرحّلة. أرباح ما قبل هذا التاريخ غير معاد بناؤها، وتوزيع أسعار الباقات القديمة يبقى للمراجعة قبل إثبات إيرادها.</div>` : S.journals.length === 0 && finance() ? `<div class="notice"><b>دفتر جديد مستقل.</b> الأرصدة المالية لم تُرحّل بعد.</div>` : ""}<div id="content">${{ overview: overview, customers: customers, contracts: contracts, production: production, finance: cash, payroll: payroll, sales: sales, appointments: appointments, campaigns: campaigns, partners: partners, reports: reports, settings: settings }[view]()}</div></main></div>`;
+  bind();
+}
+function renderSalesPortal() {
+  const allowed = ["owner", "finance", "sales"].includes(S.role),
+    portalViews = ["sales", "customers", "contracts", "appointments"],
+    portalTitles = {
+      sales: "متابعة المبيعات",
+      customers: "داتا العملاء",
+      contracts: "العقود",
+      appointments: "المواعيد",
+    };
+  if (!allowed) {
+    app.innerHTML = `<section class="card login"><img src="../dashboard/riwa-logo.png" alt="رواء"><h1>بوابة فريق المبيعات</h1><p class="error" style="margin:20px 0">هذا الحساب غير مخوّل لفتح بوابة المبيعات.</p><button class="btn primary" data-action="logout">تسجيل الخروج</button></section>`;
+    bind();
+    return;
+  }
+  if (!portalViews.includes(view)) view = "sales";
+  const page = {
+    sales,
+    customers: salesCustomers,
+    contracts: salesContracts,
+    appointments,
+  }[view];
+  app.innerHTML = `<div class="sales-portal"><header class="sales-portal-header"><a class="sales-portal-brand" href="./" aria-label="بوابة مبيعات رواء"><img src="../dashboard/riwa-logo.png" alt="شعار رواء"><span><b>رواء ستوديو</b><small>بوابة فريق المبيعات</small></span></a><nav class="sales-portal-nav" aria-label="أقسام بوابة المبيعات">${portalViews
+    .map(
+      (k) =>
+        `<button data-action="nav" data-view="${k}" class="${view === k ? "active" : ""}" aria-current="${view === k ? "page" : "false"}">${icon(k)}<span>${portalTitles[k]}</span></button>`,
+    )
+    .join("")}</nav><div class="sales-portal-account"><span><b>${esc(S.name)}</b><small>حساب ${esc(names[S.role] || S.role)}</small></span>${btn("خروج", "logout", "", "small")}</div></header><main class="sales-portal-main"><div class="sales-portal-top"><div><small>مساحة المبيعات</small><h1>${portalTitles[view]}</h1></div><div class="top-actions"><input type="month" id="month" value="${month}" aria-label="الفترة المعروضة">${btn("تحديث", "refresh", "", "small")}<span class="sync">محفوظ · بعد كل عملية</span></div></div><div id="content">${page()}</div></main></div>`;
   bind();
 }
 function overview() {
@@ -311,6 +349,40 @@ function customers() {
       }),
     )
   );
+}
+function salesCustomers() {
+  return (
+    toolbar("إضافة عميل", "customer") +
+    `<div class="sales-contact-grid">${
+      filtered(records("customer"))
+        .map((c) => {
+          const d = c.data,
+            links = [
+              d.phone ? `<a href="tel:${esc(d.phone)}">اتصال</a>` : "",
+              d.instagram
+                ? `<a href="${socialURL(d.instagram)}" target="_blank" rel="noopener">Instagram</a>`
+                : "",
+              d.facebook
+                ? `<a href="${socialURL(d.facebook, "facebook")}" target="_blank" rel="noopener">Facebook</a>`
+                : "",
+              mapURL(d)
+                ? `<a href="${mapURL(d)}" target="_blank" rel="noopener">الموقع على الخريطة</a>`
+                : "",
+            ].filter(Boolean);
+          return `<article class="card sales-contact"><div class="section-title"><div class="identity"><span class="avatar">${esc(d.name?.[0] || "ع")}</span><div><h3>${esc(d.name)}</h3><small>${esc(d.profession || "المهنة غير محددة")}</small></div></div>${badge(d.status)}</div><div class="sales-contact-phone">${esc(d.phone || "لا يوجد رقم موبايل")}</div><div class="lead-links">${links.join("") || "<small>لا توجد روابط محفوظة</small>"}</div><p>${esc(d.note || "")}</p><div class="actions">${btn("تعديل الداتا", "record", `data-kind="customer" data-id="${c.id}"`, "small")}${btn("موعد جديد", "record", `data-kind="appointment" data-customer="${c.id}"`, "small")}${btn("عقد جديد", "record", `data-kind="contract" data-customer="${c.id}"`, "small")}</div></article>`;
+        })
+        .join("") || empty("لا توجد داتا عملاء بعد")
+    }</div>`
+  );
+}
+function salesContracts() {
+  return `<div class="toolbar"><p class="muted">العقد يُرسل للإدارة للمراجعة، والمبلغ المكتوب لا يدخل الصندوق تلقائياً.</p>${btn("+ عقد جديد", "record", 'data-kind="contract"', "primary")}</div>${table(
+    ["العميل", "الخدمة", "القيمة", "الدفعة المذكورة", "الحالة", ""],
+    filtered(records("contract")).map(
+      (q) =>
+        `<tr><td><b>${esc(name(q.data.customer_id))}</b></td><td>${esc(q.data.service_name || q.data.name)}</td><td class="amount">${m(q.data.price)}</td><td class="amount">${m(q.data.declared_payment || 0)}</td><td>${badge(q.data.status)}</td><td><div class="actions">${btn("معاينة", "contract-preview", `data-id="${q.id}"`, "small")}${!["active", "closed"].includes(q.data.status) ? btn("تعديل", "record", `data-kind="contract" data-id="${q.id}"`, "small") : ""}</div></td></tr>`,
+    ),
+  )}`;
 }
 function customerDetail() {
   const c = get(selected),
@@ -815,7 +887,7 @@ function recordForm(kind, id = "", preset = {}) {
       input("end_date", "تاريخ التوقف", d.end_date || "", "date") +
       status;
   if (kind === "contract") {
-    if (S.role === "sales") {
+    if (S.role === "sales" || salesPortal) {
       fields =
         select("customer_id", "العميل", opts("customer"), d.customer_id) +
         input("service_name", "اسم الخدمة / الباقة", d.service_name || d.name || "", "text", true) +
@@ -1205,7 +1277,7 @@ function recordForm(kind, id = "", preset = {}) {
       ])
         if (k in data) data[k] = Number(data[k]);
       if (kind === "contract") {
-        if (S.role === "sales") {
+        if (S.role === "sales" || salesPortal) {
           data.items = [{ service: "service", qty: 1, rate: Number(v.price) }];
           data.type = "package";
           data.status = v.signature_data ? "pending" : "draft";
@@ -1249,7 +1321,8 @@ function recordForm(kind, id = "", preset = {}) {
         );
     };
   if (["customer", "lead"].includes(kind)) setupLocationPicker();
-  if (kind === "contract" && S.role === "sales") setupSignature(d.signature_data || "");
+  if (kind === "contract" && (S.role === "sales" || salesPortal))
+    setupSignature(d.signature_data || "");
   if (kind === "campaign") {
     const el = document.createElement("div");
     el.className = "hint full";
@@ -1988,7 +2061,14 @@ function download(text, name, type) {
   globalThis.URL.revokeObjectURL(u);
 }
 function login() {
-  app.innerHTML = `<section class="card login"><img src="../dashboard/riwa-logo.png" alt="رواء"><h1>دفتر رواء الجديد</h1><p class="muted">ادخل بحسابك الحالي. المالية محفوظة بصلاحيات مستقلة.</p><form id="loginform"><label for="email">البريد الإلكتروني<input id="email" type="email" name="email" autocomplete="email" required></label><label for="password">كلمة المرور<input id="password" type="password" name="password" autocomplete="current-password" required></label><div class="error" id="loginerror" role="alert"></div><button class="btn primary" type="submit">تسجيل الدخول</button></form><p style="margin-top:18px"><a href="../dashboard/">فتح النسخة السابقة ↗</a></p></section>`;
+  const title = salesPortal ? "بوابة فريق المبيعات" : "دفتر رواء الجديد",
+    description = salesPortal
+      ? "العملاء، المواعيد، العقود، ونتائجك الشهرية بمكان واحد."
+      : "ادخل بحسابك الحالي. المالية محفوظة بصلاحيات مستقلة.",
+    legacy = salesPortal
+      ? ""
+      : '<p style="margin-top:18px"><a href="../dashboard/">فتح النسخة السابقة ↗</a></p>';
+  app.innerHTML = `<section class="card login ${salesPortal ? "sales-login" : ""}"><img src="../dashboard/riwa-logo.png" alt="رواء"><h1>${title}</h1><p class="muted">${description}</p><form id="loginform"><label for="email">البريد الإلكتروني<input id="email" type="email" name="email" autocomplete="email" required></label><label for="password">كلمة المرور<input id="password" type="password" name="password" autocomplete="current-password" required></label><div class="error" id="loginerror" role="alert"></div><button class="btn primary" type="submit">${salesPortal ? "دخول لمساحة المبيعات" : "تسجيل الدخول"}</button></form>${legacy}</section>`;
   app.querySelector("form").onsubmit = async (e) => {
     e.preventDefault();
     const b = e.submitter;
@@ -2006,7 +2086,7 @@ function login() {
   };
 }
 function blocked(msg) {
-  app.innerHTML = `<section class="card login"><h1>الوصول للدفتر</h1><p class="error" style="margin:20px 0">${esc(msg)}</p>${btn("إعادة المحاولة", "retry", "", "primary")}<p style="margin-top:18px"><a href="../dashboard/">النسخة السابقة</a></p></section>`;
+  app.innerHTML = `<section class="card login"><h1>${salesPortal ? "بوابة فريق المبيعات" : "الوصول للدفتر"}</h1><p class="error" style="margin:20px 0">${esc(msg)}</p>${btn("إعادة المحاولة", "retry", "", "primary")}${salesPortal ? "" : '<p style="margin-top:18px"><a href="../dashboard/">النسخة السابقة</a></p>'}</section>`;
   app.querySelector("button").onclick = () => load(true);
 }
 function startEvents() {
