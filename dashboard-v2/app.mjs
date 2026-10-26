@@ -15,7 +15,7 @@ import {
   monthlyRetainerProgress,
   esc,
   VERSION,
-} from "./core.mjs?v=20261026-payroll-accrual";
+} from "./core.mjs?v=20261026-payroll-accrual-ui";
 const URL='https://gvnpixjkcmbrdfefbamr.supabase.co';
 const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2bnBpeGprY21icmRmZWZiYW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MDAyNDAsImV4cCI6MjEwMDQ3NjI0MH0.PPuHBLPRwFPvjMgoIWHCubDTX9at5gSgn4QKxcgsbQI';
 const app = document.querySelector("#app"),
@@ -856,6 +856,12 @@ function recordForm(kind, id = "", preset = {}) {
         ],
         d.pay_type || "per_task",
       ) +
+      select(
+        "daily_accrual",
+        "احتساب الراتب يومياً",
+        [["false", "غير مفعّل"], ["true", "مفعّل من تاريخ البدء"]],
+        String(Boolean(d.daily_accrual)),
+      ) +
       input("rate", "سعر الاتفاق بالدولار", d.rate || 0, "number", true) +
       select(
         "sales_enabled",
@@ -1308,7 +1314,8 @@ function recordForm(kind, id = "", preset = {}) {
         // Monthly salaries accrue from the employee start date through the
         // daily accounting sync. Keep the flag in the employee record so a
         // newly added salaried employee is never silently skipped.
-        data.daily_accrual = v.pay_type === "monthly";
+        data.daily_accrual =
+          v.pay_type === "monthly" && v.daily_accrual === "true";
       }
       if (kind === "asset") data.ownership = "company";
       if (kind === "task" && S.role === "staff") data.status = "review";
