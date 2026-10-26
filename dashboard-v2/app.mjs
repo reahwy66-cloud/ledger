@@ -378,7 +378,7 @@ function salesCustomers() {
 function salesContracts() {
   return `<div class="toolbar"><p class="muted">العقد يُرسل للإدارة للمراجعة، والمبلغ المكتوب لا يدخل الصندوق تلقائياً.</p>${btn("+ عقد جديد", "record", 'data-kind="contract"', "primary")}</div>${table(
     ["العميل", "الخدمة", "القيمة", "الدفعة المذكورة", "الحالة", ""],
-    filtered(records("contract")).map(
+    filtered(records("contract")).filter((c) => !c.data.merged_into).map(
       (q) =>
         `<tr><td><b>${esc(name(q.data.customer_id))}</b></td><td>${esc(q.data.service_name || q.data.name)}</td><td class="amount">${m(q.data.price)}</td><td class="amount">${m(q.data.declared_payment || 0)}</td><td>${badge(q.data.status)}</td><td><div class="actions">${btn("معاينة", "contract-preview", `data-id="${q.id}"`, "small")}${!["active", "closed"].includes(q.data.status) ? btn("تعديل", "record", `data-kind="contract" data-id="${q.id}"`, "small") : ""}</div></td></tr>`,
     ),
@@ -405,6 +405,7 @@ function customerDetail() {
 function contractCards(list) {
   return `<div class="entity-grid">${
     list
+      .filter((c) => !c.data.merged_into)
       .map((c) => {
         const l = ledger(S, month),
           locked = c.data.migrated,
@@ -488,7 +489,7 @@ function sales() {
       "",
     )}</div><div class="section-title" style="margin-top:25px"><h2>عقود المبيعات</h2>${canSell() ? btn("+ عقد جديد", "record", 'data-kind="contract"', "small") : ""}</div>${table(
     ["العميل", "الخدمة", "القيمة", "الدفعة المصرح بها", "الحالة", ""],
-    records("contract").map((q) =>
+    records("contract").filter((c) => !c.data.merged_into).map((q) =>
       `<tr><td>${esc(name(q.data.customer_id))}</td><td>${esc(q.data.service_name || q.data.name)}</td><td>${m(q.data.price)}</td><td>${m(q.data.declared_payment || 0)}</td><td>${badge(q.data.status)}</td><td><div class="actions">${btn("معاينة", "contract-preview", `data-id="${q.id}"`, "small")}${canSell() && !["active", "closed"].includes(q.data.status) ? btn("تعديل", "record", `data-kind="contract" data-id="${q.id}"`, "small") : ""}</div></td></tr>`,
     ),
   )}`;
