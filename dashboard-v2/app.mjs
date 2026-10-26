@@ -15,7 +15,7 @@ import {
   monthlyRetainerProgress,
   esc,
   VERSION,
-} from "./core.mjs";
+} from "./core.mjs?v=20261026-payroll-accrual";
 const URL='https://gvnpixjkcmbrdfefbamr.supabase.co';
 const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2bnBpeGprY21icmRmZWZiYW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MDAyNDAsImV4cCI6MjEwMDQ3NjI0MH0.PPuHBLPRwFPvjMgoIWHCubDTX9at5gSgn4QKxcgsbQI';
 const app = document.querySelector("#app"),
@@ -1777,7 +1777,12 @@ async function handle(b) {
     else if (a === "privacy") {
       privateMoney = !privateMoney;
       render();
-    } else if (a === "refresh") await load(true);
+    } else if (a === "refresh") {
+      // A manual refresh also retries the idempotent daily payroll sync. This
+      // is useful after adding or editing a salaried employee during the day.
+      sessionStorage.removeItem("riwaa-daily-" + today());
+      await load(true);
+    }
     else if (a === "customer") {
       selected = b.dataset.id;
       render();
