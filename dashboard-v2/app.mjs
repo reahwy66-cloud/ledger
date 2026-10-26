@@ -41,6 +41,9 @@ const titles = {
   contracts: "العقود والباقات",
   production: "الإنتاج والتسليم",
   finance: "الصندوق والحركات",
+  company_bank: "الحساب البنكي للشركة",
+  partnership_reserve: "صندوق افتتاح الشراكة",
+  personal_account: "حساب محمد الشخصي",
   payroll: "الفريق والرواتب",
   sales: "المبيعات",
   appointments: "المواعيد",
@@ -124,6 +127,10 @@ const opnames = {
   distribution_payment: "دفع حصة أرباح",
   funding_reclass: "فصل رصيد التمويل",
   reverse: "قيد عكسي",
+  owner_reconciliation: "مطابقة سحب شخصي",
+  bad_debt: "شطب دين معدوم",
+  partnership_opening: "افتتاح الشراكة",
+  bank_expense: "مصروف من بنك الشركة",
 };
 const records = (k) => (S.records || []).filter((r) => r.kind === k),
   get = (id) => S.records.find((r) => r.id === id),
@@ -137,7 +144,7 @@ const records = (k) => (S.records || []).filter((r) => r.kind === k),
       ? ["sales", "customers", "appointments", "settings"]
       : S.role === "staff"
         ? ["production", "settings"]
-        : Object.keys(titles),
+        : Object.keys(titles).filter((k) => k !== "personal_account" || S.role === "owner"),
   m = (v) => (privateMoney ? "••••" : money(v)),
   badge = (s) =>
     `<span class="badge ${["draft", "pending", "review"].includes(s) ? "warn" : ""}">${esc(names[s] || s || "—")}</span>`;
@@ -272,7 +279,7 @@ function render() {
     )
     .join(
       "",
-    )}</nav><div class="sidebar-footer"><div><b>${esc(S.name)}</b> ${badge(S.role)}</div>${S.role !== "partner" ? '<a href="../dashboard/" target="_blank" rel="noopener">↗ فتح الداش بورد السابق</a>' : ""}<button data-action="logout">تسجيل الخروج</button></div></aside><main class="main"><header class="topbar"><div><div class="breadcrumbs">مساحة العمل / ${titles[view]}</div><h1>${selected && view === "customers" ? esc(name(selected)) : titles[view]}</h1></div><div class="top-actions">${btn("☰", "menu", "", "mobile-menu")}${finance() || S.role === "sales" ? `<input type="month" id="month" value="${month}" aria-label="الفترة المعروضة">` : ""}${closed ? badge("closed") : ""}${btn(privateMoney ? "إظهار المبالغ" : "إخفاء المبالغ", "privacy", "", "small")}${btn("تحديث", "refresh", "", "small")}<span class="sync">محفوظ · بعد كل عملية</span></div></header>${migrated && finance() ? `<div class="notice"><b>تم اعتماد الجرد الافتتاحي في ${esc(migrated.data.date)}.</b> الصندوق والذمم ومستحقات الفريق مرحّلة. أرباح ما قبل هذا التاريخ غير معاد بناؤها، وتوزيع أسعار الباقات القديمة يبقى للمراجعة قبل إثبات إيرادها.</div>` : S.journals.length === 0 && finance() ? `<div class="notice"><b>دفتر جديد مستقل.</b> الأرصدة المالية لم تُرحّل بعد.</div>` : ""}<div id="content">${{ overview: overview, customers: customers, contracts: contracts, production: production, finance: cash, payroll: payroll, sales: sales, appointments: appointments, campaigns: campaigns, partners: partners, reports: reports, settings: settings }[view]()}</div></main></div>`;
+    )}</nav><div class="sidebar-footer"><div><b>${esc(S.name)}</b> ${badge(S.role)}</div>${S.role !== "partner" ? '<a href="../dashboard/" target="_blank" rel="noopener">↗ فتح الداش بورد السابق</a>' : ""}<button data-action="logout">تسجيل الخروج</button></div></aside><main class="main"><header class="topbar"><div><div class="breadcrumbs">مساحة العمل / ${titles[view]}</div><h1>${selected && view === "customers" ? esc(name(selected)) : titles[view]}</h1></div><div class="top-actions">${btn("☰", "menu", "", "mobile-menu")}${finance() || S.role === "sales" ? `<input type="month" id="month" value="${month}" aria-label="الفترة المعروضة">` : ""}${closed ? badge("closed") : ""}${btn(privateMoney ? "إظهار المبالغ" : "إخفاء المبالغ", "privacy", "", "small")}${btn("تحديث", "refresh", "", "small")}<span class="sync">محفوظ · بعد كل عملية</span></div></header>${migrated && finance() ? `<div class="notice"><b>تم اعتماد الجرد الافتتاحي في ${esc(migrated.data.date)}.</b> الصندوق والذمم ومستحقات الفريق مرحّلة. أرباح ما قبل هذا التاريخ غير معاد بناؤها، وتوزيع أسعار الباقات القديمة يبقى للمراجعة قبل إثبات إيرادها.</div>` : S.journals.length === 0 && finance() ? `<div class="notice"><b>دفتر جديد مستقل.</b> الأرصدة المالية لم تُرحّل بعد.</div>` : ""}<div id="content">${{ overview: overview, customers: customers, contracts: contracts, production: production, finance: cash, payroll: payroll, sales: sales, appointments: appointments, campaigns: campaigns, partners: partners, company_bank: companyBank, partnership_reserve: partnershipReserve, personal_account: personalAccount, reports: reports, settings: settings }[view]()}</div></main></div>`;
   bind();
 }
 function renderSalesPortal() {
@@ -442,7 +449,58 @@ function cash() {
       ["production_cost", "إنتاج / وجه"],
       ["operating_cost", "تشغيل / اشتراك"],
     ];
-  return `<div class="grid">${stat("صندوق الدولار", m(l.usd), "رصيد فعلي بالدولار")}${stat("صندوق السوري", privateMoney ? "••••" : money(l.syp, "SYP"), "رصيد فعلي بالليرة")}${stat("داخل الفترة", m(l.cashIn), "يشمل المساهمات والتحويلات؛ ليس الإيراد")}${stat("خارج الفترة", m(l.cashOut), "يشمل شراء الأصول؛ ليس المصروف فقط")}</div>${write() ? `<section class="card" style="margin-top:22px"><div class="section-title"><div><h2>مصروف سريع</h2><small>اختَر النوع وأدخل المبلغ والدافع؛ اسم مقدم الخدمة لا يضيفه للفريق.</small></div></div><div class="actions" style="margin-top:15px">${quick.map(([code, label]) => btn(label, "quick-expense", `data-category="${code}" data-label="${label}"`, "small")).join("")}</div></section>` : ""}<div class="toolbar" style="margin-top:22px"><p class="muted">كل عملية بوثيقتها وتاريخها وعملتها.</p>${write() ? btn("+ تسجيل عملية", "choose-post", "", "primary") : ""}</div><div class="two"><section class="card"><h2>الالتزامات</h2>${["wages_due", "supplier_due", "funder_due", "partner_due", "ad_funds", "customer_credit", "distribution_due"].map((a) => `<div class="row"><span>${esc(S.accounts.find((x) => x.code === a)?.name)}</span><b>${m(-l.balance(a))}</b></div>`).join("")}</section><section class="card"><h2>إجراءات واضحة</h2><div class="actions" style="margin-top:20px">${write() ? ["receipt", "expense", "salary_payment", "fx_transfer", "contribution", "draw"].map((op) => action(op)).join("") : ""}</div><p class="security-note" style="margin-top:25px">الأرصدة تتغير فقط بعد تأكيد الخادم. تحويل العملة له طرفان، وأموال الحملات والمساهمات ليست مبيعات.</p></section></div>`;
+  return `<div class="grid">${stat("صندوق الدولار", m(l.usd), "رصيد فعلي بالدولار")}${stat("بنك الشركة", m(l.balance("bank_usd")), "حساب منفصل")}${stat("احتياطي افتتاح الشراكة", m(l.balance("partnership_reserve_cash")), "خارج النقد التشغيلي")}${stat("صندوق السوري", privateMoney ? "••••" : money(l.syp, "SYP"), "رصيد فعلي بالليرة")}${stat("داخل الفترة", m(l.cashIn), "يشمل المساهمات والتحويلات؛ ليس الإيراد")}${stat("خارج الفترة", m(l.cashOut), "يشمل شراء الأصول؛ ليس المصروف فقط")}</div>${write() ? `<section class="card" style="margin-top:22px"><div class="section-title"><div><h2>مصروف سريع</h2><small>اختَر النوع وأدخل المبلغ والدافع؛ اسم مقدم الخدمة لا يضيفه للفريق.</small></div></div><div class="actions" style="margin-top:15px">${quick.map(([code, label]) => btn(label, "quick-expense", `data-category="${code}" data-label="${label}"`, "small")).join("")}</div></section>` : ""}<div class="toolbar" style="margin-top:22px"><p class="muted">كل عملية بوثيقتها وتاريخها وعملتها.</p>${write() ? btn("+ تسجيل عملية", "choose-post", "", "primary") : ""}</div><div class="two"><section class="card"><h2>الالتزامات</h2>${["wages_due", "supplier_due", "funder_due", "partner_due", "ad_funds", "customer_credit", "distribution_due"].map((a) => `<div class="row"><span>${esc(S.accounts.find((x) => x.code === a)?.name)}</span><b>${m(-l.balance(a))}</b></div>`).join("")}</section><section class="card"><h2>إجراءات واضحة</h2><div class="actions" style="margin-top:20px">${write() ? ["receipt", "expense", "salary_payment", "fx_transfer", "contribution", "draw"].map((op) => action(op)).join("") : ""}</div><p class="security-note" style="margin-top:25px">الأرصدة تتغير فقط بعد تأكيد الخادم. تحويل العملة له طرفان، وأموال الحملات والمساهمات ليست مبيعات.</p></section></div>`;
+}
+function financeRows(code) {
+  const l = ledger(S, month);
+  return l.lines.filter((x) => x.account === code).slice().reverse();
+}
+function accountHistory(code) {
+  return table(["التاريخ", "الحركة", "مدين", "دائن"], financeRows(code).map((x) =>
+    `<tr><td>${esc(x.date)}</td><td>${esc(x.note || "—")}</td><td>${m(x.debit)}</td><td>${m(x.credit)}</td></tr>`
+  ));
+}
+function companyBank() {
+  const l = ledger(S, month);
+  return `<div class="notice">حساب البنك ملك للشركة. أي إيداع جديد يُصنّف بحسب مصدره: نقد الشركة عبر أيهم أو أموال أيهم الخاصة. التسوية شهرية ولا تُسجّل الإيداعات تلقائياً كإيراد.</div>
+  <div class="grid">${stat("رصيد البنك الحالي", m(l.balance("bank_usd")), "يشمل الحركات المثبتة")}
+  ${stat("الرصيد قبل إعلان رواء", m(125), "افتتاح الحساب — 27 أكتوبر")}
+  ${stat("خصم إعلان رواء", m(8), "رصيد 117$ بعد الإعلان")}
+  ${stat("مصاريف لاحقة مقدّرة", m(42.78), "80 درهماً اشتراك + 21$ تمويل مصطفى")}</div>
+  <section class="card" style="margin-top:22px"><h2>حركات الحساب البنكي</h2>${accountHistory("bank_usd")}
+  <p class="security-note">خصم مصطفى 21$ واشتراك ChatGPT 21.78$ تقديريان، ويجب مطابقتهما مع كشف البنك.</p></section>`;
+}
+function partnershipReserve() {
+  const l = ledger(S, month);
+  const ayham = records("partner").find((x) => x.data.name?.includes("أيهم"));
+  const data = ayham?.data || {};
+  return `<div class="notice">صندوق افتتاح الشراكة نقد مستقل محفوظ عند محمد ديب، مخصص للطوارئ والرواتب عند الحاجة، ولا يدخل في صندوق تشغيل الشركة النقدي.</div>
+  <div class="grid">${stat("نقد احتياطي للشراكة", m(l.balance("partnership_reserve_cash")), "خارج صندوق التشغيل")}
+  ${stat("معدات الشركة", m(l.balance("equipment")), "أصول مملوكة للشركة")}
+  ${stat("مساهمة أيهم المقيدة", m(-l.balance("capital", ayham?.id)), "من أصل 4,000$")}
+  ${stat("المتبقي على أيهم", m(data.remaining_contribution ?? 475), "لم يُقبض بعد")}</div>
+  <div class="two" style="margin-top:22px"><section class="card"><h2>توزيع الافتتاح</h2>
+  <div class="row"><span>معدات جديدة</span><b>${m(3200)}</b></div>
+  <div class="row"><span>رصيد البنك قبل إعلان رواء</span><b>${m(125)}</b></div>
+  <div class="row"><span>احتياطي نقدي محفوظ</span><b>${m(200)}</b></div>
+  <div class="row"><span>التزام باقٍ</span><b>${m(475)}</b></div>
+  <p class="security-note">إجمالي مساهمة الشراكة المتفق عليها 4,000$. المتبقي لا يتحول إلى نقد قبل قبضه.</p></section>
+  <section class="card"><h2>حركات صندوق الاحتياطي</h2>${accountHistory("partnership_reserve_cash")}</section></div>`;
+}
+function personalAccount() {
+  if (!owner()) return '<div class="notice">هذا الحساب متاح لمالك الشركة فقط.</div>';
+  const l = ledger(S, month);
+  const me = records("partner").find((x) => x.data.name?.includes("محمد"));
+  const meId = me?.id;
+  const drawings = l.balance("drawings", meId);
+  const advances = l.balance("owner_advance", meId);
+  return `<div class="notice"><b>خاص بمحمد ديب فقط.</b> هذا القسم لا يُعرض للشريك أو المحاسب أو الموظفين، وتُحجب تفاصيله من بياناتهم عبر الخادم. السحب النهائي منفصل عن السلف القابلة للتسوية.</div>
+  <div class="grid">${stat("سحب شخصي نهائي", m(drawings), "200$ محوّلة لحسابك")}
+  ${stat("سلف شخصية", m(advances), "75$ موبايل + 146$ مصروف + 130$")}
+  ${stat("الإجمالي المستلم من الصندوق", m(drawings + advances), "ليس مصروفاً تشغيلياً")}
+  ${stat("إيجار مستحق من أيهم", m(560), "حق شخصي لم يُقبض بعد")}</div>
+  <section class="card" style="margin-top:22px"><h2>السحب الشخصي النهائي</h2>${accountHistory("drawings")}</section>
+  <section class="card" style="margin-top:22px"><h2>السلف الشخصية</h2>${accountHistory("owner_advance")}</section>`;
 }
 function payroll() {
   return (
