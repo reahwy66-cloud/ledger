@@ -494,16 +494,19 @@ function personalAccount() {
   const meId = me?.id;
   const drawings = l.balance("drawings", meId);
   const advances = l.balance("owner_advance", meId);
+  const reimbursementDue = -l.balance("partner_due", meId);
   const ayham = records("partner").find((x) => x.data.name?.includes("أيهم"))?.data || {};
   const rentReceived = Number(ayham.rent_personal_paid || 0);
   const pendingReturn = Number(ayham.overpayment_pending_return || 0);
   return `<div class="notice"><b>خاص بمحمد ديب فقط.</b> هذا القسم لا يُعرض للشريك أو المحاسب أو الموظفين، وتُحجب تفاصيله من بياناتهم عبر الخادم. السحب النهائي منفصل عن السلف القابلة للتسوية.</div>
   <div class="grid">${stat("سحب شخصي نهائي", m(drawings), "200$ محوّلة لحسابك")}
   ${stat("سلف شخصية", m(advances), "سلف مصروف شخصي — راجع حركات الحساب")}
+  ${stat("مصاريف دفعتها للشركة من جيبك", m(reimbursementDue), "مستحقة إلك من الشركة — منها 50$ راتب فؤاد")}
   ${stat("الإجمالي المستلم من الصندوق", m(drawings + advances), "ليس مصروفاً تشغيلياً")}
   ${stat("إيجار مقبوض من أيهم", m(rentReceived), "دُفع شخصياً خارج صندوق الشركة")}${stat("إيجار غير مقبوض", m(ayham.rent_personal_due ?? 0), "المتبقي عليك تحصيله")}${stat("مبلغ بانتظار الإرجاع لأيهم", m(pendingReturn), "زيادة ليست ملكك ولا للشركة")}</div>
   <section class="card" style="margin-top:22px"><h2>السحب الشخصي النهائي</h2>${accountHistory("drawings")}</section>
-  <section class="card" style="margin-top:22px"><h2>السلف الشخصية</h2>${accountHistory("owner_advance")}</section>`;
+  <section class="card" style="margin-top:22px"><h2>السلف الشخصية</h2>${accountHistory("owner_advance")}</section>
+  <section class="card" style="margin-top:22px"><h2>مستحقاتك المدفوعة نيابة عن الشركة</h2>${accountHistory("partner_due")}</section>`;
 }
 function payroll() {
   return (
