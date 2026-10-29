@@ -478,12 +478,12 @@ function partnershipReserve() {
   <div class="grid">${stat("نقد احتياطي للشراكة", m(l.balance("partnership_reserve_cash")), "خارج صندوق التشغيل")}
   ${stat("معدات الشركة", m(l.balance("equipment")), "أصول مملوكة للشركة")}
   ${stat("مساهمة أيهم المقيدة", m(-l.balance("capital", ayham?.id)), "من أصل 4,000$")}
-  ${stat("المتبقي على أيهم", m(data.remaining_contribution ?? 475), "لم يُقبض بعد")}</div>
+  ${stat("المتبقي على أيهم", m(data.remaining_contribution ?? 0), Number(data.remaining_contribution || 0) ? "لم يُقبض بعد" : "مساهمة الشراكة مكتملة")}</div>
   <div class="two" style="margin-top:22px"><section class="card"><h2>توزيع الافتتاح</h2>
   <div class="row"><span>معدات جديدة</span><b>${m(3200)}</b></div>
   <div class="row"><span>رصيد البنك قبل إعلان رواء</span><b>${m(125)}</b></div>
-  <div class="row"><span>احتياطي نقدي محفوظ</span><b>${m(200)}</b></div>
-  <div class="row"><span>التزام باقٍ</span><b>${m(475)}</b></div>
+  <div class="row"><span>احتياطي نقدي محفوظ</span><b>${m(l.balance("partnership_reserve_cash"))}</b></div>
+  <div class="row"><span>التزام باقٍ</span><b>${m(data.remaining_contribution ?? 0)}</b></div>
   <p class="security-note">إجمالي مساهمة الشراكة المتفق عليها 4,000$. المتبقي لا يتحول إلى نقد قبل قبضه.</p></section>
   <section class="card"><h2>حركات صندوق الاحتياطي</h2>${accountHistory("partnership_reserve_cash")}</section></div>`;
 }
@@ -494,11 +494,14 @@ function personalAccount() {
   const meId = me?.id;
   const drawings = l.balance("drawings", meId);
   const advances = l.balance("owner_advance", meId);
+  const ayham = records("partner").find((x) => x.data.name?.includes("أيهم"))?.data || {};
+  const rentReceived = Number(ayham.rent_personal_paid || 0);
+  const pendingReturn = Number(ayham.overpayment_pending_return || 0);
   return `<div class="notice"><b>خاص بمحمد ديب فقط.</b> هذا القسم لا يُعرض للشريك أو المحاسب أو الموظفين، وتُحجب تفاصيله من بياناتهم عبر الخادم. السحب النهائي منفصل عن السلف القابلة للتسوية.</div>
   <div class="grid">${stat("سحب شخصي نهائي", m(drawings), "200$ محوّلة لحسابك")}
-  ${stat("سلف شخصية", m(advances), "75$ موبايل + 146$ مصروف + 130$")}
+  ${stat("سلف شخصية", m(advances), "سلف مصروف شخصي — راجع حركات الحساب")}
   ${stat("الإجمالي المستلم من الصندوق", m(drawings + advances), "ليس مصروفاً تشغيلياً")}
-  ${stat("إيجار مستحق من أيهم", m(560), "حق شخصي لم يُقبض بعد")}</div>
+  ${stat("إيجار مقبوض من أيهم", m(rentReceived), "دُفع شخصياً خارج صندوق الشركة")}${stat("إيجار غير مقبوض", m(ayham.rent_personal_due ?? 0), "المتبقي عليك تحصيله")}${stat("مبلغ بانتظار الإرجاع لأيهم", m(pendingReturn), "زيادة ليست ملكك ولا للشركة")}</div>
   <section class="card" style="margin-top:22px"><h2>السحب الشخصي النهائي</h2>${accountHistory("drawings")}</section>
   <section class="card" style="margin-top:22px"><h2>السلف الشخصية</h2>${accountHistory("owner_advance")}</section>`;
 }
