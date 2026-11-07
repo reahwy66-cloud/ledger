@@ -596,7 +596,7 @@ body[dir="rtl"] .contact-card h2{letter-spacing:-.01em}
   .mobile-bottom-nav{
     position:fixed;
     display:grid;
-    grid-template-columns:repeat(4,1fr);
+    grid-template-columns:repeat(5,1fr);
     left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));
     z-index:80;
     min-height:68px;
@@ -709,3 +709,7 @@ body[dir="rtl"] .contact-card h2{letter-spacing:-.01em}
   *{scroll-behavior:auto!important;animation:none!important;transition:none!important}
   .reveal{opacity:1;transform:none}
 }
+/* Public case-studies navigation */
+.clients-results-wrap{margin-top:28px;display:flex;justify-content:center}
+.clients-results-link{display:inline-flex;min-height:48px;align-items:center;justify-content:center;padding:11px 23px;background:var(--green);color:var(--bone);border-radius:13px;font-weight:800;font-size:14px;transition:transform .2s ease,background .2s ease}
+.clients-results-link:hover{background:var(--green-deep);transform:translateY(-2px)}
