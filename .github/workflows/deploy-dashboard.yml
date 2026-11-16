@@ -8,6 +8,8 @@ on:
       - "sales/**"
       - "website/**"
       - "tests/v2-core.test.mjs"
+      - "tests/funding.test.mjs"
+      - "tests/auth-recovery.test.mjs"
       - "index.html"
       - "sw.js"
       - "manifest.webmanifest"
@@ -57,7 +59,8 @@ jobs:
           node --check dashboard-v2/app.mjs
           node --check dashboard-v2/core.mjs
           node --check dashboard-v2/funding.mjs
-          node --test tests/v2-core.test.mjs tests/funding.test.mjs
+          node --check dashboard-v2/auth-recovery.mjs
+          node --test tests/v2-core.test.mjs tests/funding.test.mjs tests/auth-recovery.test.mjs
 
       - name: Sync dashboard files
         shell: bash

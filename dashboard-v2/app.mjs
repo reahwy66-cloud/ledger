@@ -1,3 +1,4 @@
+import {rpcWithSessionRecovery,authIssue,authErrorMessage} from './auth-recovery.mjs?v=20261116-session-recovery';
 import {fundingAmounts, fundingRows, fundingSummary, fundingTable, fundingStatement, fundingStates} from './funding.mjs?v=20261116-funding';
 import {
   money,
@@ -201,8 +202,10 @@ function toast(msg, error = false) {
   }, 5000);
 }
 async function rpc(n, p = {}) {
-  const { data, error } = await sb.rpc(n, p);
-  if (error) throw Error(error.message);
+  const { data, error } = await rpcWithSessionRecovery(sb,n,p,{
+    onRetry:()=>toast("جاري إعادة الاتصال بخدمة تسجيل الدخول…")
+  });
+  if(error) throw Object.assign(new Error(authErrorMessage(error)),{code:error.code,authKind:authIssue(error)});
   return data;
 }
 async function load(force = false) {
@@ -233,7 +236,7 @@ async function load(force = false) {
     if (!visible().includes(view)) view = visible()[0];
     render();
   } catch (e) {
-    if (!S.role) blocked(e.message);
+    if (!S.role) blocked(e);
     else toast("تعذر تحميل آخر البيانات: " + e.message, true);
   } finally {
     busy = false;
@@ -2210,9 +2213,32 @@ function login() {
     }
   };
 }
-function blocked(msg) {
-  app.innerHTML = `<section class="card login"><h1>${salesPortal ? "بوابة فريق المبيعات" : "الوصول للدفتر"}</h1><p class="error" style="margin:20px 0">${esc(msg)}</p>${btn("إعادة المحاولة", "retry", "", "primary")}${salesPortal ? "" : '<p style="margin-top:18px"><a href="../dashboard/">النسخة السابقة</a></p>'}</section>`;
-  app.querySelector("button").onclick = () => load(true);
+function blocked(error) {
+  const msg=authErrorMessage(error), issue=authIssue(error);
+  app.innerHTML = `<section class="card login"><h1>${salesPortal ? "بوابة فريق المبيعات" : "الوصول للدفتر"}</h1><p class="error" style="margin:20px 0" role="alert">${esc(msg)}</p><div class="actions" style="justify-content:center;flex-wrap:wrap">${btn("إعادة المحاولة","retry","","primary")}${sb && issue ? btn("تجديد جلسة الدخول","renew-session") + btn("العودة لتسجيل الدخول","local-signin") : ""}</div>${salesPortal ? "" : '<p style="margin-top:18px"><a href="../dashboard/">النسخة السابقة</a></p>'}</section>`;
+  app.querySelector('[data-action="retry"]').onclick=()=>sb?load(true):location.reload();
+  app.querySelector('[data-action="renew-session"]')?.addEventListener('click',async()=>{
+    app.querySelectorAll('button').forEach(b=>b.disabled=true);
+    try {
+      const fresh=await sb.auth.refreshSession();
+      if(fresh.error) throw fresh.error;
+      if(!fresh.data?.session){login();return;}
+      await load(true);
+    } catch(e){blocked(e);}
+    finally{app.querySelectorAll('button').forEach(b=>b.disabled=false);}
+  });
+  app.querySelector('[data-action="local-signin"]')?.addEventListener('click',async()=>{
+    app.querySelectorAll('button').forEach(b=>b.disabled=true);
+    try {
+      const {error}=await sb.auth.signOut({scope:'local'});
+      if(error){blocked(error);return;}
+      if(realtime){await sb.removeChannel(realtime);realtime=null;}
+      S={records:[],journals:[],accounts:[],periods:[]};
+      selected=null;
+      login();
+    } catch(e){blocked(e);}
+    finally{app.querySelectorAll('button').forEach(b=>b.disabled=false);}
+  });
 }
 function startEvents() {
   if (realtime || !S.role) return;
@@ -2265,5 +2291,5 @@ try {
   if (data.session) await load(true);
   else login();
 } catch (e) {
-  blocked("تعذر الاتصال: " + e.message);
+  blocked(e);
 }
