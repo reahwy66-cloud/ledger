@@ -1,3 +1,4 @@
+import {fundingAmounts, fundingRows, fundingSummary, fundingTable, fundingStatement, fundingStates} from './funding.mjs?v=20261116-funding';
 import {
   money,
   round,
@@ -34,6 +35,7 @@ let sb,
   privateMoney = false,
   realtime = null,
   pendingUpdate = false;
+let fundingFilters={customer:'',page:'',status:'',platform:'',month:''};
 const chan = new BroadcastChannel("riwaa-v2-operations");
 const titles = {
   overview: "الملخص",
@@ -407,7 +409,7 @@ function customerDetail() {
       (x) =>
         `<tr><td>${esc(x.date)}</td><td>${esc(x.note)}</td><td>${esc(S.accounts.find((a) => a.code === x.account)?.name)}</td><td>${m(x.debit)}</td><td>${m(x.credit)}</td></tr>`,
     ),
-  )}<div class="section-title" style="margin-top:25px"><h2>عقود العميل</h2></div>${contractCards(records("contract").filter((x) => x.data.customer_id === selected))}`;
+  )}<div class="section-title" style="margin-top:25px"><h2>عقود العميل</h2></div>${contractCards(records("contract").filter((x) => x.data.customer_id === selected))}${fundingPanel(selected,true)}`;
 }
 function contractCards(list) {
   return `<div class="entity-grid">${
@@ -575,18 +577,52 @@ function appointments() {
     )
   );
 }
+
+function fundingPanel(customerId='',compact=false){
+ const filters=customerId?{customer:customerId}:fundingFilters,all=fundingRows(S),rows=fundingRows(S,filters),t=fundingSummary(rows);
+ if(compact&&!rows.length)return '';
+ const opt=(v,label,current)=>'<option value="'+esc(v)+'" '+(v===current?'selected':'')+'>'+esc(label)+'</option>';
+ const clients=records('customer').filter(c=>c.data.service_mode==='ads_only'||all.some(r=>r.data.customer_id===c.id));
+ const pages=[...new Set(all.filter(r=>!filters.customer||r.data.customer_id===filters.customer).map(r=>r.page))];
+ const months=[...new Set(all.map(r=>r.date.slice(0,7)).filter(Boolean))].sort().reverse();
+ const control=(key,label,values)=>'<label>'+label+'<select data-funding-filter="'+key+'">'+values.map(([v,l])=>opt(v,l,filters[key])).join('')+'</select></label>';
+ const controls=compact?'':'<div class="funding-filters">'+control('customer','الزبون',[['','كل الزبائن'],...clients.map(c=>[c.id,c.data.name])])+control('page','الصفحة',[['','كل الصفحات'],...pages.map(p=>[p,p])])+control('status','الحالة',[['','كل الحالات'],...Object.entries(fundingStates).filter(([k])=>k!=='paused')])+control('platform','المنصة',[['','كل المنصات'],...['Facebook','Instagram','Meta'].map(p=>[p,p])])+control('month','شهر الإعلان',[['','كل التواريخ'],...months.map(p=>[p,p]),['unknown','تاريخ غير محدد']])+'</div>';
+ const actions=r=>write()?btn('تفاصيل / تعديل','funding-edit','data-id="'+r.id+'"','small')+(!r.completed&&r.data.status!=='cancelled'?btn('انتهى التمويل','funding-complete','data-id="'+r.id+'"','small primary'):'')+(r.due>0?action('ad_payment','تسجيل قبض','campaign',r.id):''):'';
+ const groups=new Map();for(const r of rows){const key=r.customer+' — '+r.page;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);}
+ const summaries=clients.filter(c=>!filters.customer||filters.customer===c.id).map(c=>{const x=fundingSummary(rows.filter(r=>r.data.customer_id===c.id));return '<article class="card"><div class="section-title"><h3>'+esc(c.data.name)+'</h3>'+btn('طباعة كشف الحساب','funding-print','data-customer="'+c.id+'"','small')+'</div><div class="money-grid"><div><small>المنتهي مع الأجور</small><b>'+m(x.total)+'</b></div><div><small>المقبوض المسجل</small><b>'+m(x.paid)+'</b></div><div><small>المتبقي المعتمد</small><b>'+m(x.due)+'</b></div></div><small>'+x.active+' إعلان نشط · صرف ظاهر '+m(x.activeSpend)+' خارج الحساب'+(x.pendingSpend?' · مبالغ بانتظار الحالة '+m(x.pendingSpend):'')+'</small></article>';}).join('');
+ const content=[...groups].map(([key,list])=>{const x=fundingSummary(list);return '<section class="card funding-page"><div class="section-title"><div><h3>'+esc(key)+'</h3><small>التمويل المنتهي '+m(x.spend)+' + الأجور '+m(x.fee)+' = '+m(x.total)+'</small></div><b>'+list.length+' إعلان</b></div>'+fundingTable(list,{actions,moneyFormat:m})+'<details><summary>مصدر البيانات وسجل التحديثات</summary>'+list.map(r=>'<div class="funding-evidence"><b>'+esc(r.data.name)+'</b><p>'+esc(r.data.note||'')+'</p><small>آخر متابعة: '+esc(r.data.observed_on||'غير محدد')+' · '+esc(r.data.source_status||r.data.status)+(r.data.views!=null?' · مشاهدات '+esc(r.data.views):'')+(r.data.reach!=null?' · وصول '+esc(r.data.reach):'')+(r.data.messages!=null?' · محادثات '+esc(r.data.messages):'')+'</small>'+(r.data.spend_history||[]).map(h=>'<small>'+esc(h.at)+' — '+m(h.spent)+' — '+esc(fundingStates[h.status]||h.status)+'</small>').join('')+'</div>').join('')+'</details></section>';}).join('');
+ return '<section class="funding-workspace"><div class="section-title"><div><h2>متابعة التمويل وكشف الحساب</h2><small>كل صفحة وإعلان بحسابه · التواريخ غير المتوفرة تبقى غير محددة</small></div><div class="actions">'+(write()?btn('+ إضافة تمويل','funding-new',customerId?'data-customer="'+customerId+'"':'','primary'):'')+btn('طباعة كشف الحساب','funding-print',customerId?'data-customer="'+customerId+'"':'')+'</div></div><div class="notice">الـ<strong>Active خارج الحساب</strong>، والـ<strong>Paused منتهي</strong>. عند اعتماد الانتهاء يُثبّت الصرف النهائي وتُضاف النسبة مرة واحدة. صرف الإعلان النشط هو لقطة متابعة، ولا يخصم من الصندوق تلقائياً.</div>'+controls+'<div class="grid funding-stats">'+stat('تمويل منتهي',m(t.spend),t.completed+' إعلانات')+stat('أجور التمويل',m(t.fee),'مضافة فوق التمويل')+stat('المتبقي المعتمد',m(t.due),'بعد الدفعات المسجلة')+stat('صرف نشط — خارج الحساب',m(t.activeSpend),t.active+' إعلانات نشطة')+'</div>'+(compact?'':'<div class="entity-grid funding-clients">'+summaries+'</div>')+(content||empty('لا توجد إعلانات مطابقة'))+'<p class="muted">إجماليات التمويل حسب المرشحات أعلاه، وتعرض كل التواريخ افتراضياً. الدفعات تُسجّل فقط بعد تأكيد الاستلام الفعلي.</p><div class="actions">'+btn('طباعة كشف الحساب / حفظ PDF','funding-print',customerId?'data-customer="'+customerId+'"':'','primary')+'</div></section>';
+}
+function fundingForm(id='',preset={}){
+ const rec=get(id),d={status:'active',fee_pct:25,platform:'Facebook',...rec?.data,...preset},rid=id||uid();
+ const fields=select('customer_id','الزبون',[['','اختر الزبون'],...opts('customer')],d.customer_id||'')+input('name','وصف الإعلان',d.name||'','text',true)+input('page_name','اسم الصفحة',d.page_name||'','text',false,'list="funding-page-names"')+input('page_reference','مرجع الصفحة عند غياب الاسم',d.page_reference||'')+select('platform','المنصة',[['Facebook','Facebook'],['Instagram','Instagram'],['Meta','Meta']],d.platform)+select('status','حالة التمويل',Object.entries(fundingStates).filter(([k])=>k!=='paused'),d.status)+input('ad_date','تاريخ الإعلان الظاهر / البداية',d.ad_date||'','date')+input('end_date','تاريخ الانتهاء — إذا كان معروفاً',d.end_date||'','date')+input('observed_spend','الصرف الظاهر / النهائي بالدولار',d.observed_spend??0,'number',true)+input('fee_pct','أجور التمويل % فوق المبلغ',d.fee_pct,'number',true,'max="100"')+input('observed_on','تاريخ متابعة الصرف',d.observed_on||today(),'date',true)+input('billing_date','تاريخ تسجيل الحساب عند الانتهاء',d.billing_date||today(),'date',true)+'<label class="full">ملاحظات المصدر<textarea name="note">'+esc(d.note||'')+'</textarea></label><div class="hint full" id="funding-preview"></div>';
+ showModal('إضافة / تحديث التمويل','<datalist id="funding-page-names">'+records('customer').filter(c=>!d.customer_id||c.id===d.customer_id).flatMap(c=>c.data.ad_pages||[]).map(p=>'<option value="'+esc(p)+'"></option>').join('')+'</datalist><div class="form-grid">'+fields+'</div><div class="hint">اختيار «منتهي» وحفظه يعتمد الإنفاق النهائي والأجور في ذمة الزبون مرة واحدة. لا يسجّل قبضاً أو دفعاً من البنك. بعد الاعتماد تُحمى المبالغ من التعديل؛ التصحيح المالي يتم بقيد عكسي.</div>',async v=>{if(!v.customer_id)throw Error('اختر الزبون');const data={...d,...v,observed_spend:Number(v.observed_spend),fee_pct:Number(v.fee_pct),managed_funding:true};await mutate(()=>rpc('rwa2_save_funding_campaign',{p:{id:rid,version:rec?.version||0,data}}));},d.status==='closed'?'حفظ واعتماد الحساب':'حفظ التمويل');
+ const preview=()=>{const v=Object.fromEntries(new FormData(modal.querySelector('form'))),a=fundingAmounts(v);modal.querySelector('#funding-preview').textContent=a.completed?'تمويل '+money(a.spent)+' + أجور '+money(a.fee)+' = إجمالي '+money(a.total):'صرف ظاهر '+money(a.spent)+' — خارج المبلغ المستحق حتى انتهاء التمويل';};
+ modal.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',preview));
+ modal.querySelector('[name=customer_id]').addEventListener('change',e=>{modal.querySelector('#funding-page-names').innerHTML=(get(e.target.value)?.data.ad_pages||[]).map(p=>'<option value="'+esc(p)+'"></option>').join('');if(!rec){modal.querySelector('[name=fee_pct]').value=get(e.target.value)?.data.ad_fee_pct??25;preview();}});preview();
+}
+async function printFunding(customerId=''){
+ const filters={...fundingFilters,...(customerId?{customer:customerId}:{})},rows=fundingRows(S,filters);
+ if(!rows.length){toast('لا توجد إعلانات ضمن الفلترة الحالية',true);return;}
+ const customer=filters.customer?name(filters.customer):'كل العملاء',filtersLabel=[filters.month||'كل التواريخ',filters.page||'كل الصفحات',fundingStates[filters.status]||'كل الحالات',filters.platform||'كل المنصات'].join(' · ');
+ const frame=document.createElement('iframe');frame.className='funding-print-frame';frame.title='كشف حساب التمويل';document.body.append(frame);
+ frame.contentDocument.open();frame.contentDocument.write(fundingStatement(rows,{customer,filtersLabel,asOf:today()}));frame.contentDocument.close();
+ await Promise.all([...frame.contentDocument.images].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=img.onerror=resolve;setTimeout(resolve,2000);})));
+ frame.contentWindow.addEventListener('afterprint',()=>frame.remove(),{once:true});frame.contentWindow.focus();frame.contentWindow.print();setTimeout(()=>frame.remove(),60000);
+}
+
 function campaigns() {
   const l = ledger(S, month),
     funders = records("funding_account");
-  return `<div class="notice"><b>فصل كامل بين العميل وصاحب البطاقة.</b> ميزانية المنصة ليست إيراداً؛ أتعاب التمويل تظهر وحدها. استخدام بطاقة Sai أو أيهم ينشئ مستحقاً لصاحب البطاقة ويمكن تحويله لاحقاً لخدمة موثقة.</div><div class="section-title"><h2>حسابات التمويل الخارجي</h2>${owner() ? btn("+ حساب تمويل", "record", 'data-kind="funding_account"', "primary") : ""}</div><div class="entity-grid">${
+  return fundingPanel() + `<div class="notice"><b>فصل كامل بين العميل وصاحب البطاقة.</b> ميزانية المنصة ليست إيراداً؛ أتعاب التمويل تظهر وحدها. استخدام بطاقة Sai أو أيهم ينشئ مستحقاً لصاحب البطاقة ويمكن تحويله لاحقاً لخدمة موثقة.</div><div class="section-title"><h2>حسابات التمويل الخارجي</h2>${owner() ? btn("+ حساب تمويل", "record", 'data-kind="funding_account"', "primary") : ""}</div><div class="entity-grid">${
     funders
       .map((f) => {
         const b = fundingBalance(S, f, month);
         return `<article class="card"><div class="section-title"><div><h3>${esc(f.data.name)}</h3><small>${esc(name(f.data.owner_party_id))} · ${esc(f.data.card_label || "بطاقة خارجية")}</small></div>${badge(f.data.status)}</div><div class="money-grid"><div><small>تمويل البطاقة المستحق</small><b>${m(b.card)}</b></div><div><small>حصة أرباح مستحقة</small><b>${m(b.profit)}</b></div><div><small>إجمالي قابل للتحويل</small><b>${m(b.total)}</b></div></div><small>أتعاب افتراضية: ${esc(f.data.default_fee_value || 0)}${f.data.default_fee_mode === "percent" ? "%" : "$"} · قابلة للتخصيص بكل حملة</small><div class="actions">${write() ? action("ad_spend_funded", "تمويل حملة", "funding", f.id) + action("funded_expense", "مصروف بالبطاقة", "funding", f.id) + action("funder_transfer", "تحويل لخدمة", "funding", f.id) + action("funder_payment", "تسديد نقدي", "funding", f.id) : ""}${owner() ? btn("تعديل", "record", `data-kind="funding_account" data-id="${f.id}"`, "small") : ""}</div></article>`;
       })
       .join("") || empty("أضف بطاقة Sai أو أيهم")
-  }</div><div class="section-title" style="margin-top:25px"><h2>الحملات</h2>${write() ? btn("+ حملة جديدة", "record", 'data-kind="campaign"', "primary") : ""}</div><div class="entity-grid">${
-    filtered(records("campaign"))
+  }</div><div class="section-title" style="margin-top:25px"><h2>الحملات المالية السابقة</h2></div><div class="entity-grid">${
+    filtered(records("campaign").filter(c=>!c.data.managed_funding))
       .map(
         (c) =>
           `<article class="card"><div class="section-title"><h3>${esc(c.data.name)}</h3>${badge(c.data.status)}</div><small>${esc(name(c.data.customer_id))} · ${esc(c.data.platform || "Meta")}</small><div class="money-grid"><div><small>الميزانية</small><b>${m(c.data.budget)}</b></div><div><small>أتعابنا</small><b>${m(c.data.fee)}</b></div><div><small>الإجمالي</small><b>${m(Number(c.data.budget) + Number(c.data.fee))}</b></div></div><div class="row"><span>أموال منصة متبقية</span><b>${m(-l.balance("ad_funds", null, null, c.id))}</b></div><div class="actions">${write() ? ["ad_invoice", "ad_payment", "ad_receipt", "ad_spend", "ad_spend_funded", "ad_fee", "ad_refund"].map((op) => action(op, null, "campaign", c.id)).join("") : ""}</div></article>`,
@@ -880,6 +916,7 @@ const parties = () =>
     .filter((x) => ["customer", "employee", "partner"].includes(x.kind))
     .map((x) => [x.id, x.data.name]);
 function recordForm(kind, id = "", preset = {}) {
+  if(kind==="campaign"&&get(id)?.data.managed_funding) return fundingForm(id);
   const formRecordId = id || uid(),
     rec = get(id),
     d = { ...(rec?.data || {}), ...preset };
@@ -1867,6 +1904,10 @@ async function handle(b) {
         b.dataset.id || "",
         b.dataset.customer ? { customer_id: b.dataset.customer } : {},
       );
+    else if (a === "funding-new") fundingForm("",{customer_id:b.dataset.customer||"",fee_pct:get(b.dataset.customer)?.data.ad_fee_pct??25});
+    else if (a === "funding-edit") fundingForm(b.dataset.id);
+    else if (a === "funding-complete") fundingForm(b.dataset.id,{status:"closed"});
+    else if (a === "funding-print") await printFunding(b.dataset.customer||"");
     else if (a === "contract-preview") contractPreview(b.dataset.id);
     else if (a === "convert-lead") {
       const lead = get(b.dataset.id),
@@ -2115,6 +2156,7 @@ async function handle(b) {
   }
 }
 function bind() {
+  app.querySelectorAll('[data-funding-filter]').forEach(el=>el.addEventListener('change',e=>{fundingFilters[e.target.dataset.fundingFilter]=e.target.value;if(e.target.dataset.fundingFilter==='customer')fundingFilters.page='';render();}));
   app
     .querySelectorAll("[data-action]")
     .forEach((b) => (b.onclick = () => handle(b)));

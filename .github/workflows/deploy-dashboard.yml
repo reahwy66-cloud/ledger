@@ -56,7 +56,8 @@ jobs:
         run: |
           node --check dashboard-v2/app.mjs
           node --check dashboard-v2/core.mjs
-          node --test tests/v2-core.test.mjs
+          node --check dashboard-v2/funding.mjs
+          node --test tests/v2-core.test.mjs tests/funding.test.mjs
 
       - name: Sync dashboard files
         shell: bash
